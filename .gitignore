@@ -1,0 +1,24 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Python & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.pytest_cache/
+
+# Database & Model Binaries
+mlb_quant.sqlite3
+*.sqlite3
+*.pkl
+
+# IDEs & System Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

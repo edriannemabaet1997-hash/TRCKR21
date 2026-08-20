@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>trckr21 MLB Quant Terminal</title>
+
+
+  <style type="text/css">@font-face {font-family:'Inter';font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:400;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:500;src:url(/cf-fonts/v/inter/5.2.8/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:600;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:'Inter';font-style:normal;font-weight:700;src:url(/cf-fonts/v/inter/5.2.8/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-mono/5.2.9/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-mono/5.2.9/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-mono/5.2.9/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-mono/5.2.9/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-mono/5.2.9/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-mono/5.2.9/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:500;src:url(/cf-fonts/v/roboto-mono/5.2.9/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:500;src:url(/cf-fonts/v/roboto-mono/5.2.9/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:500;src:url(/cf-fonts/v/roboto-mono/5.2.9/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:500;src:url(/cf-fonts/v/roboto-mono/5.2.9/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:500;src:url(/cf-fonts/v/roboto-mono/5.2.9/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:500;src:url(/cf-fonts/v/roboto-mono/5.2.9/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:600;src:url(/cf-fonts/v/roboto-mono/5.2.9/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:600;src:url(/cf-fonts/v/roboto-mono/5.2.9/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:600;src:url(/cf-fonts/v/roboto-mono/5.2.9/greek/wght/normal.woff2);unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:600;src:url(/cf-fonts/v/roboto-mono/5.2.9/latin-ext/wght/normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:600;src:url(/cf-fonts/v/roboto-mono/5.2.9/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:'Roboto Mono';font-style:normal;font-weight:600;src:url(/cf-fonts/v/roboto-mono/5.2.9/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}</style>
+  <style>
+  /* ==========================================================================
+    1. THEME TOKENS (accent is switchable at runtime via data-theme)
+    ========================================================================== */
+  :root{
+    --bg-base:#000; --bg-surface:#0A0A0A; --bg-surface-raised:#121212;
+    --bg-hover:rgba(255,255,255,.04); --bg-active:rgba(255,255,255,.08);
+    --border-subtle:rgba(255,255,255,.1); --border-focus:rgba(255,255,255,.25);
+    --text-primary:#EDEDED; --text-secondary:#8A8A8E; --text-tertiary:#555;
+    --accent-amber:#F5A623; --accent-red:#FF453A; --accent-green:#32D74B;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+    --ease:cubic-bezier(.4,0,.2,1);
+    --t-fast:150ms var(--ease); --t-med:300ms var(--ease);
+    --font-ui:'Inter',-apple-system,sans-serif; --font-mono:'Roboto Mono',monospace;
+    --accent:#00E5FF; --accent-dim:rgba(0,229,255,.12); --accent-border:rgba(0,229,255,.3);
+  }
+  :root[data-theme="amber"]{ --accent:#F5A623; --accent-dim:rgba(245,166,35,.12); --accent-border:rgba(245,166,35,.35); }
+  :root[data-theme="violet"]{ --accent:#A78BFA; --accent-dim:rgba(167,139,250,.14); --accent-border:rgba(167,139,250,.35); }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg-base);color:var(--text-primary);font-family:var(--font-ui);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:4px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text-secondary);}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+  @media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
+
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  .text-muted{color:var(--text-secondary);}
+  .flex{display:flex;} .flex-col{display:flex;flex-direction:column;}
+  .items-center{align-items:center;} .justify-between{justify-content:space-between;}
+  .gap-2{gap:8px;} .gap-3{gap:12px;} .gap-4{gap:16px;} .gap-6{gap:24px;}
+  .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);}
+  h1,h2,h3{font-weight:500;letter-spacing:-.02em;}
+
+  .card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:16px;transition:border-color var(--t-med),background var(--t-med);}
+
+  button{font-family:var(--font-ui);background:transparent;border:none;color:var(--text-primary);cursor:pointer;outline:none;transition:all var(--t-fast);}
+  .btn{padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);font-weight:500;font-size:12px;background:var(--bg-surface);display:inline-flex;align-items:center;gap:6px;}
+  .btn:hover{background:var(--bg-hover);border-color:var(--border-focus);}
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primary{color:var(--accent);border-color:var(--accent-border);background:var(--accent-dim);}
+  .btn-primary:hover{background:var(--accent-dim);filter:brightness(1.2);}
+  .icon-btn{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);position:relative;}
+  .icon-btn:hover{background:var(--bg-hover);color:var(--text-primary);}
+
+  input,select{background:var(--bg-surface-raised);border:1px solid var(--border-subtle);color:var(--text-primary);padding:8px 12px;border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:12px;transition:border-color var(--t-fast);outline:none;width:100%;}
+  input:focus,select:focus{border-color:var(--accent);}
+
+  .badge{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--font-mono);border:1px solid var(--border-subtle);white-space:nowrap;}
+  .badge.high{color:var(--accent);border-color:var(--accent-border);background:var(--accent-dim);}
+  .badge.med{color:var(--accent-amber);border-color:rgba(245,166,35,.3);background:rgba(245,166,35,.05);}
+  .badge.low{color:var(--accent-red);border-color:rgba(255,69,58,.3);background:rgba(255,69,58,.05);}
+
+  /* ==========================================================================
+    2. TOP NAV
+    ========================================================================== */
+  .top-nav{position:sticky;top:0;z-index:40;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle);padding:0 20px;display:flex;align-items:center;height:56px;gap:8px;}
+  .brand{font-weight:700;letter-spacing:-.03em;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .brand-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);}
+  .nav-tabs{display:flex;gap:20px;position:relative;margin-left:24px;height:100%;overflow-x:auto;scrollbar-width:none;}
+  .nav-tabs::-webkit-scrollbar{display:none;}
+  .nav-tab{height:100%;display:flex;align-items:center;color:var(--text-secondary);font-weight:500;position:relative;white-space:nowrap;font-size:13px;}
+  .nav-tab:hover{color:var(--text-primary);}
+  .nav-tab.active{color:var(--text-primary);}
+  .nav-indicator{position:absolute;bottom:-1px;height:2px;background:var(--accent);transition:all var(--t-med);box-shadow:0 0 6px var(--accent);}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+
+  .freshness{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary);padding:0 8px;font-family:var(--font-mono);}
+  .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-green);position:relative;flex-shrink:0;}
+  .pulse-dot::after{content:'';position:absolute;inset:-4px;border-radius:50%;background:var(--accent-green);opacity:.5;animation:pulse 2s infinite var(--ease);}
+  .pulse-dot.stale{background:var(--accent-amber);}
+  .pulse-dot.stale::after{background:var(--accent-amber);}
+  @keyframes pulse{0%{transform:scale(1);opacity:.5;}70%{transform:scale(2.2);opacity:0;}100%{opacity:0;}}
+
+  .badge-count{position:absolute;top:2px;right:2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--accent-red);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);}
+
+  /* ==========================================================================
+    3. POPOVERS (theme / alerts)
+    ========================================================================== */
+  .popover{position:absolute;top:44px;right:0;width:280px;background:var(--bg-surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-md);box-shadow:0 12px 30px rgba(0,0,0,.6);z-index:60;opacity:0;transform:translateY(-6px);pointer-events:none;transition:all var(--t-fast);max-height:70vh;overflow-y:auto;}
+  .popover.active{opacity:1;transform:translateY(0);pointer-events:auto;}
+  .popover-header{padding:12px 14px;border-bottom:1px solid var(--border-subtle);font-weight:600;font-size:12px;}
+  .popover-body{padding:10px 14px;}
+  .theme-swatches{display:flex;gap:10px;}
+  .swatch{width:36px;height:36px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all var(--t-fast);position:relative;}
+  .swatch.active{border-color:var(--text-primary);}
+  .swatch.active::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#000;font-weight:700;font-size:14px;}
+
+  .alert-item{padding:10px 0;border-bottom:1px solid var(--border-subtle);}
+  .alert-item:last-child{border-bottom:none;}
+  .rule-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;}
+  .rule-row select,.rule-row input{padding:5px 8px;font-size:11px;}
+  .rule-chip{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);margin-bottom:6px;font-size:11px;font-family:var(--font-mono);}
+  .rule-chip button{color:var(--accent-red);font-size:14px;}
+
+  /* ==========================================================================
+    4. SEGMENTED CONTROLS
+    ========================================================================== */
+  .segmented-control{display:inline-flex;background:var(--bg-surface-raised);border-radius:var(--radius-sm);padding:2px;position:relative;}
+  .seg-btn{padding:6px 16px;font-size:12px;font-weight:500;color:var(--text-secondary);position:relative;z-index:2;}
+  .seg-btn.active{color:var(--text-primary);}
+  .seg-indicator{position:absolute;top:2px;bottom:2px;background:var(--bg-active);border-radius:4px;transition:all var(--t-med);z-index:1;}
+
+  /* ==========================================================================
+    5. LAYOUT
+    ========================================================================== */
+  .container{padding:24px;max-width:1400px;margin:0 auto;}
+  .view-section{display:none;animation:fadeIn var(--t-med);}
+  .view-section.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .hud-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  .filter-grid{display:flex;gap:8px;flex-wrap:wrap;}
+
+  /* Watchlist tray */
+  .watchlist-tray{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-surface);margin-bottom:20px;overflow:hidden;transition:all var(--t-med);}
+  .tray-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;}
+  .tray-body{display:flex;gap:8px;padding:0 14px 14px;flex-wrap:wrap;max-height:200px;overflow-y:auto;transition:all var(--t-med);}
+  .tray-body.collapsed{display:none;}
+  .watch-chip{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-surface-raised);border:1px solid var(--border-subtle);border-radius:20px;cursor:pointer;transition:all var(--t-fast);font-size:11px;}
+  .watch-chip:hover{border-color:var(--accent-border);}
+  .watch-chip .unpin{color:var(--text-tertiary);font-size:13px;}
+  .watch-chip .unpin:hover{color:var(--accent-red);}
+
+  /* Tables */
+  .table-wrapper{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-surface);overflow:hidden;}
+  .table-scroll{overflow:auto;max-height:560px;}
+  table{width:100%;border-collapse:collapse;text-align:left;}
+  th{font-weight:500;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:12px 14px;border-bottom:1px solid var(--border-subtle);background:var(--bg-surface);position:sticky;top:0;z-index:2;}
+  td{padding:11px 14px;font-family:var(--font-mono);font-size:12px;border-bottom:1px solid var(--border-subtle);transition:background var(--t-fast);cursor:pointer;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr.data-row:hover td{background:var(--bg-hover);}
+  tbody tr.data-row{opacity:0;animation:slideInUp .4s var(--ease) forwards;}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  td.flash-up{animation:flashUp 1.4s var(--ease);}
+  td.flash-down{animation:flashDown 1.4s var(--ease);}
+  @keyframes flashUp{0%{background:rgba(50,215,75,.35);}100%{background:transparent;}}
+  @keyframes flashDown{0%{background:rgba(255,69,58,.35);}100%{background:transparent;}}
+  .delta-arrow{font-size:10px;margin-left:4px;}
+  .delta-arrow.up{color:var(--accent-green);} .delta-arrow.down{color:var(--accent-red);}
+
+  .star-btn{color:var(--text-tertiary);font-size:15px;cursor:pointer;transition:all var(--t-fast);}
+  .star-btn:hover{color:var(--accent-amber);transform:scale(1.15);}
+  .star-btn.pinned{color:var(--accent-amber);}
+  .chk{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;}
+
+  .edge-meter{width:52px;height:6px;border-radius:3px;background:var(--bg-active);overflow:hidden;position:relative;}
+  .edge-meter-fill{height:100%;border-radius:3px;transition:width var(--t-med);}
+
+  /* ==========================================================================
+    6. DRAWER
+    ========================================================================== */
+  .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:100;opacity:0;pointer-events:none;transition:opacity var(--t-med);}
+  .drawer-overlay.active{opacity:1;pointer-events:auto;}
+  .drawer{position:fixed;top:0;right:-500px;width:480px;height:100vh;background:var(--bg-surface);border-left:1px solid var(--border-subtle);z-index:101;box-shadow:-10px 0 30px rgba(0,0,0,.5);transition:right var(--t-med);display:flex;flex-direction:column;}
+  .drawer.active{right:0;}
+  .drawer-header{padding:16px 20px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;}
+  .drawer-content{padding:24px;overflow-y:auto;flex:1;transition:opacity var(--t-fast);}
+  .gauge-track{height:4px;background:var(--bg-active);border-radius:2px;overflow:hidden;margin-top:6px;display:flex;gap:2px;}
+  .gauge-fill{height:100%;border-radius:2px;transition:width var(--t-med);}
+  .spinner{width:14px;height:14px;border:2px solid var(--bg-active);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ==========================================================================
+    7. MONEYLINE
+    ========================================================================== */
+  .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+  .team-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:var(--radius-sm);transition:background var(--t-fast);cursor:pointer;}
+  .team-row:hover{background:var(--bg-hover);}
+
+  /* ---- Game / Pitcher panel ---- */
+  .game-drawer{width:520px;}
+  .score-strip{padding:14px 20px;border-bottom:1px solid var(--border-subtle);}
+  .score-strip .side{padding:6px 0;}
+  .score-strip .side.current{color:var(--accent);}
+  .avatar-circle{width:52px;height:52px;border-radius:50%;background:var(--bg-surface-raised);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--accent);flex-shrink:0;}
+  .split-table{width:100%;border-collapse:collapse;margin-top:10px;}
+  .split-table th,.split-table td{padding:8px 6px;font-size:11px;border-bottom:1px solid var(--border-subtle);text-align:right;font-family:var(--font-mono);}
+  .split-table th{color:var(--text-secondary);font-weight:500;text-transform:uppercase;font-size:9px;letter-spacing:.04em;}
+  .split-table th:first-child,.split-table td:first-child{text-align:left;color:var(--text-secondary);font-family:var(--font-ui);}
+  .split-table tr:last-child td{border-bottom:none;}
+  .split-table td.vuln{color:var(--accent-red);}
+  .split-table td.strong{color:var(--accent);}
+  .advantage-callout{margin-top:14px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);font-size:12px;font-weight:500;}
+  .ladder-section{margin-top:16px;}
+  .ladder-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-subtle);}
+  .ladder-row:last-child{border-bottom:none;}
+  .ladder-line{width:64px;font-family:var(--font-mono);font-size:12px;flex-shrink:0;}
+  .ladder-bar-track{flex:1;height:6px;border-radius:3px;background:var(--bg-active);overflow:hidden;}
+  .ladder-bar-fill{height:100%;border-radius:3px;transition:width var(--t-med);}
+  .ladder-prob{width:48px;text-align:right;font-family:var(--font-mono);font-size:11px;flex-shrink:0;}
+  .ladder-odds{width:52px;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);flex-shrink:0;}
+  .platoon-list-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-subtle);font-size:12px;cursor:pointer;transition:background var(--t-fast);}
+  .platoon-list-item:last-child{border-bottom:none;}
+  .platoon-list-item:hover{background:var(--bg-hover);}
+  .pitcher-watch-toggle{color:var(--text-tertiary);font-size:18px;cursor:pointer;transition:all var(--t-fast);}
+  .pitcher-watch-toggle:hover{color:var(--accent-amber);transform:scale(1.1);}
+  .pitcher-watch-toggle.pinned{color:var(--accent-amber);}
+
+  /* ==========================================================================
+    8. COMMAND PALETTE
+    ========================================================================== */
+  .palette-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:200;opacity:0;pointer-events:none;transition:opacity var(--t-fast);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;}
+  .palette-overlay.active{opacity:1;pointer-events:auto;}
+  .command-palette{width:560px;max-width:92vw;max-height:60vh;background:var(--bg-surface-raised);border:1px solid var(--border-focus);border-radius:var(--radius-lg);box-shadow:0 24px 60px rgba(0,0,0,.7);overflow:hidden;transform:scale(.97) translateY(-6px);transition:transform var(--t-fast);display:flex;flex-direction:column;}
+  .palette-overlay.active .command-palette{transform:scale(1) translateY(0);}
+  .palette-input-row{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border-subtle);}
+  .palette-input-row input{border:none;background:transparent;font-family:var(--font-ui);font-size:14px;padding:0;}
+  .palette-input-row input:focus{border:none;}
+  .palette-results{overflow-y:auto;padding:6px;}
+  .palette-group-label{padding:8px 10px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
+  .palette-item{display:flex;justify-content:space-between;align-items:center;padding:10px 10px;border-radius:var(--radius-sm);cursor:pointer;}
+  .palette-item.selected,.palette-item:hover{background:var(--bg-hover);}
+  .palette-empty{padding:30px;text-align:center;color:var(--text-secondary);}
+
+  /* ==========================================================================
+    9. TOASTS
+    ========================================================================== */
+  .toast-stack{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:10px;width:320px;max-width:90vw;}
+  .toast{background:var(--bg-surface-raised);border:1px solid var(--border-subtle);border-left:3px solid var(--accent);border-radius:var(--radius-sm);padding:12px 14px;box-shadow:0 10px 24px rgba(0,0,0,.5);animation:toastIn .3s var(--ease);cursor:pointer;font-size:12px;}
+  .toast.error{border-left-color:var(--accent-red);}
+  @keyframes toastIn{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+  .toast.leaving{animation:toastOut .25s var(--ease) forwards;}
+  @keyframes toastOut{to{opacity:0;transform:translateX(30px);}}
+
+  /* ==========================================================================
+    10. COMPARE BAR + MODAL
+    ========================================================================== */
+  .compare-bar{position:fixed;bottom:0;left:0;right:0;background:var(--bg-surface-raised);border-top:1px solid var(--border-subtle);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;z-index:90;transform:translateY(100%);transition:transform var(--t-med);box-shadow:0 -10px 30px rgba(0,0,0,.4);}
+  .compare-bar.active{transform:translateY(0);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:210;opacity:0;pointer-events:none;transition:opacity var(--t-med);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .modal-overlay.active{opacity:1;pointer-events:auto;}
+  .modal-box{width:100%;max-width:760px;max-height:82vh;overflow-y:auto;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);transform:scale(.96);transition:transform var(--t-med);}
+  .modal-overlay.active .modal-box{transform:scale(1);}
+  .compare-table{width:100%;border-collapse:collapse;}
+  .compare-table th,.compare-table td{padding:12px 14px;border-bottom:1px solid var(--border-subtle);text-align:left;font-size:12px;}
+  .compare-table th{color:var(--text-secondary);font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:.05em;}
+  .compare-win{color:var(--accent);font-weight:600;}
+
+  /* ==========================================================================
+    11. SKELETONS
+    ========================================================================== */
+  .skeleton{background:linear-gradient(90deg,var(--bg-surface-raised) 25%,var(--bg-hover) 50%,var(--bg-surface-raised) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite linear;border-radius:4px;color:transparent!important;}
+  @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+  /* ==========================================================================
+    12. TRACK RECORD
+    ========================================================================== */
+  .calib-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
+  .calib-bar-track{height:6px;background:var(--bg-active);border-radius:3px;margin-top:8px;overflow:hidden;position:relative;}
+  .calib-bar-fill{position:absolute;top:0;bottom:0;border-radius:3px;}
+
+  /* ==========================================================================
+    13. RESPONSIVE
+    ========================================================================== */
+  @media(max-width:900px){
+    .hud-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media(max-width:768px){
+    .container{padding:14px;}
+    .top-nav{padding:0 12px;}
+    .brand span:last-child{display:none;}
+    .nav-right .freshness{display:none;}
+    .drawer{width:100vw;right:-100vw;}
+    .palette-overlay{padding-top:0;align-items:stretch;}
+    .command-palette{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0;}
+    .filter-grid{width:100%;} .filter-grid select,.filter-grid input{flex:1;min-width:100px;}
+    .hud-grid{grid-template-columns:1fr 1fr;gap:10px;}
+    .game-grid{grid-template-columns:1fr;}
+    .compare-bar{flex-direction:column;gap:10px;align-items:stretch;}
+
+    .table-scroll table,.table-scroll thead,.table-scroll tbody,.table-scroll th,.table-scroll td,.table-scroll tr{display:block;}
+    .table-scroll thead{position:absolute;top:-9999px;left:-9999px;}
+    tbody tr.data-row{border:1px solid var(--border-subtle);border-radius:var(--radius-md);margin:10px;padding:6px 10px;}
+    .table-scroll td{border:none;display:flex;justify-content:space-between;align-items:center;padding:8px 2px;}
+    .table-scroll td::before{content:attr(data-label);color:var(--text-secondary);font-family:var(--font-ui);font-size:10px;text-transform:uppercase;letter-spacing:.04em;}
+  }
+  </style>
+  </head>
+  <body>
+
+  <nav class="top-nav">
+    <div class="brand"><div class="brand-dot"></div>trckr21<span class="text-muted">_terminal</span></div>
+    <div class="nav-tabs" id="main-nav">
+      <div class="nav-indicator" id="nav-indicator"></div>
+      <button class="nav-tab active" data-tab="props">Player Props</button>
+      <button class="nav-tab" data-tab="moneyline">Moneyline</button>
+      <button class="nav-tab" data-tab="trackrecord">Track Record</button>
+    </div>
+    <div class="nav-right">
+      <div class="freshness"><span class="pulse-dot" id="pulse-dot"></span><span id="freshness-label">—</span></div>
+      <button class="btn" id="btn-refresh" title="Refresh slate">↻ Refresh</button>
+      <div style="position:relative;">
+        <button class="icon-btn" id="btn-search" title="Search (⌘K)">⌕</button>
+      </div>
+      <div style="position:relative;">
+        <button class="icon-btn" id="btn-alerts" title="Alerts">🔔<span class="badge-count" id="alert-count" style="display:none;">0</span></button>
+        <div class="popover" id="alerts-popover">
+          <div class="popover-header flex justify-between items-center">Alerts <button class="btn" id="btn-manage-rules" style="padding:3px 8px;font-size:11px;">+ Rule</button></div>
+          <div class="popover-body" id="alerts-list"><div class="text-muted" style="text-align:center;padding:14px 0;">No alerts triggered yet.</div></div>
+        </div>
+      </div>
+      <div style="position:relative;">
+        <button class="icon-btn" id="btn-theme" title="Theme">◐</button>
+        <div class="popover" id="theme-popover" style="width:200px;">
+          <div class="popover-header">Accent Theme</div>
+          <div class="popover-body theme-swatches">
+            <div class="swatch" data-theme="teal" style="background:#00E5FF;"></div>
+            <div class="swatch" data-theme="amber" style="background:#F5A623;"></div>
+            <div class="swatch" data-theme="violet" style="background:#A78BFA;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <section id="view-props" class="view-section active">
+
+      <div id="team-context-header" class="card" style="display:none;margin-bottom:20px;border-color:var(--text-secondary);">
+        <div class="flex justify-between items-center">
+          <div><div class="eyebrow">Filtered View</div><h2 id="context-team-name" style="margin-top:4px;">-</h2></div>
+          <div class="flex items-center gap-3">
+            <div class="segmented-control" id="context-toggle">
+              <div class="seg-indicator" id="context-seg-indicator"></div>
+              <button class="seg-btn active" data-view="batters">Team Batters</button>
+              <button class="seg-btn" data-view="pitcher">Opposing Pitcher</button>
+            </div>
+            <button class="btn" id="btn-clear-context">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="watchlist-tray" id="watchlist-tray" style="display:none;">
+        <div class="tray-header" id="tray-toggle">
+          <div class="flex items-center gap-2"><span class="eyebrow" style="margin:0;">★ Watchlist</span><span class="text-muted mono" id="tray-count"></span></div>
+          <span class="text-muted" id="tray-chevron">▾</span>
+        </div>
+        <div class="tray-body" id="tray-body"></div>
+      </div>
+
+      <div class="hud-grid" id="hud-container"></div>
+
+      <div class="flex justify-between items-center gap-4" style="margin-bottom:16px;flex-wrap:wrap;">
+        <div class="segmented-control" id="prop-type-toggle">
+          <div class="seg-indicator" id="prop-seg-indicator"></div>
+          <button class="seg-btn active" data-prop="hits">Hits</button>
+          <button class="seg-btn" data-prop="runs">Runs</button>
+          <button class="seg-btn" data-prop="homeruns">Home Runs</button>
+          <button class="seg-btn" data-prop="rbi">RBI</button>
+        </div>
+        <div class="filter-grid" id="filters-container"></div>
+      </div>
+
+      <div class="table-wrapper">
+        <div class="table-scroll" id="table-scroll">
+          <table id="props-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-moneyline" class="view-section">
+      <div class="flex justify-between items-center" style="margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <h2>Moneyline Engine</h2>
+        <input type="date" class="btn" style="width:auto;background:var(--bg-surface);" id="ml-date-picker">
+      </div>
+      <div class="game-grid" id="ml-grid"></div>
+    </section>
+
+    <section id="view-trackrecord" class="view-section">
+      <h2 style="margin-bottom:20px;">Model Track Record</h2>
+      <div class="eyebrow" style="margin-bottom:10px;">Calibration — Predicted vs. Actual Hit Rate by Confidence Bucket</div>
+      <div class="calib-grid" id="calib-grid"></div>
+      <div class="eyebrow" style="margin:24px 0 10px;">Recent Predictions Log</div>
+      <div class="table-wrapper"><div class="table-scroll" style="max-height:420px;">
+        <table><thead><tr><th>Date</th><th>Player</th><th>Stat</th><th>Predicted</th><th>Actual</th><th>Result</th></tr></thead>
+        <tbody id="trackrecord-body"></tbody></table>
+      </div></div>
+    </section>
+
+  </main>
+
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="segmented-control" id="drawer-toggle">
+        <div class="seg-indicator" id="drawer-seg-indicator"></div>
+        <button class="seg-btn active" data-view="sandbox">Player Card</button>
+        <button class="seg-btn" data-view="verifier">Matchup Verifier</button>
+      </div>
+      <button class="text-muted" id="btn-close-drawer" style="font-size:20px;">×</button>
+    </div>
+    <div class="drawer-content" id="drawer-content"></div>
+  </aside>
+
+  <div class="drawer-overlay" id="game-drawer-overlay"></div>
+  <aside class="drawer game-drawer" id="game-drawer">
+    <div class="drawer-header">
+      <div>
+        <div class="eyebrow" id="game-panel-eyebrow">Game</div>
+        <h3 id="game-panel-title" style="margin-top:2px;">— @ —</h3>
+      </div>
+      <button class="text-muted" id="btn-close-game-drawer" style="font-size:20px;">×</button>
+    </div>
+    <div class="score-strip" id="game-panel-score"></div>
+    <div class="flex justify-between items-center" style="padding:12px 20px;border-bottom:1px solid var(--border-subtle);">
+      <div class="segmented-control" id="pitcher-side-toggle">
+        <div class="seg-indicator" id="pitcher-side-seg-indicator"></div>
+        <button class="seg-btn active" data-side="away">Away SP</button>
+        <button class="seg-btn" data-side="home">Home SP</button>
+      </div>
+      <span class="pitcher-watch-toggle" id="pitcher-watch-star" title="Add pitcher to watchlist">☆</span>
+    </div>
+    <div class="drawer-header" style="border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <div class="segmented-control" id="pitcher-tab-toggle">
+        <div class="seg-indicator" id="pitcher-tab-seg-indicator"></div>
+        <button class="seg-btn active" data-view="intel">Pitcher Intel</button>
+        <button class="seg-btn" data-view="props">Pitcher Props</button>
+      </div>
+    </div>
+    <div class="drawer-content" id="game-drawer-content"></div>
+  </aside>
+
+  <div class="palette-overlay" id="palette-overlay">
+    <div class="command-palette">
+      <div class="palette-input-row">
+        <span class="text-muted">⌕</span>
+        <input type="text" id="palette-input" placeholder="Search players, teams, pitchers...">
+        <span class="text-muted" style="font-size:11px;">esc</span>
+      </div>
+      <div class="palette-results" id="palette-results"></div>
+    </div>
+  </div>
+
+  <div class="compare-bar" id="compare-bar">
+    <div class="mono text-muted" id="compare-count-label">0 selected</div>
+    <div class="flex gap-2">
+      <button class="btn" id="btn-clear-compare">Clear</button>
+      <button class="btn btn-primary" id="btn-open-compare">Compare Selected</button>
+    </div>
+  </div>
+  <div class="modal-overlay" id="compare-modal-overlay">
+    <div class="modal-box">
+      <div class="drawer-header"><h3>Player Comparison</h3><button class="text-muted" id="btn-close-compare" style="font-size:20px;">×</button></div>
+      <div style="padding:16px;overflow-x:auto;"><table class="compare-table" id="compare-table"></table></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <script>
+  /* ==========================================================================
+    STATE
+    ========================================================================== */
+  const STAT_LABELS = {hits:'Hits',runs:'Runs',homeruns:'Home Runs',rbi:'RBI'};
+  const VIRTUAL_ROW_H = 45;
+
+  const State = {
+    data:{ players:[], prevPlayers:null, games:[], pitchers:{}, trackRecord:[], calibration:[], isLoading:true, lastUpdated:null, refreshing:false },
+    ui:{
+      activeTab:'props', activeProp:'hits',
+      filters:{ team:'ALL', confidence:'ALL', search:'' },
+      drawer:{ isOpen:false, view:'sandbox', playerId:null, calibrating:false, calibrationResult:null },
+      contextTeam:null, contextView:'batters',
+      watchlist:loadLS('watchlist',[]),
+      pitcherWatchlist:loadLS('pitcherWatchlist',[]),
+      gamePanel:{ isOpen:false, gameId:null, side:'away', tab:'intel' },
+      trayOpen:true,
+      theme:loadLS('theme','teal'),
+      alertRules:loadLS('alertRules',[]),
+      triggeredAlerts:loadLS('triggeredAlerts',[]),
+      unreadAlerts:0,
+      compareSelection:[],
+      paletteOpen:false, paletteIndex:0, paletteResults:[]
+    }
+  };
+
+  function loadLS(key,fallback){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):fallback; }catch(e){ return fallback; } }
+  function saveLS(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+  function debounce(fn,delay){ let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a),delay); }; }
+
+  /* ==========================================================================
+    LIVE API CLIENT
+    ========================================================================== */
+  const API_BASE = 'http://127.0.0.1:8000';
+
+  const PITCHER_PROP_LABELS = {k:'Strikeouts', bb:'Walks Allowed', er:'Earned Runs'};
+
+  const API = {
+    async request(path, options={}){
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers:{ 'Content-Type':'application/json', ...(options.headers || {}) }
+      });
+      if(!response.ok){
+        let message = `Request failed (${response.status})`;
+        try{ const payload = await response.json(); message = payload.detail || message; }catch(_e){}
+        throw new Error(message);
+      }
+      return response.json();
+    },
+    fetchSlate(date, refresh=false){
+      const params = new URLSearchParams();
+      if(date && date !== 'null' && date !== 'undefined') params.append('date', date);
+      if(refresh) params.append('refresh', 'true');
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return this.request(`/api/slate${query}`);
+    },
+    fetchPitcher(id){ return this.request(`/api/pitchers/${id}`); },
+    fetchTrackRecord(limit=100){ return this.request(`/api/track-record?limit=${limit}`); },
+    calibrate(payload){ return this.request('/api/calibrate', {method:'POST', body:JSON.stringify(payload)}); }
+  };
+
+  function selectedSlateDate(){
+    const picker = document.getElementById('ml-date-picker');
+    if(picker && picker.value) return picker.value;
+    return new Intl.DateTimeFormat('en-CA', {timeZone:'America/New_York'}).format(new Date());
+  }
+  function formatAmerican(value){
+    if(value === null || value === undefined) return 'N/A';
+    return Number(value) > 0 ? `+${value}` : String(value);
+  }
+  function displayMetric(value, digits=3, suffix=''){
+    return value === null || value === undefined || Number.isNaN(Number(value))
+      ? 'N/A' : Number(value).toFixed(digits) + suffix;
+  }
+  function safeEdge(value){ return value === null || value === undefined ? null : Number(value); }
+  function escapeHTML(value){
+    return String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;')
+      .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+  }
+
+  /* ==========================================================================
+    INIT
+    ========================================================================== */
+  async function initApp(){
+    applyTheme(State.ui.theme, false);
+    bindEvents();
+    updateNavIndicator();
+    updateSegIndicators();
+    applyStateFromURL();
+    const picker = document.getElementById('ml-date-picker');
+    picker.value = selectedSlateDate();
+    renderAll();
+    try{
+      const [slate, tr] = await Promise.all([API.fetchSlate(picker.value), API.fetchTrackRecord()]);
+      State.data.players = slate.players || [];
+      State.data.games = slate.games || [];
+      State.data.trackRecord = tr.log || [];
+      State.data.calibration = tr.calibration || [];
+      State.data.lastUpdated = Date.parse(slate.meta.generatedAt) || Date.now();
+    }catch(e){
+      showToast(e.message || 'Unable to load live data.', 'error');
+    }finally{
+      State.data.isLoading = false;
+      renderAll();
+      startFreshnessClock();
+    }
+    if(State.ui._pendingPlayerFromURL && State.data.players.find(x=>String(x.id)===String(State.ui._pendingPlayerFromURL))){
+      openDrawer(State.ui._pendingPlayerFromURL);
+    }
+    syncURL();
+  }
+
+  function renderAll(){
+    renderWatchlistTray();
+    renderHUD();
+    renderFilters();
+    renderTable();
+    renderMoneyline();
+    renderTrackRecord();
+    updateAlertBadge();
+  }
+
+  /* ==========================================================================
+    FRESHNESS / REFRESH (Stage 3.2 + Stage 4.2 request states)
+    ========================================================================== */
+  function startFreshnessClock(){
+    setInterval(()=>{
+      const label = document.getElementById('freshness-label');
+      const dot = document.getElementById('pulse-dot');
+      if(!State.data.lastUpdated) return;
+      const secs = Math.floor((Date.now()-State.data.lastUpdated)/1000);
+      let text = secs < 5 ? 'just now' : secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`;
+      label.textContent = State.data.refreshing ? 'refreshing…' : `Live · updated ${text}`;
+      dot.classList.toggle('stale', secs > 600);
+    }, 1000);
+  }
+
+  async function refreshSlate(){
+    if(State.data.refreshing) return;
+    State.data.refreshing = true;
+    State.data.prevPlayers = structuredClone(State.data.players);
+    const btn = document.getElementById('btn-refresh');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Refreshing';
+    try{
+      const slate = await API.fetchSlate(selectedSlateDate(), true);
+      State.data.players = slate.players || [];
+      State.data.games = slate.games || [];
+      State.data.pitchers = {};
+      State.data.lastUpdated = Date.parse(slate.meta.generatedAt) || Date.now();
+      checkAlertRules();
+      renderHUD(); renderTable(true); renderMoneyline(); renderWatchlistTray();
+      showToast('Live slate refreshed.');
+    }catch(e){ showToast(e.message || 'Refresh failed.', 'error'); }
+    finally{ State.data.refreshing=false; btn.disabled=false; btn.innerHTML='↻ Refresh'; }
+  }
+
+  /* ==========================================================================
+    HUD + FILTERS
+    ========================================================================== */
+  function renderHUD(){
+    const c = document.getElementById('hud-container');
+    if(State.data.isLoading){
+      c.innerHTML = Array(4).fill('<div class="card skeleton" style="height:76px;"></div>').join('');
+      return;
+    }
+    const p = State.data.players;
+    const highCount = p.filter(x=>x.props[State.ui.activeProp].conf==='high').length;
+    const edges = p.map(x=>safeEdge(x.props[State.ui.activeProp].edge)).filter(x=>x!==null);
+    const avgEdge = edges.length ? edges.reduce((s,x)=>s+x,0)/edges.length : null;
+    const heat = Math.min(100, Math.max(0,(highCount/p.length)*160));
+    c.innerHTML = `
+      <div class="card flex-col justify-between"><div class="eyebrow">Active Universe</div><div class="mono" style="font-size:22px;">${p.length}</div></div>
+      <div class="card flex-col justify-between" style="border-color:var(--accent-border);"><div class="eyebrow" style="color:var(--accent);">High Conviction</div><div class="mono" style="font-size:22px;color:var(--accent);">${highCount}</div></div>
+      <div class="card flex-col justify-between"><div class="eyebrow">Avg Edge</div><div class="mono" style="font-size:22px;">${avgEdge===null?'N/A':(avgEdge*100).toFixed(1)+'%'}</div></div>
+      <div class="card flex-col justify-between"><div class="eyebrow">Market Heat</div><div class="mono" style="font-size:22px;">${heat.toFixed(0)}%</div></div>
+    `;
+  }
+
+  function renderFilters(){
+    const c = document.getElementById('filters-container');
+    if(State.data.isLoading){ c.innerHTML=''; return; }
+    const teams = ['ALL', ...new Set(State.data.players.map(p=>p.team))];
+    c.innerHTML = `
+      <select id="sel-team" style="width:110px;">${teams.map(t=>`<option value="${t}" ${State.ui.filters.team===t?'selected':''}>${t}</option>`).join('')}</select>
+      <select id="sel-conf" style="width:120px;">
+        <option value="ALL">All Conf</option><option value="high" ${State.ui.filters.confidence==='high'?'selected':''}>High</option>
+        <option value="med" ${State.ui.filters.confidence==='med'?'selected':''}>Medium</option><option value="low" ${State.ui.filters.confidence==='low'?'selected':''}>Low</option>
+      </select>
+      <input type="text" id="inp-search" placeholder="Search... (debounced)" value="${State.ui.filters.search}" style="width:170px;">
+    `;
+    document.getElementById('sel-team').onchange = e=>{ State.ui.filters.team=e.target.value; renderTable(); syncURL(); };
+    document.getElementById('sel-conf').onchange = e=>{ State.ui.filters.confidence=e.target.value; renderTable(); syncURL(); };
+    document.getElementById('inp-search').oninput = debounce(e=>{ State.ui.filters.search=e.target.value.toLowerCase(); renderTable(); syncURL(); }, 300);
+  }
+
+  function getFilteredPlayers(){
+    return State.data.players.filter(p=>{
+      const teamMatch = State.ui.filters.team==='ALL' || p.team===State.ui.filters.team;
+      const confMatch = State.ui.filters.confidence==='ALL' || p.props[State.ui.activeProp].conf===State.ui.filters.confidence;
+      const searchMatch = !State.ui.filters.search || p.name.toLowerCase().includes(State.ui.filters.search);
+      return teamMatch && confMatch && searchMatch;
+    });
+  }
+
+  /* ==========================================================================
+    TABLE (edge meter, watchlist star, compare checkbox, delta flash, virtualized)
+    ========================================================================== */
+  function edgeColor(edge){
+    if(edge >= .08) return 'var(--accent)';
+    if(edge >= .03) return 'var(--accent-amber)';
+    return 'var(--accent-red)';
+  }
+
+  function rowHTML(p, i){
+    const propData = p.props[State.ui.activeProp];
+    const oddsStr = formatAmerican(propData.odds);
+    const pinned = State.ui.watchlist.includes(p.id);
+    const checked = State.ui.compareSelection.includes(p.id);
+    const prev = State.data.prevPlayers ? State.data.prevPlayers.find(x=>x.id===p.id) : null;
+    const prevProb = prev ? prev.props[State.ui.activeProp].prob : null;
+    let deltaHTML = '';
+    let flashClass = '';
+    if(prevProb !== null && Math.abs(prevProb - propData.prob) > 0.001){
+      const up = propData.prob > prevProb;
+      deltaHTML = `<span class="delta-arrow ${up?'up':'down'}">${up?'▲':'▼'}</span>`;
+      flashClass = up ? 'flash-up' : 'flash-down';
+    }
+    const edge = safeEdge(propData.edge);
+    const edgePct = edge===null ? 0 : Math.max(0, Math.min(1, (edge + .05) / .25));
+    return `
+      <tr class="data-row" style="animation-delay:${i*35}ms" data-player-id="${p.id}">
+        <td data-label="Compare" onclick="event.stopPropagation()"><input type="checkbox" class="chk" ${checked?'checked':''} onchange="toggleCompareSelect('${p.id}')"></td>
+        <td data-label="Watch" onclick="event.stopPropagation(); toggleWatchlist('${p.id}')"><span class="star-btn ${pinned?'pinned':''}">${pinned?'★':'☆'}</span></td>
+        <td data-label="Player" style="color:var(--text-primary);font-family:var(--font-ui);font-weight:500;" onclick="openDrawer('${p.id}')">${p.name}</td>
+        <td data-label="Team" onclick="openDrawer('${p.id}')">${p.team}</td>
+        <td data-label="Opp Pitcher" onclick="openDrawer('${p.id}')">${p.oppPitcher}</td>
+        <td data-label="Probability" class="${flashClass}" onclick="openDrawer('${p.id}')" style="color:var(--accent);">${(propData.prob*100).toFixed(1)}%${deltaHTML}</td>
+        <td data-label="Edge" onclick="openDrawer('${p.id}')">
+          <div class="flex items-center gap-2">
+            <div class="edge-meter"><div class="edge-meter-fill" style="width:${edgePct*100}%;background:${edge===null?'var(--text-tertiary)':edgeColor(edge)};"></div></div>
+            <span style="font-size:11px;color:${edge===null?'var(--text-tertiary)':edgeColor(edge)};">${edge===null?'Model only':(edge*100).toFixed(1)+'%'}</span>
+          </div>
+        </td>
+        <td data-label="Fair Odds" onclick="openDrawer('${p.id}')">${oddsStr}</td>
+        <td data-label="Conviction" onclick="openDrawer('${p.id}')"><span class="badge ${propData.conf}">${propData.conf.toUpperCase()}</span></td>
+      </tr>`;
+  }
+
+  function renderTable(diffMode){
+    const thead = document.querySelector('#props-table thead');
+    const tbody = document.querySelector('#props-table tbody');
+    const propTitle = STAT_LABELS[State.ui.activeProp];
+
+    thead.innerHTML = `<tr><th></th><th></th><th>Player</th><th>Team</th><th>Opp Pitcher</th><th>${propTitle} Prob</th><th>Edge</th><th>Fair Odds</th><th>Conviction</th></tr>`;
+
+    if(State.data.isLoading){
+      tbody.innerHTML = Array(5).fill('<tr><td colspan="9"><div class="skeleton" style="height:20px;width:100%;"></div></td></tr>').join('');
+      return;
+    }
+
+    const filtered = getFilteredPlayers();
+    if(filtered.length === 0){
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-secondary);">No data matches filters.</td></tr>`;
+      return;
+    }
+    renderVirtualized(filtered);
+
+    if(diffMode){
+      setTimeout(()=>{ State.data.prevPlayers = null; }, 1500);
+    }
+  }
+
+  // Lightweight windowed rendering — safe no-op visually at small N, scales to large N.
+  function renderVirtualized(rows){
+    const scroller = document.getElementById('table-scroll');
+    const tbody = document.querySelector('#props-table tbody');
+    const render = ()=>{
+      const viewportH = scroller.clientHeight || 560;
+      const scrollTop = scroller.scrollTop;
+      const buffer = 6;
+      const startIdx = Math.max(0, Math.floor(scrollTop / VIRTUAL_ROW_H) - buffer);
+      const visibleCount = Math.ceil(viewportH / VIRTUAL_ROW_H) + buffer*2;
+      const endIdx = Math.min(rows.length, startIdx + visibleCount);
+      const topPad = startIdx * VIRTUAL_ROW_H;
+      const bottomPad = (rows.length - endIdx) * VIRTUAL_ROW_H;
+      let html = '';
+      if(topPad>0) html += `<tr style="height:${topPad}px;"><td colspan="9" style="border:none;padding:0;"></td></tr>`;
+      html += rows.slice(startIdx, endIdx).map((p,idx)=>rowHTML(p, idx)).join('');
+      if(bottomPad>0) html += `<tr style="height:${bottomPad}px;"><td colspan="9" style="border:none;padding:0;"></td></tr>`;
+      tbody.innerHTML = html;
+    };
+    scroller.onscroll = debounce(render, 12);
+    render();
+  }
+
+  /* ==========================================================================
+    MONEYLINE
+    ========================================================================== */
+  function renderMoneyline(){
+    const grid = document.getElementById('ml-grid');
+    if(State.data.isLoading){
+      grid.innerHTML = Array(4).fill('<div class="card skeleton" style="height:140px;"></div>').join('');
+      return;
+    }
+    grid.innerHTML = State.data.games.map(g=>`
+      <div class="card flex-col gap-4">
+        <div class="flex justify-between items-center text-muted" style="font-size:11px;"><span>Game ${g.id.toUpperCase()}</span><span>Fair Line</span></div>
+        <div class="team-row" onclick="openGamePanel('${g.id}','away')">
+          <div class="flex items-center gap-4"><span style="font-family:var(--font-ui);font-weight:600;width:40px;">${g.away}</span><span class="text-muted" style="font-size:11px;">${g.awayPitcher}</span></div>
+          <div class="flex gap-4 mono"><span>${(g.awayProb*100).toFixed(1)}%</span><span style="color:${g.awayOdds>0?'var(--accent-amber)':'var(--text-primary)'};width:40px;text-align:right;">${g.awayOdds>0?'+'+g.awayOdds:g.awayOdds}</span></div>
+        </div>
+        <div style="height:1px;background:var(--border-subtle);"></div>
+        <div class="team-row" onclick="openGamePanel('${g.id}','home')">
+          <div class="flex items-center gap-4"><span style="font-family:var(--font-ui);font-weight:600;width:40px;">${g.home}</span><span class="text-muted" style="font-size:11px;">${g.homePitcher}</span></div>
+          <div class="flex gap-4 mono"><span>${(g.homeProb*100).toFixed(1)}%</span><span style="color:${g.homeOdds>0?'var(--accent-amber)':'var(--text-primary)'};width:40px;text-align:right;">${g.homeOdds>0?'+'+g.homeOdds:g.homeOdds}</span></div>
+        </div>
+      </div>`).join('');
+  }
+
+  function routeToTeamContext(team){
+    State.ui.contextTeam = team;
+    State.ui.filters.team = team;
+    State.ui.activeTab = 'props';
+    document.getElementById('team-context-header').style.display = 'block';
+    document.getElementById('context-team-name').innerText = `${team} Matchup Intel`;
+    switchTabUI('props');
+    renderAll();
+    syncURL();
+  }
+
+  /* ==========================================================================
+    GAME PANEL — Pitcher Intel / Pitcher Props
+    Anchored to the game (drawer over the moneyline view, not a tab switch),
+    with an away/home SP toggle and a link back to that pitcher's batter
+    matchups in Player Props.
+    ========================================================================== */
+  function openGamePanel(gameId, side){
+    const game = State.data.games.find(g=>g.id===gameId);
+    if(!game) return;
+    State.ui.gamePanel.isOpen = true;
+    State.ui.gamePanel.gameId = gameId;
+    State.ui.gamePanel.side = side || 'away';
+    document.getElementById('game-drawer-overlay').classList.add('active');
+    document.getElementById('game-drawer').classList.add('active');
+    updateSegUI('pitcher-side-toggle', document.querySelector(`#pitcher-side-toggle .seg-btn[data-side="${State.ui.gamePanel.side}"]`));
+    renderGamePanel();
+  }
+  function closeGamePanel(){
+    State.ui.gamePanel.isOpen = false;
+    document.getElementById('game-drawer-overlay').classList.remove('active');
+    document.getElementById('game-drawer').classList.remove('active');
+  }
+
+  // Resolves which game + side a pitcher belongs to, so the palette and any
+  // other entry point open the exact same panel that a moneyline click would.
+  function findGameAndSideByPitcher(pitcherName){
+    for(const g of State.data.games){
+      if(g.awayPitcher === pitcherName) return {gameId:g.id, side:'away'};
+      if(g.homePitcher === pitcherName) return {gameId:g.id, side:'home'};
+    }
+    return null;
+  }
+  function openPitcherPanelByName(pitcherName){
+    const loc = findGameAndSideByPitcher(pitcherName);
+    if(!loc){ showToast(`No game found for ${pitcherName}.`, 'error'); return; }
+    openGamePanel(loc.gameId, loc.side);
+  }
+
+  async function loadPitcherData(pitcherId){
+    if(!pitcherId) throw new Error('This starting pitcher is still TBD.');
+    if(State.data.pitchers[pitcherId]) return State.data.pitchers[pitcherId];
+    const data = await API.fetchPitcher(pitcherId);
+    State.data.pitchers[pitcherId] = data;
+    return data;
+  }
+
+  async function renderGamePanel(){
+    const game = State.data.games.find(g=>g.id===State.ui.gamePanel.gameId);
+    if(!game) return;
+    const side = State.ui.gamePanel.side;
+    const pitcherName = side === 'away' ? game.awayPitcher : game.homePitcher;
+    const pitcherTeam = side === 'away' ? game.away : game.home;
+    const pitcherId = side === 'away' ? game.awayPitcherId : game.homePitcherId;
+    document.getElementById('game-panel-eyebrow').textContent = `Game ${String(game.id).toUpperCase()}`;
+    document.getElementById('game-panel-title').textContent = `${game.away} @ ${game.home}`;
+    document.getElementById('game-panel-score').innerHTML = `
+      <div class="flex justify-between items-center side ${side==='away'?'current':''}"><span style="font-family:var(--font-ui);font-weight:600;">${escapeHTML(game.away)}<span class="text-muted" style="font-weight:400;"> · ${escapeHTML(game.awayPitcher)}</span></span><span class="flex gap-4 mono"><span>${(game.awayProb*100).toFixed(1)}%</span><span class="text-muted" style="width:44px;text-align:right;">${formatAmerican(game.awayOdds)}</span></span></div>
+      <div class="flex justify-between items-center side ${side==='home'?'current':''}"><span style="font-family:var(--font-ui);font-weight:600;">${escapeHTML(game.home)}<span class="text-muted" style="font-weight:400;"> · ${escapeHTML(game.homePitcher)}</span></span><span class="flex gap-4 mono"><span>${(game.homeProb*100).toFixed(1)}%</span><span class="text-muted" style="width:44px;text-align:right;">${formatAmerican(game.homeOdds)}</span></span></div>`;
+    const star = document.getElementById('pitcher-watch-star');
+    const pinned = State.ui.pitcherWatchlist.includes(pitcherName);
+    star.textContent = pinned ? '★' : '☆'; star.classList.toggle('pinned', pinned);
+    star.onclick = ()=>togglePitcherWatch(pitcherName);
+    const content = document.getElementById('game-drawer-content');
+    content.innerHTML = '<div class="spinner"></div> Loading pitcher data...';
+    try{ renderPitcherPanelContent(await loadPitcherData(pitcherId), pitcherTeam, pitcherName); }
+    catch(e){ content.innerHTML = `<div class="card" style="color:var(--accent-red);">${escapeHTML(e.message)}</div>`; }
+  }
+
+  function renderPitcherPanelContent(data, pitcherTeam, pitcherName){
+    const content = document.getElementById('game-drawer-content');
+
+    if(State.ui.gamePanel.tab === 'intel'){
+      const initials = pitcherName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const vsL = data.splits.vsL, vsR = data.splits.vsR;
+      // Vulnerable hand = the platoon side with the worse (higher) opponent BAA.
+      const vulnHand = vsL.baa > vsR.baa ? 'L' : 'R';
+      const vulnLabel = vulnHand === 'L' ? 'Left-Handed Batters' : 'Right-Handed Batters';
+      const strongLabel = vulnHand === 'L' ? 'Right-Handed Batters' : 'Left-Handed Batters';
+      const gap = Math.abs(vsL.baa - vsR.baa);
+      const strength = gap >= .035 ? 'Strong' : gap >= .015 ? 'Moderate' : 'Slight';
+
+      // Cross-reference: batters in today's opposing lineup (already tagged with
+      // this pitcher as oppPitcher — same data model that powers Player Props)
+      // whose handedness matches the pitcher's vulnerable side.
+      const oppBatters = State.data.players.filter(p=>p.oppPitcher===pitcherName);
+      const platoonEdgeBatters = oppBatters.filter(p=>p.bats===vulnHand || p.bats==='S');
+
+      content.innerHTML = `
+        <div class="flex items-center gap-3" style="margin-bottom:20px;">
+          <div class="avatar-circle">${initials}</div>
+          <div>
+            <h2 style="margin-bottom:2px;">${pitcherName}</h2>
+            <div class="text-muted">${pitcherTeam} · Throws ${data.throws} · Probable SP</div>
+          </div>
+        </div>
+        <div class="hud-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px;">
+          <div class="card flex-col justify-between"><div class="eyebrow">Projected K</div><div class="mono" style="font-size:20px;color:var(--accent);">${data.projK.toFixed(1)}</div></div>
+          <div class="card flex-col justify-between"><div class="eyebrow">Projected ER</div><div class="mono" style="font-size:20px;">${data.projER.toFixed(1)}</div></div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">Platoon Splits</div>
+          <table class="split-table">
+            <thead><tr><th></th><th>BAA</th><th>K%</th><th>BB%</th><th>HR%</th></tr></thead>
+            <tbody>
+              <tr><td>vs LHB</td><td class="${vulnHand==='L'?'vuln':'strong'}">${vsL.baa.toFixed(3)}</td><td>${vsL.k.toFixed(1)}%</td><td>${vsL.bb.toFixed(1)}%</td><td>${vsL.hr.toFixed(1)}%</td></tr>
+              <tr><td>vs RHB</td><td class="${vulnHand==='R'?'vuln':'strong'}">${vsR.baa.toFixed(3)}</td><td>${vsR.k.toFixed(1)}%</td><td>${vsR.bb.toFixed(1)}%</td><td>${vsR.hr.toFixed(1)}%</td></tr>
+            </tbody>
+          </table>
+          <div class="advantage-callout">${strength} advantage vs ${strongLabel} — batters get more traction from the ${vulnLabel.toLowerCase()} side.</div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="flex justify-between items-center" style="margin-bottom:4px;">
+            <span class="eyebrow" style="margin:0;">Lineup Cross-Reference</span>
+            <span class="text-muted mono" style="font-size:11px;">${platoonEdgeBatters.length} of ${oppBatters.length}</span>
+          </div>
+          <div class="text-muted" style="font-size:11px;margin-bottom:6px;">${platoonEdgeBatters.length ? `${platoonEdgeBatters.length} batter${platoonEdgeBatters.length>1?'s':''} in today's lineup with a platoon edge vs this pitcher` : 'No tracked batters carry a platoon edge vs this pitcher today.'}</div>
+          ${platoonEdgeBatters.map(p=>`
+            <div class="platoon-list-item" onclick="closeGamePanel(); openDrawer('${p.id}')">
+              <span style="font-family:var(--font-ui);">${p.name} <span class="text-muted mono" style="font-size:10px;">bats ${p.bats}</span></span>
+              <span class="mono" style="color:var(--accent);">${(p.props.hits.prob*100).toFixed(1)}% H</span>
+            </div>`).join('')}
+        </div>
+      `;
+    } else {
+      const sections = Object.keys(data.propLadder).map(key=>{
+        const rows = data.propLadder[key].map(r=>{
+          const oddsStr = r.odds > 0 ? `+${r.odds}` : r.odds;
+          return `
+            <div class="ladder-row">
+              <span class="ladder-line">O ${r.line}</span>
+              <div class="ladder-bar-track"><div class="ladder-bar-fill" style="width:${r.prob*100}%;background:${edgeLikeColor(r.prob)};"></div></div>
+              <span class="ladder-prob">${(r.prob*100).toFixed(0)}%</span>
+              <span class="ladder-odds">${oddsStr}</span>
+            </div>`;
+        }).join('');
+        return `<div class="card ladder-section"><div class="eyebrow">${PITCHER_PROP_LABELS[key]}</div>${rows}</div>`;
+      }).join('');
+      content.innerHTML = `
+        <div style="margin-bottom:18px;"><h2 style="margin-bottom:2px;">${pitcherName}</h2><div class="text-muted">Prop ladder · ${pitcherTeam}</div></div>
+        ${sections}
+      `;
+    }
+  }
+
+  function edgeLikeColor(prob){
+    if(prob >= .65) return 'var(--accent)';
+    if(prob >= .40) return 'var(--accent-amber)';
+    return 'var(--accent-red)';
+  }
+
+  function togglePitcherWatch(pitcherName){
+    const idx = State.ui.pitcherWatchlist.indexOf(pitcherName);
+    if(idx>-1) State.ui.pitcherWatchlist.splice(idx,1); else State.ui.pitcherWatchlist.push(pitcherName);
+    saveLS('pitcherWatchlist', State.ui.pitcherWatchlist);
+    if(State.ui.gamePanel.isOpen) renderGamePanel();
+    renderWatchlistTray();
+  }
+
+  /* ==========================================================================
+    TRACK RECORD
+    ========================================================================== */
+  function renderTrackRecord(){
+    const calibGrid = document.getElementById('calib-grid');
+    const body = document.getElementById('trackrecord-body');
+    if(State.data.isLoading || !State.data.calibration.length){
+      calibGrid.innerHTML = Array(4).fill('<div class="card skeleton" style="height:90px;"></div>').join('');
+      body.innerHTML = '';
+      return;
+    }
+    calibGrid.innerHTML = State.data.calibration.map(c=>{
+      const diff = c.actual - c.predicted;
+      const clr = Math.abs(diff) < .03 ? 'var(--accent)' : (diff < 0 ? 'var(--accent-red)' : 'var(--accent-amber)');
+      return `<div class="card">
+        <div class="eyebrow">${c.bucket} confidence</div>
+        <div class="flex justify-between mono" style="margin-top:6px;"><span class="text-muted">Predicted</span><span>${(c.predicted*100).toFixed(0)}%</span></div>
+        <div class="flex justify-between mono"><span class="text-muted">Actual</span><span style="color:${clr};">${(c.actual*100).toFixed(0)}%</span></div>
+        <div class="calib-bar-track"><div class="calib-bar-fill" style="left:0;width:${c.predicted*100}%;background:var(--text-tertiary);"></div><div class="calib-bar-fill" style="left:0;width:${c.actual*100}%;background:${clr};opacity:.85;"></div></div>
+        <div class="text-muted mono" style="font-size:10px;margin-top:6px;">n = ${c.n}</div>
+      </div>`;
+    }).join('');
+
+    body.innerHTML = State.data.trackRecord.map(r=>`
+      <tr><td>${r.date}</td><td style="font-family:var(--font-ui);">${r.player}</td><td>${r.stat}</td>
+      <td>${(r.predicted*100).toFixed(0)}%</td><td>${r.actual===1?'Hit':'No Hit'}</td>
+      <td style="color:${r.correct?'var(--accent-green)':'var(--accent-red)'};">${r.correct?'✓ Correct':'✗ Miss'}</td></tr>`).join('');
+  }
+
+  /* ==========================================================================
+    DRAWER (Player Card + Matchup Verifier) — with optimistic calibrate action
+    ========================================================================== */
+  function openDrawer(playerId){
+    State.ui.drawer.playerId = playerId;
+    State.ui.drawer.calibrationResult = null;
+    State.ui.drawer.isOpen = true;
+    document.getElementById('drawer-overlay').classList.add('active');
+    document.getElementById('drawer').classList.add('active');
+    renderDrawerContent();
+    syncURL();
+  }
+  function closeDrawer(){
+    State.ui.drawer.isOpen = false;
+    document.getElementById('drawer-overlay').classList.remove('active');
+    document.getElementById('drawer').classList.remove('active');
+    syncURL();
+  }
+
+  function renderDrawerContent(){
+    const content = document.getElementById('drawer-content');
+    const p = State.data.players.find(x=>x.id===State.ui.drawer.playerId);
+    if(!p) return;
+
+    if(State.ui.drawer.view === 'sandbox'){
+      content.innerHTML = `
+        <div style="margin-bottom:22px;">
+          <h2 style="margin-bottom:4px;">${p.name}</h2>
+          <div class="text-muted">${p.team} · Batting ${p.order} · vs ${p.oppPitcher}</div>
+        </div>
+        <div class="card flex-col gap-4" style="margin-bottom:20px;">
+          <div class="flex justify-between items-center">
+            <span class="eyebrow" style="margin:0;">Statcast Baseline</span>
+            <button class="btn btn-primary" id="btn-calibrate" ${State.ui.drawer.calibrating?'disabled':''}>${State.ui.drawer.calibrating?'<span class="spinner"></span> Calibrating':'Calibrate'}</button>
+          </div>
+          <div class="flex-col gap-2"><div class="flex justify-between mono text-muted" style="font-size:11px;"><span>xwOBA</span><span>.320 lg</span></div><input type="number" id="in-xwoba" value="${p.stats.xwoba ?? ''}" step="0.001" placeholder="N/A - enter verified value"></div>
+          <div class="flex-col gap-2"><div class="flex justify-between mono text-muted" style="font-size:11px;"><span>xBA</span><span>.250 lg</span></div><input type="number" id="in-xba" value="${p.stats.xba ?? ''}" step="0.001" placeholder="N/A - enter verified value"></div>
+          <div class="flex-col gap-2"><div class="flex justify-between mono text-muted" style="font-size:11px;"><span>Barrel %</span><span>8.0% lg</span></div><input type="number" id="in-barrel" value="${p.stats.barrel ?? ''}" step="0.1" placeholder="N/A - enter verified value"></div>
+        </div>
+        <div class="card flex justify-between items-center" id="verdict-card" style="border-left:3px solid var(--accent);">
+          <div><div class="eyebrow">Model Verdict</div><div style="font-weight:500;" id="verdict-label">${State.ui.drawer.calibrationResult ? (State.ui.drawer.calibrationResult.finalProb>=.72?'Strong Push':State.ui.drawer.calibrationResult.finalProb>=.66?'Probable':'Avoid') : 'Run calibration'}</div></div>
+          <div class="mono" style="font-size:22px;" id="verdict-value">${State.ui.drawer.calibrationResult ? (State.ui.drawer.calibrationResult.finalProb*100).toFixed(1)+'%' : 'N/A'}</div>
+        </div>
+      `;
+      document.getElementById('btn-calibrate').onclick = ()=>runCalibration(p.id);
+    } else {
+      content.innerHTML = `
+        <div style="margin-bottom:22px;"><h2 style="margin-bottom:4px;">Matchup Vector</h2><div class="text-muted">${escapeHTML(p.name)} vs ${escapeHTML(p.oppPitcher)}</div></div>
+        <div id="matchup-verifier-body"><div class="spinner"></div> Loading matchup data...</div>
+      `;
+      loadMatchupVerifier(p.mlbId, p.oppPitcherId);
+    }
+  }
+  async function loadMatchupVerifier(batterId, pitcherId) {
+    const target = document.getElementById('matchup-verifier-body');
+    if (!target) return;
+    if (!pitcherId) {
+      target.innerHTML = `<div class="card" style="color:var(--text-secondary);">Opposing pitcher not yet confirmed for this matchup.</div>`;
+      return;
+    }
+    try {
+      const data = await API.request(`/api/matchup/${batterId}/${pitcherId}`);
+      const verdictColor = data.verdict === 'batter' ? 'var(--accent)' : data.verdict === 'pitcher' ? 'var(--accent-red)' : 'var(--accent-amber)';
+      const h2h = data.headToHead;
+      target.innerHTML = `
+        <div class="card" style="border-left:3px solid ${verdictColor};margin-bottom:16px;">
+          <div class="eyebrow">Advantage Verdict</div>
+          <div style="font-weight:600;color:${verdictColor};font-size:15px;margin-top:4px;">${escapeHTML(data.verdictLabel)}</div>
+          <div class="mono text-muted" style="font-size:11px;margin-top:2px;">Score: ${data.advantageScore > 0 ? '+' : ''}${data.advantageScore}%</div>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="eyebrow">Season Snapshot</div>
+          <div class="flex justify-between mono" style="padding:6px 0;border-bottom:1px solid var(--border-subtle);"><span>${escapeHTML(data.batterName)} (bats ${data.batterHand})</span><span>${data.batterAvg.toFixed(3)} AVG · ${data.batterKRate.toFixed(1)}% K</span></div>
+          <div class="flex justify-between mono" style="padding:6px 0;"><span>${escapeHTML(data.pitcherName)} (throws ${data.pitcherHand})</span><span>${data.pitcherBaa.toFixed(3)} BAA · ${data.pitcherKRate.toFixed(1)}% K</span></div>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="eyebrow">Pitcher Platoon Splits</div>
+          <table class="split-table">
+            <thead><tr><th></th><th>BAA</th><th>K%</th><th>BB%</th><th>HR%</th></tr></thead>
+            <tbody>
+              <tr><td>vs LHB</td><td>${data.platoonVsLeft.baa.toFixed(3)}</td><td>${data.platoonVsLeft.kPct.toFixed(1)}%</td><td>${data.platoonVsLeft.bbPct.toFixed(1)}%</td><td>${data.platoonVsLeft.hrPct.toFixed(1)}%</td></tr>
+              <tr><td>vs RHB</td><td>${data.platoonVsRight.baa.toFixed(3)}</td><td>${data.platoonVsRight.kPct.toFixed(1)}%</td><td>${data.platoonVsRight.bbPct.toFixed(1)}%</td><td>${data.platoonVsRight.hrPct.toFixed(1)}%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="eyebrow">Head-to-Head History</div>
+          ${h2h.hasData
+            ? `<div class="mono" style="font-size:12px;margin-top:6px;line-height:1.8;">
+                 <div>At-bats: <b>${h2h.atBats}</b></div>
+                 <div>Hits / HR / SO: <b>${h2h.hits} / ${h2h.homeRuns} / ${h2h.strikeouts}</b></div>
+                 <div>Slash: <b>${h2h.avg.toFixed(3)} AVG</b> / ${h2h.obp.toFixed(3)} OBP</div>
+               </div>`
+            : `<div class="text-muted" style="font-size:11px;margin-top:6px;">No recorded career at-bats between these two — weighting relies on season splits only.</div>`
+          }
+        </div>
+      `;
+    } catch (e) {
+      target.innerHTML = `<div class="card" style="color:var(--accent-red);">${escapeHTML(e.message || 'Failed to load matchup data.')}</div>`;
+    }
+  }
+
+  // Optimistic UI: show loading state immediately, simulate async result, handle error path
+  async function runCalibration(playerId){
+    const p = State.data.players.find(x=>String(x.id)===String(playerId));
+    if(!p) return;
+    const xwoba = Number(document.getElementById('in-xwoba').value);
+    const xba = Number(document.getElementById('in-xba').value);
+    const barrel = Number(document.getElementById('in-barrel').value);
+    if(!Number.isFinite(xwoba)||!Number.isFinite(xba)||!Number.isFinite(barrel)){ showToast('Enter verified xwOBA, xBA, and Barrel values.', 'error'); return; }
+    State.ui.drawer.calibrating = true; renderDrawerContent();
+    try{
+      State.ui.drawer.calibrationResult = await API.calibrate({
+        player_id:p.mlbId, prop_type:State.ui.activeProp, xwoba, xba, barrel,
+        hardhit:p.stats.hardhit ?? 40, whiff:p.stats.whiff ?? 25
+      });
+      showToast(`Calibration complete for ${p.name}.`);
+    }catch(e){ showToast(e.message || 'Calibration failed.', 'error'); }
+    finally{ State.ui.drawer.calibrating=false; renderDrawerContent(); }
+  }
+
+  /* ==========================================================================
+    WATCHLIST TRAY
+    ========================================================================== */
+  function toggleWatchlist(playerId){
+    const idx = State.ui.watchlist.indexOf(playerId);
+    if(idx>-1) State.ui.watchlist.splice(idx,1); else State.ui.watchlist.push(playerId);
+    saveLS('watchlist', State.ui.watchlist);
+    renderWatchlistTray();
+    renderTable();
+  }
+
+  function renderWatchlistTray(){
+    const tray = document.getElementById('watchlist-tray');
+    const body = document.getElementById('tray-body');
+    const countEl = document.getElementById('tray-count');
+    const totalCount = State.ui.watchlist.length + State.ui.pitcherWatchlist.length;
+    if(!totalCount || State.data.isLoading){ tray.style.display='none'; return; }
+    tray.style.display = 'block';
+    countEl.textContent = `(${totalCount})`;
+    const players = State.ui.watchlist.map(id=>State.data.players.find(p=>p.id===id)).filter(Boolean);
+    const playerChips = players.map(p=>{
+      const stat = p.props[State.ui.activeProp];
+      return `<div class="watch-chip">
+        <span onclick="openDrawer('${p.id}')" style="font-family:var(--font-ui);">${p.name} <span class="mono text-muted">${(stat.prob*100).toFixed(1)}%</span></span>
+        <span class="unpin" onclick="toggleWatchlist('${p.id}')">×</span>
+      </div>`;
+    }).join('');
+    const pitcherChips = State.ui.pitcherWatchlist.map(name=>{
+      const gameLoc = findGameAndSideByPitcher(name);
+      const game = gameLoc ? State.data.games.find(g=>g.id===gameLoc.gameId) : null;
+      const pitcherId = game ? (gameLoc.side==='away'?game.awayPitcherId:game.homePitcherId) : null;
+      const d = pitcherId ? State.data.pitchers[pitcherId] : null;
+      const kLines = d?.propLadder?.k || [];
+      const kLine = kLines[1] || kLines[0] || null;
+      const label = kLine ? `O${kLine.line} K ${(kLine.prob*100).toFixed(0)}%` : '';
+      return `<div class="watch-chip" style="border-color:var(--accent-border);">
+        <span onclick="openPitcherPanelByName('${name}')" style="font-family:var(--font-ui);">⚾ ${name} <span class="mono text-muted">${label}</span></span>
+        <span class="unpin" onclick="togglePitcherWatch('${name}')">×</span>
+      </div>`;
+    }).join('');
+    body.innerHTML = playerChips + pitcherChips;
+  }
+
+  /* ==========================================================================
+    COMMAND PALETTE (Cmd/Ctrl+K)
+    ========================================================================== */
+  function buildSearchIndex(){
+    const items = [];
+    State.data.players.forEach(p=>items.push({type:'Player', label:p.name, sub:`${p.team} · vs ${p.oppPitcher}`, action:()=>openDrawer(p.id)}));
+    [...new Set(State.data.players.map(p=>p.team))].forEach(t=>items.push({type:'Team', label:t, sub:'View team batters', action:()=>{ closePalette(); routeToTeamContext(t); }}));
+    [...new Set(State.data.players.map(p=>p.oppPitcher))].forEach(pt=>items.push({type:'Pitcher', label:pt, sub:'Probable pitcher', action:()=>{ closePalette(); openPitcherPanelByName(pt); }}));
+    return items;
+  }
+
+  function openPalette(){
+    State.ui.paletteOpen = true;
+    document.getElementById('palette-overlay').classList.add('active');
+    const input = document.getElementById('palette-input');
+    input.value=''; input.focus();
+    State.ui.paletteIndex = 0;
+    renderPaletteResults('');
+  }
+  function closePalette(){
+    State.ui.paletteOpen = false;
+    document.getElementById('palette-overlay').classList.remove('active');
+  }
+  function renderPaletteResults(query){
+    const all = buildSearchIndex();
+    const q = query.trim().toLowerCase();
+    const results = q ? all.filter(i=>i.label.toLowerCase().includes(q)) : all.slice(0,8);
+    State.ui.paletteResults = results;
+    State.ui.paletteIndex = 0;
+    const el = document.getElementById('palette-results');
+    if(!results.length){ el.innerHTML = `<div class="palette-empty">No matches for "${query}"</div>`; return; }
+    const groups = {};
+    results.forEach(r=>{ (groups[r.type] = groups[r.type]||[]).push(r); });
+    let html = '';
+    let flatIdx = 0;
+    Object.keys(groups).forEach(type=>{
+      html += `<div class="palette-group-label">${type}s</div>`;
+      groups[type].forEach(r=>{
+        html += `<div class="palette-item ${flatIdx===0?'selected':''}" data-idx="${flatIdx}"><span>${r.label}</span><span class="text-muted" style="font-size:11px;">${r.sub}</span></div>`;
+        flatIdx++;
+      });
+    });
+    el.innerHTML = html;
+    el.querySelectorAll('.palette-item').forEach(item=>{
+      item.onclick = ()=>{ results[+item.dataset.idx].action(); closePalette(); };
+    });
+  }
+  function movePaletteSelection(dir){
+    const items = document.querySelectorAll('.palette-item');
+    if(!items.length) return;
+    State.ui.paletteIndex = Math.max(0, Math.min(items.length-1, State.ui.paletteIndex+dir));
+    items.forEach(i=>i.classList.remove('selected'));
+    items[State.ui.paletteIndex].classList.add('selected');
+    items[State.ui.paletteIndex].scrollIntoView({block:'nearest'});
+  }
+  function selectPaletteActive(){
+    if(State.ui.paletteResults[State.ui.paletteIndex]){
+      State.ui.paletteResults[State.ui.paletteIndex].action();
+      closePalette();
+    }
+  }
+
+  /* ==========================================================================
+    ALERTS (threshold rules + toasts)
+    ========================================================================== */
+  function checkAlertRules(){
+    if(!State.data.prevPlayers) return;
+    State.ui.alertRules.forEach(rule=>{
+      State.data.players.forEach(p=>{
+        const prev = State.data.prevPlayers.find(x=>x.id===p.id);
+        if(!prev) return;
+        const curVal = p.props[rule.propType][rule.statKey];
+        const prevVal = prev.props[rule.propType][rule.statKey];
+        const wasTrue = rule.cmp==='gte' ? prevVal >= rule.threshold : prevVal <= rule.threshold;
+        const isTrue = rule.cmp==='gte' ? curVal >= rule.threshold : curVal <= rule.threshold;
+        if(isTrue && !wasTrue){
+          const msg = `${p.name} ${STAT_LABELS[rule.propType]} ${rule.statKey==='edge'?'Edge':'Prob'} ${rule.cmp==='gte'?'crossed above':'dropped below'} ${(rule.threshold*100).toFixed(0)}%`;
+          showToast('🔔 ' + msg);
+          State.ui.triggeredAlerts.unshift({msg, time: Date.now()});
+          State.ui.triggeredAlerts = State.ui.triggeredAlerts.slice(0,20);
+          State.ui.unreadAlerts++;
+        }
+      });
+    });
+    saveLS('triggeredAlerts', State.ui.triggeredAlerts);
+    updateAlertBadge();
+    renderAlertsList();
+  }
+
+  function addAlertRule(propType, statKey, cmp, threshold){
+    State.ui.alertRules.push({id:'r'+Date.now(), propType, statKey, cmp, threshold});
+    saveLS('alertRules', State.ui.alertRules);
+    renderAlertsList();
+  }
+  function removeAlertRule(id){
+    State.ui.alertRules = State.ui.alertRules.filter(r=>r.id!==id);
+    saveLS('alertRules', State.ui.alertRules);
+    renderAlertsList();
+  }
+
+  function updateAlertBadge(){
+    const badge = document.getElementById('alert-count');
+    if(State.ui.unreadAlerts > 0){ badge.style.display='flex'; badge.textContent = State.ui.unreadAlerts; }
+    else badge.style.display = 'none';
+  }
+
+  function renderAlertsList(){
+    const el = document.getElementById('alerts-list');
+    let html = '';
+    if(State.ui.alertRules.length){
+      html += State.ui.alertRules.map(r=>`<div class="rule-chip"><span>${STAT_LABELS[r.propType]} ${r.statKey} ${r.cmp==='gte'?'≥':'≤'} ${(r.threshold*100).toFixed(0)}%</span><button onclick="removeAlertRule('${r.id}')">×</button></div>`).join('');
+    }
+    if(State.ui.triggeredAlerts.length){
+      html += State.ui.triggeredAlerts.slice(0,6).map(a=>`<div class="alert-item"><div style="font-size:11px;">${a.msg}</div><div class="text-muted mono" style="font-size:10px;">${new Date(a.time).toLocaleTimeString()}</div></div>`).join('');
+    } else if(!State.ui.alertRules.length){
+      html = '<div class="text-muted" style="text-align:center;padding:14px 0;">No alerts triggered yet.</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function openRuleBuilder(){
+    const propTypes = Object.keys(STAT_LABELS);
+    const el = document.getElementById('alerts-list');
+    el.insertAdjacentHTML('afterbegin', `
+      <div class="card" style="margin-bottom:10px;" id="rule-builder">
+        <div class="rule-row">
+          <select id="rb-prop">${propTypes.map(k=>`<option value="${k}">${STAT_LABELS[k]}</option>`).join('')}</select>
+          <select id="rb-stat"><option value="edge">Edge %</option><option value="prob">Prob %</option></select>
+        </div>
+        <div class="rule-row">
+          <select id="rb-cmp"><option value="gte">≥</option><option value="lte">≤</option></select>
+          <input type="number" id="rb-val" placeholder="e.g. 10" style="width:70px;">%
+          <button class="btn btn-primary" id="rb-save" style="margin-left:auto;">Save</button>
+        </div>
+      </div>`);
+    document.getElementById('rb-save').onclick = ()=>{
+      const propType = document.getElementById('rb-prop').value;
+      const statKey = document.getElementById('rb-stat').value;
+      const cmp = document.getElementById('rb-cmp').value;
+      const val = parseFloat(document.getElementById('rb-val').value);
+      if(isNaN(val)) return;
+      addAlertRule(propType, statKey, cmp, val/100);
+    };
+  }
+
+  /* ==========================================================================
+    COMPARE MODE
+    ========================================================================== */
+  function toggleCompareSelect(playerId){
+    const idx = State.ui.compareSelection.indexOf(playerId);
+    if(idx>-1) State.ui.compareSelection.splice(idx,1);
+    else{ if(State.ui.compareSelection.length>=3) return showToast('You can compare up to 3 players.', 'error'); State.ui.compareSelection.push(playerId); }
+    renderCompareBar();
+  }
+  function renderCompareBar(){
+    const bar = document.getElementById('compare-bar');
+    const n = State.ui.compareSelection.length;
+    bar.classList.toggle('active', n>=2);
+    document.getElementById('compare-count-label').textContent = `${n} selected`;
+  }
+  function clearCompare(){ State.ui.compareSelection = []; renderCompareBar(); renderTable(); }
+  function openCompareModal(){
+    const players = State.ui.compareSelection.map(id=>State.data.players.find(p=>p.id===id)).filter(Boolean);
+    const prop = State.ui.activeProp;
+    const rows = [
+      {label:`${STAT_LABELS[prop]} Prob`, get:p=>(p.props[prop].prob*100).toFixed(1)+'%', better:'max'},
+      {label:'Edge %', get:p=>p.props[prop].edge==null?'Model only':(p.props[prop].edge*100).toFixed(1)+'%', better:'max', raw:p=>p.props[prop].edge??-Infinity},
+      {label:'Fair Odds', get:p=>p.props[prop].odds>0?'+'+p.props[prop].odds:p.props[prop].odds},
+      {label:'Conviction', get:p=>p.props[prop].conf.toUpperCase()},
+      {label:'xwOBA', get:p=>displayMetric(p.stats.xwoba,3), better:'max', raw:p=>p.stats.xwoba??-Infinity},
+      {label:'Barrel %', get:p=>displayMetric(p.stats.barrel,1,'%'), better:'max', raw:p=>p.stats.barrel??-Infinity}
+    ];
+    let html = `<tr><th>Metric</th>${players.map(p=>`<th>${p.name}</th>`).join('')}</tr>`;
+    rows.forEach(r=>{
+      let bestIdx = -1;
+      if(r.better==='max'){
+        const vals = players.map(p=>r.raw?r.raw(p):parseFloat(r.get(p)));
+        bestIdx = vals.indexOf(Math.max(...vals));
+      }
+      html += `<tr><td class="text-muted">${r.label}</td>${players.map((p,i)=>`<td class="${i===bestIdx?'compare-win':''}">${r.get(p)}</td>`).join('')}</tr>`;
+    });
+    document.getElementById('compare-table').innerHTML = html;
+    document.getElementById('compare-modal-overlay').classList.add('active');
+  }
+  function closeCompareModal(){ document.getElementById('compare-modal-overlay').classList.remove('active'); }
+
+  /* ==========================================================================
+    TOASTS
+    ========================================================================== */
+  function showToast(msg, type){
+    const stack = document.getElementById('toast-stack');
+    const el = document.createElement('div');
+    el.className = 'toast' + (type==='error' ? ' error' : '');
+    el.textContent = msg;
+    el.onclick = ()=>dismissToast(el);
+    stack.appendChild(el);
+    setTimeout(()=>dismissToast(el), 5000);
+  }
+  function dismissToast(el){
+    if(!el.isConnected) return;
+    el.classList.add('leaving');
+    setTimeout(()=>el.remove(), 250);
+  }
+
+  /* ==========================================================================
+    THEME
+    ========================================================================== */
+  function applyTheme(theme, persist){
+    document.documentElement.setAttribute('data-theme', theme);
+    State.ui.theme = theme;
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('active', s.dataset.theme===theme));
+    if(persist!==false) saveLS('theme', theme);
+  }
+
+  /* ==========================================================================
+    URL DEEP-LINKING
+    ========================================================================== */
+  function syncURL(){
+    const p = new URLSearchParams();
+    p.set('tab', State.ui.activeTab);
+    p.set('prop', State.ui.activeProp);
+    if(State.ui.filters.team!=='ALL') p.set('team', State.ui.filters.team);
+    if(State.ui.filters.confidence!=='ALL') p.set('conf', State.ui.filters.confidence);
+    if(State.ui.filters.search) p.set('q', State.ui.filters.search);
+    if(State.ui.drawer.isOpen && State.ui.drawer.playerId) p.set('player', State.ui.drawer.playerId);
+    history.replaceState(null, '', '?' + p.toString());
+  }
+  function applyStateFromURL(){
+    const p = new URLSearchParams(location.search);
+    if(p.get('tab')) State.ui.activeTab = p.get('tab');
+    if(p.get('prop')) State.ui.activeProp = p.get('prop');
+    if(p.get('team')) State.ui.filters.team = p.get('team');
+    if(p.get('conf')) State.ui.filters.confidence = p.get('conf');
+    if(p.get('q')) State.ui.filters.search = p.get('q');
+    if(p.get('player')) State.ui._pendingPlayerFromURL = p.get('player');
+    switchTabUI(State.ui.activeTab);
+    document.querySelectorAll('#prop-type-toggle .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.prop===State.ui.activeProp));
+  }
+
+  /* ==========================================================================
+    BINDINGS
+    ========================================================================== */
+  function bindEvents(){
+    document.querySelectorAll('.nav-tab').forEach(btn=>{
+      btn.onclick = e=>{
+        State.ui.activeTab = e.target.dataset.tab;
+        if(State.ui.activeTab !== 'props'){ State.ui.contextTeam=null; document.getElementById('team-context-header').style.display='none'; }
+        switchTabUI(State.ui.activeTab); syncURL();
+      };
+    });
+
+    document.querySelectorAll('#prop-type-toggle .seg-btn').forEach(btn=>{
+      btn.onclick = e=>{
+        State.ui.activeProp = e.target.dataset.prop;
+        State.ui.drawer.calibrationResult = null;
+        updateSegUI('prop-type-toggle', e.target);
+        const tbody = document.querySelector('#props-table tbody');
+        tbody.style.opacity = 0;
+        setTimeout(()=>{ renderTable(); renderHUD(); renderWatchlistTray(); tbody.style.opacity = 1; }, 150);
+        syncURL();
+      };
+    });
+
+    document.querySelectorAll('#context-toggle .seg-btn').forEach(btn=>{
+      btn.onclick = e=>{ State.ui.contextView = e.target.dataset.view; updateSegUI('context-toggle', e.target); };
+    });
+    document.getElementById('btn-clear-context').onclick = ()=>{
+      State.ui.contextTeam=null; State.ui.filters.team='ALL';
+      document.getElementById('team-context-header').style.display='none';
+      renderFilters(); renderTable(); syncURL();
+    };
+
+    document.querySelectorAll('#drawer-toggle .seg-btn').forEach(btn=>{
+      btn.onclick = e=>{
+        State.ui.drawer.view = e.target.dataset.view;
+        updateSegUI('drawer-toggle', e.target);
+        const content = document.getElementById('drawer-content');
+        content.style.opacity = 0;
+        setTimeout(()=>{ renderDrawerContent(); content.style.opacity = 1; }, 150);
+      };
+    });
+    document.getElementById('btn-close-drawer').onclick = closeDrawer;
+    document.getElementById('drawer-overlay').onclick = closeDrawer;
+
+    document.getElementById('btn-close-game-drawer').onclick = closeGamePanel;
+    document.getElementById('game-drawer-overlay').onclick = closeGamePanel;
+    document.querySelectorAll('#pitcher-side-toggle .seg-btn').forEach(btn=>{
+      btn.onclick = e=>{
+        State.ui.gamePanel.side = e.target.dataset.side;
+        updateSegUI('pitcher-side-toggle', e.target);
+        const content = document.getElementById('game-drawer-content');
+        content.style.opacity = 0;
+        setTimeout(()=>{ renderGamePanel(); content.style.opacity = 1; }, 150);
+      };
+    });
+    document.querySelectorAll('#pitcher-tab-toggle .seg-btn').forEach(btn=>{
+      btn.onclick = e=>{
+        State.ui.gamePanel.tab = e.target.dataset.view;
+        updateSegUI('pitcher-tab-toggle', e.target);
+        const content = document.getElementById('game-drawer-content');
+        content.style.opacity = 0;
+        setTimeout(()=>{ renderGamePanel(); content.style.opacity = 1; }, 150);
+      };
+    });
+
+    document.getElementById('tray-toggle').onclick = ()=>{
+      State.ui.trayOpen = !State.ui.trayOpen;
+      document.getElementById('tray-body').classList.toggle('collapsed', !State.ui.trayOpen);
+      document.getElementById('tray-chevron').textContent = State.ui.trayOpen ? '▾' : '▸';
+    };
+
+    document.getElementById('btn-refresh').onclick = refreshSlate;
+    document.getElementById('ml-date-picker').onchange = async e=>{
+      State.data.isLoading=true; renderAll();
+      try{
+        const slate=await API.fetchSlate(e.target.value,false);
+        State.data.players=slate.players||[]; State.data.games=slate.games||[]; State.data.pitchers={};
+        State.data.lastUpdated=Date.parse(slate.meta.generatedAt)||Date.now();
+      }catch(err){ showToast(err.message||'Unable to load selected date.','error'); }
+      finally{ State.data.isLoading=false; renderAll(); }
+    };
+
+    // Command palette
+    document.getElementById('btn-search').onclick = openPalette;
+    document.getElementById('palette-overlay').addEventListener('click', e=>{ if(e.target.id==='palette-overlay') closePalette(); });
+    document.getElementById('palette-input').oninput = e=>renderPaletteResults(e.target.value);
+    document.addEventListener('keydown', e=>{
+      if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); State.ui.paletteOpen ? closePalette() : openPalette(); }
+      if(State.ui.paletteOpen){
+        if(e.key==='Escape') closePalette();
+        if(e.key==='ArrowDown'){ e.preventDefault(); movePaletteSelection(1); }
+        if(e.key==='ArrowUp'){ e.preventDefault(); movePaletteSelection(-1); }
+        if(e.key==='Enter'){ e.preventDefault(); selectPaletteActive(); }
+      }
+    });
+
+    // Alerts popover
+    document.getElementById('btn-alerts').onclick = e=>{
+      e.stopPropagation();
+      const pop = document.getElementById('alerts-popover');
+      pop.classList.toggle('active');
+      document.getElementById('theme-popover').classList.remove('active');
+      if(pop.classList.contains('active')){ State.ui.unreadAlerts = 0; updateAlertBadge(); renderAlertsList(); }
+    };
+    document.getElementById('btn-manage-rules').onclick = e=>{ e.stopPropagation(); openRuleBuilder(); };
+
+    // Theme popover
+    document.getElementById('btn-theme').onclick = e=>{
+      e.stopPropagation();
+      document.getElementById('theme-popover').classList.toggle('active');
+      document.getElementById('alerts-popover').classList.remove('active');
+    };
+    document.querySelectorAll('.swatch').forEach(s=>{ s.onclick = ()=>applyTheme(s.dataset.theme); });
+    document.addEventListener('click', ()=>{
+      document.getElementById('alerts-popover').classList.remove('active');
+      document.getElementById('theme-popover').classList.remove('active');
+    });
+
+    // Compare
+    document.getElementById('btn-clear-compare').onclick = clearCompare;
+    document.getElementById('btn-open-compare').onclick = openCompareModal;
+    document.getElementById('btn-close-compare').onclick = closeCompareModal;
+    document.getElementById('compare-modal-overlay').addEventListener('click', e=>{ if(e.target.id==='compare-modal-overlay') closeCompareModal(); });
+  }
+
+  function switchTabUI(tabId){
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    const tabEl = document.querySelector(`.nav-tab[data-tab="${tabId}"]`);
+    if(tabEl) tabEl.classList.add('active');
+    document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active'));
+    const view = document.getElementById(`view-${tabId}`);
+    if(view) view.classList.add('active');
+    updateNavIndicator();
+  }
+  function updateNavIndicator(){
+    const activeTab = document.querySelector('.nav-tab.active');
+    const indicator = document.getElementById('nav-indicator');
+    if(activeTab && indicator){ indicator.style.width = `${activeTab.offsetWidth}px`; indicator.style.left = `${activeTab.offsetLeft}px`; }
+  }
+  function updateSegIndicators(){
+    updateSegUI('prop-type-toggle', document.querySelector('#prop-type-toggle .seg-btn.active'));
+    updateSegUI('context-toggle', document.querySelector('#context-toggle .seg-btn.active'));
+    updateSegUI('drawer-toggle', document.querySelector('#drawer-toggle .seg-btn.active'));
+    updateSegUI('pitcher-side-toggle', document.querySelector('#pitcher-side-toggle .seg-btn.active'));
+    updateSegUI('pitcher-tab-toggle', document.querySelector('#pitcher-tab-toggle .seg-btn.active'));
+  }
+  function updateSegUI(containerId, activeBtn){
+    if(!activeBtn) return;
+    const container = document.getElementById(containerId);
+    container.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+    activeBtn.classList.add('active');
+    const indicator = container.querySelector('.seg-indicator');
+    indicator.style.width = `${activeBtn.offsetWidth}px`;
+    indicator.style.left = `${activeBtn.offsetLeft}px`;
+  }
+
+  window.addEventListener('resize', ()=>{ updateNavIndicator(); updateSegIndicators(); });
+  document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+  </body>
+  </html>

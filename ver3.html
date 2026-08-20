@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>trckr21 · VIP Quant Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08090b;
+    --bg-raised:#0e0f12;
+    --bg-card:#111318;
+    --border:#212329;
+    --border-soft:#191b20;
+    --text-hi:#f2f3f5;
+    --text-mid:#9a9ca6;
+    --text-lo:#5b5d68;
+    --amber:#f2a93b;
+    --amber-dim:rgba(242,169,59,0.14);
+    --cyan:#33d6c0;
+    --cyan-dim:rgba(51,214,192,0.14);
+    --violet:#8b7bff;
+    --violet-dim:rgba(139,123,255,0.14);
+    --green:#33c17a;
+    --red:#e8495f;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+    --font-body:'Inter', sans-serif;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+
+  *{box-sizing:border-box;}
+  ::selection{background:var(--amber-dim); color:var(--text-hi);}
+
+  body{
+    font-family:var(--font-body);
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(242,169,59,0.05), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(51,214,192,0.04), transparent 55%),
+      var(--bg);
+    color:var(--text-mid);
+    margin:0;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    user-select:none;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  button, [tabindex], .list-item, .bar-group{ outline-offset:2px; }
+  button:focus-visible, .list-item:focus-visible, .bar-group:focus-visible{
+    outline:2px solid var(--amber);
+    border-radius:4px;
+  }
+
+  /* ===== TOP NAV ===== */
+  .top-nav{
+    background:#000;
+    border-bottom:1px solid var(--border);
+    padding:14px 28px;
+    display:flex;
+    align-items:center;
+    gap:26px;
+    flex-shrink:0;
+  }
+  .nav-brand{
+    font-family:var(--font-display);
+    font-size:1.15em;
+    font-weight:700;
+    color:var(--text-hi);
+    letter-spacing:0.3px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-right:6px;
+  }
+  .nav-brand .brand-mark{
+    width:9px;height:9px;border-radius:2px;
+    background:var(--amber);
+    box-shadow:0 0 10px rgba(242,169,59,0.55);
+    transform:rotate(45deg);
+  }
+  .nav-brand .brand-sub{
+    font-family:var(--font-mono);
+    font-size:0.62em;
+    font-weight:500;
+    color:var(--text-lo);
+    letter-spacing:1.5px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:2px 6px;
+    margin-left:2px;
+  }
+  .main-tab{
+    background:transparent; border:none; color:var(--text-lo);
+    font-family:var(--font-display);
+    font-size:0.98em; font-weight:600; cursor:pointer;
+    padding:6px 4px; border-bottom:2px solid transparent;
+    transition:color .18s var(--ease), border-color .18s var(--ease);
+    position:relative;
+  }
+  .main-tab:hover{ color:var(--text-mid); }
+  .main-tab.active{ color:var(--text-hi); border-bottom-color:var(--amber); }
+  .main-tab.active.tab-matchups-active{ border-bottom-color:var(--violet); }
+  .main-tab.disabled{
+    opacity:0.35; cursor:not-allowed; pointer-events:none;
+  }
+  .tab-badge{
+    font-family:var(--font-mono); font-size:0.58em; font-weight:700;
+    color:var(--text-lo); background:var(--bg-raised); border:1px solid var(--border);
+    border-radius:8px; padding:1px 6px; margin-left:7px; vertical-align:middle;
+  }
+  .tab-new{
+    font-family:var(--font-mono); font-size:0.55em; font-weight:700;
+    color:var(--violet); background:var(--violet-dim); border:1px solid rgba(139,123,255,0.4);
+    border-radius:8px; padding:1px 6px; margin-left:7px; vertical-align:middle; letter-spacing:0.4px;
+  }
+
+  .nav-status{
+    margin-left:auto;
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:0.72em; color:var(--text-lo);
+    letter-spacing:0.5px;
+  }
+  .nav-status .live-dot{
+    width:6px;height:6px;border-radius:50%; background:var(--green);
+    box-shadow:0 0 6px rgba(51,193,122,0.8);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  #nav-clock{ color:var(--text-mid); min-width:70px; text-align:right; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .live-dot.stale{ background:var(--text-lo); box-shadow:none; animation:none; }
+
+  .refresh-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-mid);
+    font-family:var(--font-mono); font-size:0.72em; letter-spacing:0.5px;
+    padding:5px 10px; border-radius:6px; cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+    transition:border-color .15s var(--ease), color .15s var(--ease);
+  }
+  .refresh-btn:hover{ border-color:var(--amber); color:var(--amber); }
+  .refresh-btn .spin{ display:inline-block; transition:transform .5s var(--ease); }
+  .refresh-btn.loading .spin{ animation:spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ===== DATA STATE OVERLAY ===== */
+  .state-overlay{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    padding:40px; text-align:center;
+  }
+  .state-card{ max-width:420px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .state-ring{
+    width:34px; height:34px; border-radius:50%;
+    border:3px solid var(--border); border-top-color:var(--amber);
+    animation:spin 0.8s linear infinite;
+  }
+  .state-title{ font-family:var(--font-display); font-size:1.15em; font-weight:600; color:var(--text-hi); }
+  .state-body{ font-family:var(--font-body); font-size:0.88em; color:var(--text-mid); line-height:1.55; }
+  .state-retry{
+    margin-top:6px; background:var(--amber-dim); border:1px solid var(--amber); color:var(--amber);
+    font-family:var(--font-body); font-weight:600; font-size:0.85em;
+    padding:8px 18px; border-radius:7px; cursor:pointer; transition:filter .15s var(--ease);
+  }
+  .state-retry:hover{ filter:brightness(1.15); }
+
+  /* ===== MODEL / DISTRIBUTION BADGES ===== */
+  .dist-badge{
+    font-family:var(--font-mono); font-size:0.62em; font-weight:700; letter-spacing:0.4px;
+    padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:middle;
+  }
+  .dist-badge.nb2{ background:rgba(51,214,192,0.14); color:var(--cyan); border:1px solid rgba(51,214,192,0.35); }
+  .dist-badge.poi{ background:rgba(242,169,59,0.14); color:var(--amber); border:1px solid rgba(242,169,59,0.35); }
+  .conf-badge{
+    font-family:var(--font-mono); font-size:0.6em; text-transform:uppercase; letter-spacing:0.5px;
+    padding:2px 6px; border-radius:4px; font-weight:700;
+  }
+  .conf-badge.high{ color:var(--green); background:rgba(51,193,122,0.12); }
+  .conf-badge.medium{ color:var(--amber); background:rgba(242,169,59,0.12); }
+  .conf-badge.low{ color:var(--red); background:rgba(232,73,95,0.12); }
+
+  /* ===== TICKER ===== */
+  .ticker-wrap{
+    background:#000;
+    border-bottom:1px solid var(--border);
+    overflow:hidden;
+    white-space:nowrap;
+    padding:7px 0;
+    flex-shrink:0;
+  }
+  .ticker-track{
+    display:inline-flex;
+    animation:ticker-scroll 42s linear infinite;
+    will-change:transform;
+  }
+  .ticker-wrap:hover .ticker-track{ animation-play-state:paused; }
+  @keyframes ticker-scroll{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+  .ticker-item{
+    font-family:var(--font-mono); font-size:0.78em;
+    display:inline-flex; align-items:center; gap:8px;
+    padding:0 22px; color:var(--text-mid);
+    border-right:1px solid var(--border-soft);
+  }
+  .ticker-item .tk-name{ color:var(--text-hi); font-weight:600; letter-spacing:0.3px; }
+  .ticker-item .tk-market{ color:var(--text-lo); }
+  .ticker-item .tk-rate{ color:var(--text-mid); }
+  .ticker-item .tk-edge.up{ color:var(--green); }
+  .ticker-item .tk-edge.down{ color:var(--red); }
+
+  /* ===== LAYOUT ===== */
+  .app-container{ display:flex; flex:1; overflow:hidden; min-height:0; }
+
+  .sidebar{
+    width:270px; background:var(--bg);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0;
+  }
+  .sidebar-label{
+    font-family:var(--font-mono); font-size:0.68em; color:var(--text-lo);
+    letter-spacing:1.5px; padding:14px 20px 8px;
+  }
+  .list-item{
+    padding:13px 20px; border-bottom:1px solid var(--border-soft);
+    cursor:pointer; transition:background-color .15s var(--ease);
+    background:transparent; display:flex; align-items:center; gap:12px;
+  }
+  .list-item:hover{ background:var(--bg-raised); }
+  .list-item.active{ background:var(--bg-raised); border-left:3px solid var(--amber); padding-left:17px; }
+  .list-item.active.matchup-active{ border-left-color:var(--violet); }
+  .trend-dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .trend-dot.hot{ background:var(--green); box-shadow:0 0 6px rgba(51,193,122,0.7); }
+  .trend-dot.cold{ background:var(--red); box-shadow:0 0 6px rgba(232,73,95,0.6); }
+  .trend-dot.neutral{ background:var(--text-lo); }
+  .entity-name{ font-family:var(--font-display); font-weight:600; font-size:1.02em; color:var(--text-hi); }
+  .entity-sub{ font-family:var(--font-mono); font-size:0.75em; color:var(--text-lo); margin-top:3px; letter-spacing:0.3px; }
+  .entity-sub .opp{ color:var(--text-mid); }
+  .entity-flag{
+    font-family:var(--font-mono); font-size:0.56em; font-weight:700; letter-spacing:0.4px;
+    padding:1px 5px; border-radius:3px; margin-top:5px; display:inline-block;
+  }
+  .entity-flag.confirmed{ color:var(--green); background:rgba(51,193,122,0.12); }
+  .entity-flag.projected{ color:var(--amber); background:rgba(242,169,59,0.12); }
+
+  .main-content{ flex:1; padding:26px 32px; display:flex; flex-direction:column; overflow-y:auto; min-height:0; }
+  .hidden{ display:none !important; }
+
+  /* ===== HEADER STATS ===== */
+  .header-stats{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; gap:20px; }
+  .player-title{ font-family:var(--font-display); font-size:1.9em; font-weight:700; color:var(--text-hi); letter-spacing:-0.3px; }
+  .player-context{ font-family:var(--font-mono); font-size:0.78em; color:var(--text-lo); margin-top:5px; letter-spacing:0.3px; }
+  .player-context .opp{ color:var(--cyan); }
+
+  .odds-box{ display:flex; gap:26px; }
+  .odds-item{ display:flex; flex-direction:column; align-items:flex-end; }
+  .odds-label{ font-family:var(--font-mono); font-size:0.66em; text-transform:uppercase; color:var(--text-lo); font-weight:600; letter-spacing:0.8px; }
+  .odds-val{ font-family:var(--font-mono); font-size:1.7em; font-weight:700; transition:color .2s var(--ease); margin-top:2px; }
+  .val-green{ color:var(--green); }
+  .val-red{ color:var(--red); }
+  .val-cyan{ color:var(--cyan); }
+  .value-flash{ animation:flash-in .38s var(--ease); }
+  @keyframes flash-in{ from{ opacity:0.15; transform:translateY(3px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ===== MARKET TOGGLES ===== */
+  .market-toggles{ display:flex; gap:9px; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:16px; flex-wrap:wrap; }
+  .market-btn{
+    background:var(--bg); border:1px solid var(--border); color:var(--text-lo);
+    padding:7px 15px; border-radius:7px; cursor:pointer;
+    font-family:var(--font-body); font-size:0.85em; font-weight:600;
+    transition:all .15s var(--ease);
+  }
+  .market-btn:hover{ background:var(--bg-raised); color:var(--text-mid); border-color:#2c2e35; }
+  .market-btn.active{ background:var(--amber-dim); border-color:var(--amber); color:var(--amber); }
+
+  /* ===== CHART ===== */
+  .chart-card{
+    background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+    padding:26px 36px 26px 62px; flex-shrink:0; display:flex; flex-direction:column; position:relative;
+  }
+  .chart-area{ position:relative; display:flex; align-items:flex-end; justify-content:space-around; height:260px; margin-bottom:22px; }
+
+  .grid-line{ position:absolute; left:0; right:0; border-top:1px solid var(--border-soft); }
+  .grid-label{ position:absolute; left:-46px; top:-7px; font-family:var(--font-mono); font-size:0.68em; color:var(--text-lo); width:38px; text-align:right; }
+
+  .threshold-line{ position:absolute; left:0; right:0; border-top:2px dashed var(--amber); z-index:10; display:flex; align-items:center; cursor:ns-resize; }
+  .drag-handle{
+    position:absolute; left:-52px; background:var(--amber); color:#000; font-weight:800;
+    font-family:var(--font-mono); font-size:1.05em; padding:3px 10px; border-radius:6px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.55); cursor:ns-resize; transition:transform .1s var(--ease);
+  }
+  .drag-handle:active{ transform:scale(1.12); background:#ffc266; }
+  .line-chip{ position:absolute; right:0; top:-19px; font-family:var(--font-mono); font-size:0.65em; letter-spacing:0.5px; color:#000; background:var(--amber); padding:2px 6px; border-radius:4px; font-weight:700; }
+
+  .avg-line{ position:absolute; left:0; right:0; border-top:1.5px dashed var(--cyan); z-index:8; opacity:0.75; }
+  .avg-chip{
+    position:absolute; right:-2px; top:-9px; transform:translateY(-100%);
+    font-family:var(--font-mono); font-size:0.65em; color:var(--cyan);
+    background:rgba(51,214,192,0.12); border:1px solid rgba(51,214,192,0.35);
+    padding:2px 6px; border-radius:4px; font-weight:600; letter-spacing:0.3px;
+  }
+
+  .bar-group{
+    display:flex; flex-direction:column; align-items:center; z-index:2;
+    width:6.5%; height:100%; justify-content:flex-end; cursor:crosshair; position:relative;
+  }
+  .bar-group:hover .bar{ filter:brightness(1.18); box-shadow:0 0 14px rgba(255,255,255,0.12); }
+  .bar{
+    width:100%; border-radius:4px 4px 0 0; display:flex; justify-content:center; align-items:flex-start;
+    padding-top:6px; font-weight:700; font-family:var(--font-mono); font-size:1em; color:#fff;
+    transition:background-color .2s var(--ease), filter .2s var(--ease), height .45s var(--ease);
+  }
+  .bar.over{ background:var(--green); }
+  .bar.under{ background:var(--red); }
+  .x-label{ margin-top:14px; font-family:var(--font-mono); font-size:0.72em; color:var(--text-lo); font-weight:500; position:absolute; bottom:-28px; letter-spacing:0.2px; }
+
+  .match-info-box{
+    background:#000; border:1px solid var(--border); border-radius:8px; padding:13px 18px;
+    display:flex; flex-direction:column; gap:5px; opacity:0; transition:opacity .18s var(--ease);
+    min-height:52px; pointer-events:none;
+  }
+  .match-info-box.active{ opacity:1; }
+  .mi-title{ font-family:var(--font-mono); font-size:0.72em; font-weight:600; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.6px; }
+  .mi-score{ font-family:var(--font-mono); font-size:1.1em; font-weight:700; color:var(--green); }
+  .mi-score.loss{ color:var(--red); }
+  .mi-text{ font-family:var(--font-mono); font-size:0.82em; color:var(--text-mid); }
+
+  /* ===== METRICS GRID ===== */
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:14px; margin-top:20px; }
+  .metric-card{
+    background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
+    padding:15px 17px; display:flex; flex-direction:column; gap:6px;
+  }
+  .metric-card.wide{ grid-column:span 2; }
+  .metric-label{ font-family:var(--font-mono); font-size:0.66em; text-transform:uppercase; color:var(--text-lo); letter-spacing:0.8px; font-weight:600; }
+  .metric-value{ font-family:var(--font-mono); font-size:1.5em; font-weight:700; color:var(--text-hi); }
+  .metric-caption{ font-size:0.76em; color:var(--text-lo); font-family:var(--font-body); }
+
+  .compare-row{ display:flex; align-items:center; gap:10px; margin-top:2px; }
+  .compare-label{ font-family:var(--font-mono); font-size:0.7em; color:var(--text-mid); width:78px; flex-shrink:0; }
+  .compare-bar-track{ flex:1; height:7px; background:var(--bg-raised); border-radius:4px; overflow:hidden; }
+  .compare-bar-fill{ height:100%; border-radius:4px; transition:width .5s var(--ease); }
+  .compare-bar-fill.model{ background:var(--cyan); }
+  .compare-bar-fill.market{ background:var(--amber); }
+  .compare-pct{ font-family:var(--font-mono); font-size:0.78em; color:var(--text-hi); width:44px; text-align:right; flex-shrink:0; }
+
+  /* ===== FOOTER ===== */
+  .status-bar{
+    margin-top:22px; padding-top:14px; border-top:1px solid var(--border-soft);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+    font-family:var(--font-mono); font-size:0.7em; color:var(--text-lo); letter-spacing:0.3px;
+  }
+  .status-bar .disclaimer{ color:#3f4149; }
+
+  /* ===== MATCHUP ANALYZER (NEW) ===== */
+  .matchup-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; gap:20px; flex-wrap:wrap; }
+  .matchup-title{ font-family:var(--font-display); font-size:1.9em; font-weight:700; color:var(--text-hi); letter-spacing:-0.3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .matchup-vs{ color:var(--text-lo); font-weight:500; font-size:0.6em; }
+  .matchup-context{ font-family:var(--font-mono); font-size:0.78em; color:var(--text-lo); margin-top:6px; letter-spacing:0.3px; }
+  .lineup-status{
+    font-family:var(--font-mono); font-size:0.68em; font-weight:700; letter-spacing:0.5px;
+    padding:5px 12px; border-radius:20px; text-transform:uppercase; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .lineup-status.confirmed{ color:var(--green); background:rgba(51,193,122,0.1); border:1px solid rgba(51,193,122,0.35); }
+  .lineup-status.projected{ color:var(--amber); background:rgba(242,169,59,0.1); border:1px solid rgba(242,169,59,0.35); }
+  .lineup-status .dot{ width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+  .edge-summary-card{
+    background:linear-gradient(155deg, rgba(139,123,255,0.09), rgba(139,123,255,0.02));
+    border:1px solid rgba(139,123,255,0.3); border-radius:14px;
+    padding:22px 26px; display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:24px; gap:24px; flex-wrap:wrap;
+  }
+  .edge-summary-left{ display:flex; flex-direction:column; gap:4px; }
+  .edge-summary-label{ font-family:var(--font-mono); font-size:0.7em; text-transform:uppercase; letter-spacing:1px; color:var(--text-lo); font-weight:700; }
+  .edge-summary-value{ font-family:var(--font-display); font-size:2.4em; font-weight:700; color:var(--violet); letter-spacing:-0.5px; }
+  .edge-summary-caption{ font-family:var(--font-body); font-size:0.78em; color:var(--text-mid); max-width:420px; line-height:1.5; }
+  .edge-tier-badge{
+    font-family:var(--font-mono); font-weight:800; letter-spacing:0.6px; text-transform:uppercase;
+    padding:8px 18px; border-radius:10px; font-size:0.85em;
+  }
+  .edge-tier-badge.elite{ color:#0a0a0a; background:var(--green); }
+  .edge-tier-badge.strong{ color:#0a0a0a; background:var(--cyan); }
+  .edge-tier-badge.average{ color:#0a0a0a; background:var(--amber); }
+  .edge-tier-badge.soft{ color:var(--text-hi); background:var(--bg-raised); border:1px solid var(--border); }
+
+  .section-heading{
+    font-family:var(--font-display); font-size:1.05em; font-weight:700; color:var(--text-hi);
+    margin:6px 0 14px; display:flex; align-items:center; gap:10px;
+  }
+  .section-heading .section-sub{ font-family:var(--font-mono); font-size:0.6em; color:var(--text-lo); font-weight:500; letter-spacing:0.3px; }
+
+  .pitchmix-card{
+    background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+    padding:20px 24px; margin-bottom:26px;
+  }
+  .pitchmix-row{ display:grid; grid-template-columns:150px 1fr 70px; align-items:center; gap:16px; padding:9px 0; }
+  .pitchmix-row + .pitchmix-row{ border-top:1px solid var(--border-soft); }
+  .pitchmix-name{ font-family:var(--font-body); font-weight:600; font-size:0.88em; color:var(--text-hi); }
+  .pitchmix-track{ height:9px; background:var(--bg-raised); border-radius:5px; overflow:hidden; position:relative; }
+  .pitchmix-fill{ height:100%; border-radius:5px; background:linear-gradient(90deg, var(--violet), var(--cyan)); transition:width .5s var(--ease); }
+  .pitchmix-pct{ font-family:var(--font-mono); font-weight:700; font-size:0.85em; color:var(--text-hi); text-align:right; }
+  .pitchmix-velo{ font-family:var(--font-mono); font-size:0.68em; color:var(--text-lo); text-align:right; margin-top:2px; }
+  .pitchmix-empty{ font-family:var(--font-body); font-size:0.85em; color:var(--text-lo); padding:10px 2px; line-height:1.6; }
+
+  .lineup-table-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .lineup-table{ width:100%; border-collapse:collapse; }
+  .lineup-table thead th{
+    font-family:var(--font-mono); font-size:0.64em; text-transform:uppercase; letter-spacing:0.6px;
+    color:var(--text-lo); font-weight:700; text-align:right; padding:12px 14px; border-bottom:1px solid var(--border);
+    background:var(--bg-raised);
+  }
+  .lineup-table thead th:first-child, .lineup-table thead th:nth-child(2){ text-align:left; }
+  .lineup-table tbody td{
+    font-family:var(--font-mono); font-size:0.82em; color:var(--text-mid); text-align:right;
+    padding:11px 14px; border-bottom:1px solid var(--border-soft); vertical-align:middle;
+  }
+  .lineup-table tbody tr:last-child td{ border-bottom:none; }
+  .lineup-table tbody tr:hover{ background:var(--bg-raised); }
+  .lineup-table td.batter-cell{ text-align:left; }
+  .lineup-order{ color:var(--text-lo); font-size:0.78em; margin-right:8px; }
+  .batter-name{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:0.95em; }
+  .small-sample-tag{
+    font-family:var(--font-mono); font-size:0.56em; color:var(--red); background:rgba(232,73,95,0.1);
+    border:1px solid rgba(232,73,95,0.3); border-radius:4px; padding:1px 5px; margin-left:7px; letter-spacing:0.3px;
+  }
+  .credibility-cell{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+  .credibility-track{ width:56px; height:5px; background:var(--bg-raised); border-radius:3px; overflow:hidden; }
+  .credibility-fill{ height:100%; background:var(--text-lo); border-radius:3px; }
+  .blended-ops-cell{ font-weight:700; }
+  .blended-ops-cell.elite{ color:var(--green); }
+  .blended-ops-cell.strong{ color:var(--cyan); }
+  .blended-ops-cell.average{ color:var(--amber); }
+  .blended-ops-cell.soft{ color:var(--text-lo); }
+
+  .matchup-empty-state{
+    background:var(--bg-card); border:1px dashed var(--border); border-radius:12px;
+    padding:40px; text-align:center; color:var(--text-lo); font-family:var(--font-body); font-size:0.9em; line-height:1.6;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 860px){
+    .app-container{ flex-direction:column; }
+    .sidebar{ width:100%; flex-direction:row; overflow-x:auto; overflow-y:hidden; border-right:none; border-bottom:1px solid var(--border); }
+    .sidebar-label{ display:none; }
+    .list-item{ border-bottom:none; border-right:1px solid var(--border-soft); flex-shrink:0; min-width:200px; }
+    .list-item.active{ border-left:none; border-top:3px solid var(--amber); padding-left:20px; padding-top:10px; }
+    .main-content{ padding:20px; }
+    .chart-card{ padding:22px 20px 22px 50px; }
+    .grid-label{ left:-38px; width:30px; }
+    .drag-handle{ left:-44px; font-size:0.9em; }
+    .header-stats{ flex-direction:column; align-items:flex-start; gap:14px; }
+    .odds-box{ align-self:stretch; justify-content:space-between; gap:14px; }
+    .odds-item{ align-items:flex-start; }
+    .metric-card.wide{ grid-column:span 1; }
+    .pitchmix-row{ grid-template-columns:110px 1fr 60px; gap:10px; }
+    .lineup-table{ font-size:0.85em; }
+    .edge-summary-card{ flex-direction:column; align-items:flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ticker-track{ animation:none; }
+    .live-dot{ animation:none; }
+    .bar{ transition:background-color .01s, filter .01s; }
+    .value-flash{ animation:none; }
+    .compare-bar-fill{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="top-nav">
+    <div class="nav-brand">
+      <span class="brand-mark"></span>
+      trckr21
+      <span class="brand-sub">VIP QUANT</span>
+    </div>
+    <button class="main-tab" id="tab-pitchers" onclick="switchMainTab('pitchers')">Pitcher Props</button>
+    <button class="main-tab" id="tab-teams" onclick="switchMainTab('teams')">Team Matchups</button>
+    <button class="main-tab" id="tab-matchups" onclick="switchMainTab('matchups')">Matchup Analyzer<span class="tab-new">NEW</span></button>
+    <div class="nav-status">
+      <span class="live-dot" id="nav-live-dot"></span>
+      <span id="nav-live-label">CONNECTING</span>
+      <span id="nav-clock">--:--:--</span>
+      <button class="refresh-btn" id="refresh-btn" onclick="loadData()">
+        <span class="spin">&#8635;</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <div class="ticker-wrap">
+    <div class="ticker-track" id="ticker-track"></div>
+  </div>
+
+  <div class="app-container" id="app-container" style="display:none;">
+    <div class="sidebar">
+      <div class="sidebar-label" id="sidebar-label">SLATE</div>
+      <div id="sidebar-list" style="display:contents;"></div>
+    </div>
+
+    <div class="main-content">
+
+      <!-- ================= PITCHER / TEAM PROPS VIEW ================= -->
+      <div id="view-props">
+        <div class="header-stats">
+          <div>
+            <div class="player-title" id="ui-entity-name">Select Entity</div>
+            <div class="player-context" id="ui-entity-context">—</div>
+          </div>
+
+          <div class="odds-box">
+            <div class="odds-item">
+              <span class="odds-label">L10 Hit Rate</span>
+              <span class="odds-val" id="ui-hit-rate">--</span>
+            </div>
+            <div class="odds-item">
+              <span class="odds-label" id="ui-dist-label">Fair Odds</span>
+              <span class="odds-val" id="ui-fair-odds">--</span>
+            </div>
+            <div class="odds-item">
+              <span class="odds-label">Edge vs -110</span>
+              <span class="odds-val" id="ui-edge">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="market-toggles" id="market-toggles"></div>
+
+        <div class="chart-card">
+          <div class="chart-area" id="chart-area"></div>
+          <div class="match-info-box" id="match-info-box">
+            <div class="mi-title" id="mi-title">--</div>
+            <div class="mi-score" id="mi-score">--</div>
+            <div class="mi-text" id="mi-text">--</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid" id="metrics-grid"></div>
+
+        <div class="status-bar">
+          <span id="model-status-line">MODEL &middot; Poisson / NB2 dynamic gate &middot; L10 sample</span>
+          <span class="disclaimer">Informational only &middot; not betting advice</span>
+        </div>
+      </div>
+
+      <!-- ================= MATCHUP ANALYZER VIEW (NEW) ================= -->
+      <div id="view-matchup" class="hidden">
+        <div class="matchup-header">
+          <div>
+            <div class="matchup-title" id="mx-title">Select a Matchup <span class="matchup-vs"></span></div>
+            <div class="matchup-context" id="mx-context">—</div>
+          </div>
+          <div class="lineup-status" id="mx-lineup-status">
+            <span class="dot"></span><span id="mx-lineup-status-text">—</span>
+          </div>
+        </div>
+
+        <div class="edge-summary-card">
+          <div class="edge-summary-left">
+            <span class="edge-summary-label">Lineup Threat Index &middot; Shrunk OPS</span>
+            <span class="edge-summary-value" id="mx-edge-value">.000</span>
+            <span class="edge-summary-caption">Each batter's career OPS vs this pitcher is blended with his season OPS, weighted by career plate-appearance sample size — so a hot 2-for-3 doesn't outrank a full season of data. Higher = tougher matchup for the pitcher.</span>
+          </div>
+          <div class="edge-tier-badge" id="mx-edge-tier">—</div>
+        </div>
+
+        <div class="section-heading">Pitch Mix <span class="section-sub" id="mx-pitchmix-sub">Season usage &amp; velocity &middot; MLB Stats API</span></div>
+        <div class="pitchmix-card" id="mx-pitchmix"></div>
+
+        <div class="section-heading">Opposing Lineup — Batter vs Pitcher <span class="section-sub" id="mx-lineup-sub">Career H2H, shrunk toward season form</span></div>
+        <div class="lineup-table-card">
+          <table class="lineup-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Batter</th>
+                <th>H2H PA</th>
+                <th>H2H AVG</th>
+                <th>H2H OPS</th>
+                <th>Season OPS</th>
+                <th>Credibility</th>
+                <th>Blended OPS</th>
+              </tr>
+            </thead>
+            <tbody id="mx-lineup-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="state-overlay" id="state-overlay">
+    <div class="state-card">
+      <div class="state-ring"></div>
+      <div class="state-title" id="state-title">Connecting to the model</div>
+      <div class="state-body" id="state-body">Pulling today's slate and last-10 game logs from the MLB Stats API…</div>
+    </div>
+  </div>
+
+<script>
+  // ================= CONFIG =================
+  const DATA_URL = 'projections.json';
+  const MARKET_IMPLIED_PROB = 110 / 210;   // p(-110) both sides
+  const MARKET_B = 100 / 110;              // decimal payout fraction, used in Kelly
+
+  // ================= CALIBRATION ENGINE =================
+  // Mirrors the backend exactly: dynamic Poisson / Negative-Binomial (NB2)
+  // gate on the Variance-to-Mean Ratio, unbiased (n-1) sample variance,
+  // log-gamma NB2 PMF for numerical stability, with a Poisson safety-net
+  // fallback if the NB2 parameters go degenerate. Recomputed live as the
+  // threshold line is dragged.
+
+  function sampleMean(arr){ return arr.reduce((a,b)=>a+b,0) / arr.length; }
+
+  function sampleVariance(arr){
+    const n = arr.length;
+    if(n < 2) return 0;
+    const mu = sampleMean(arr);
+    return arr.reduce((a,b)=>a + Math.pow(b-mu,2), 0) / (n - 1);
+  }
+
+  function logGamma(x){
+    const g = 7;
+    const c = [
+      0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+      771.32342877765313, -176.61502916214059, 12.507343278686905,
+      -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+    ];
+    if(x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+    x -= 1;
+    let a = c[0];
+    const t = x + g + 0.5;
+    for(let i=1; i<g+2; i++) a += c[i] / (x + i);
+    return 0.5*Math.log(2*Math.PI) + (x+0.5)*Math.log(t) - t + Math.log(a);
+  }
+
+  function factorial(n){ if(n===0||n===1) return 1; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+
+  function poissonPmf(lam, k){
+    if(lam <= 0) return k === 0 ? 1 : 0;
+    return Math.exp(-lam) * Math.pow(lam, k) / factorial(k);
+  }
+
+  function poissonOverProb(lam, line){
+    const targetInt = Math.ceil(line);
+    let cumulative = 0;
+    for(let i=0;i<targetInt;i++) cumulative += poissonPmf(lam, i);
+    return Math.min(1, Math.max(0, 1 - cumulative));
+  }
+
+  function nbinomPmf(k, r, p){
+    const logCoef = logGamma(r+k) - logGamma(r) - logGamma(k+1);
+    const logPmf = logCoef + r*Math.log(p) + k*Math.log(1-p);
+    return Math.exp(logPmf);
+  }
+
+  function nbinomOverProb(mu, variance, line){
+    if(variance <= mu) throw new Error('NB2 requires variance > mean');
+    const p = mu / variance;
+    const r = (mu*mu) / (variance - mu);
+    if(!(p>0 && p<1) || !(r>0) || !isFinite(r)) throw new Error('degenerate NB2 params');
+    const targetInt = Math.ceil(line);
+    let cumulative = 0;
+    for(let i=0;i<targetInt;i++) cumulative += nbinomPmf(i, r, p);
+    return Math.min(1, Math.max(0, 1 - cumulative));
+  }
+
+  function probToAmericanOdds(prob){
+    if(prob<=0||prob>=1) return "N/A";
+    if(prob>0.50) return `-${Math.round((prob/(1-prob))*100)}`;
+    return `+${Math.round(((1-prob)/prob)*100)}`;
+  }
+
+  function confidenceTier(n){ return n>=10 ? 'high' : (n>=6 ? 'medium' : 'low'); }
+  function stdDev(arr){ return Math.sqrt(sampleVariance(arr)); }
+
+  function currentStreak(arr,line){
+    if(arr.length===0) return {count:0,dir:null};
+    const dirOf = v => v>line ? 'O' : 'U';
+    const lastDir = dirOf(arr[arr.length-1]);
+    let count=0;
+    for(let i=arr.length-1;i>=0;i--){ if(dirOf(arr[i])===lastDir) count++; else break; }
+    return {count, dir:lastDir};
+  }
+
+  function calibrate(history, line){
+    const n = history.length;
+    const mu = sampleMean(history);
+    const variance = sampleVariance(history);
+    const vmr = mu > 0 ? variance/mu : 0;
+    let overProb, distribution, fallback=false;
+    if(variance > mu && mu > 0){
+      try{ overProb = nbinomOverProb(mu, variance, line); distribution='negative_binomial'; }
+      catch(e){ overProb = poissonOverProb(mu, line); distribution='poisson'; fallback=true; }
+    } else {
+      overProb = poissonOverProb(mu, line); distribution='poisson';
+    }
+    const edgePct = (overProb - MARKET_IMPLIED_PROB) * 100;
+    const edge = overProb - MARKET_IMPLIED_PROB;
+    let kellyPct = 0;
+    if(edge > 0){
+      const q = 1 - overProb;
+      const fStar = (MARKET_B*overProb - q) / MARKET_B;
+      kellyPct = Math.max(0, fStar) * 100;
+    }
+    return {
+      distribution, mu, variance, vmr, overProb, fallback,
+      fairOdds: probToAmericanOdds(overProb),
+      edgePct, kellyPct,
+      confidence: confidenceTier(n), sampleSize: n
+    };
+  }
+
+  // ================= STATE =================
+  let db = { pitchers: [], teams: [], matchups: [] };
+  let mainTab = 'pitchers';
+  let currentEntity = null;      // pitcher or team object
+  let currentMarketKey = null;
+  let currentLine = null;
+  let currentMatchup = null;
+  let dragState = null;
+
+  // ================= LOAD =================
+  async function loadData(){
+    const btn = document.getElementById('refresh-btn');
+    btn.classList.add('loading');
+    setLive(false, 'SYNCING');
+    try{
+      const res = await fetch(DATA_URL, {cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      db = { pitchers: json.pitchers||[], teams: json.teams||[], matchups: json.matchups||[] };
+      onDataLoaded();
+      setLive(true, 'LIVE');
+    } catch(e){
+      showState('error', 'Could not load projections.json', e.message + ' — make sure generate_projections.py has been run and projections.json sits next to this file.');
+      setLive(false, 'OFFLINE');
+    } finally {
+      btn.classList.remove('loading');
+    }
+  }
+
+  function setLive(isLive, label){
+    document.getElementById('nav-live-label').textContent = label;
+    document.getElementById('nav-live-dot').classList.toggle('stale', !isLive);
+  }
+
+  function showState(kind, title, body){
+    document.getElementById('app-container').style.display = 'none';
+    const overlay = document.getElementById('state-overlay');
+    overlay.style.display = 'flex';
+    document.getElementById('state-title').textContent = title;
+    document.getElementById('state-body').textContent = body;
+  }
+
+  function onDataLoaded(){
+    const hasAny = db.pitchers.length || db.teams.length || db.matchups.length;
+    if(!hasAny){
+      showState('empty', 'No games on the slate', 'The MLB Stats API returned zero games for today\'s date, or probable pitchers haven\'t been announced yet. Try refreshing closer to game time.');
+      return;
+    }
+    document.getElementById('state-overlay').style.display = 'none';
+    document.getElementById('app-container').style.display = 'flex';
+
+    updateTabAvailability();
+    renderTicker();
+
+    if(mainTab === 'pitchers' && !db.pitchers.length) mainTab = db.teams.length ? 'teams' : 'matchups';
+    switchMainTab(mainTab, true);
+  }
+
+  function updateTabAvailability(){
+    document.getElementById('tab-pitchers').classList.toggle('disabled', db.pitchers.length===0);
+    document.getElementById('tab-teams').classList.toggle('disabled', db.teams.length===0);
+    document.getElementById('tab-matchups').classList.toggle('disabled', db.matchups.length===0);
+  }
+
+  // ================= TAB SWITCHING =================
+  function switchMainTab(tab, force){
+    if(!force && mainTab === tab) return;
+    mainTab = tab;
+    ['tab-pitchers','tab-teams','tab-matchups'].forEach(id => document.getElementById(id).classList.remove('active','tab-matchups-active'));
+    const btn = document.getElementById('tab-' + tab);
+    btn.classList.add('active');
+    if(tab === 'matchups') btn.classList.add('tab-matchups-active');
+
+    document.getElementById('view-props').classList.toggle('hidden', tab === 'matchups');
+    document.getElementById('view-matchup').classList.toggle('hidden', tab !== 'matchups');
+
+    document.getElementById('sidebar-label').textContent =
+      tab === 'pitchers' ? 'PITCHER PROPS' : tab === 'teams' ? 'TEAM MATCHUPS' : 'MATCHUP ANALYZER';
+
+    renderSidebar();
+
+    if(tab === 'matchups'){
+      if(db.matchups.length) selectMatchup(db.matchups[0].id);
+    } else {
+      const list = tab === 'pitchers' ? db.pitchers : db.teams;
+      if(list.length) selectEntity(list[0].id);
+    }
+  }
+
+  // ================= SIDEBAR =================
+  function renderSidebar(){
+    const container = document.getElementById('sidebar-list');
+    container.innerHTML = '';
+
+    if(mainTab === 'matchups'){
+      db.matchups.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'list-item' + (currentMatchup && currentMatchup.id===m.id ? ' active matchup-active' : '');
+        div.tabIndex = 0;
+        div.onclick = () => selectMatchup(m.id);
+        div.innerHTML = `
+          <span class="trend-dot ${m.lineupEdgeTier==='elite'||m.lineupEdgeTier==='strong' ? 'hot' : m.lineupEdgeTier==='soft' ? 'cold' : 'neutral'}"></span>
+          <div>
+            <div class="entity-name">${m.pitcherName}</div>
+            <div class="entity-sub">${m.team} &middot; <span class="opp">${m.matchup}</span></div>
+            <span class="entity-flag ${m.lineupConfirmed ? 'confirmed':'projected'}">${m.lineupConfirmed ? 'LINEUP CONFIRMED':'PROJECTED ROSTER'}</span>
+          </div>`;
+        container.appendChild(div);
+      });
+      if(!db.matchups.length){
+        container.innerHTML = '<div class="matchup-empty-state" style="margin:16px;">No matchups yet — waiting on probable pitchers.</div>';
+      }
+      return;
+    }
+
+    const list = mainTab === 'pitchers' ? db.pitchers : db.teams;
+    list.forEach(e => {
+      const primaryMarket = Object.values(e.markets)[0];
+      const m = primaryMarket.model;
+      const streak = currentStreak(primaryMarket.history, primaryMarket.defaultLine);
+      const dotClass = streak.count>=2 ? (streak.dir==='O' ? 'hot':'cold') : 'neutral';
+      const div = document.createElement('div');
+      div.className = 'list-item' + (currentEntity && currentEntity.id===e.id ? ' active' : '');
+      div.tabIndex = 0;
+      div.onclick = () => selectEntity(e.id);
+      div.innerHTML = `
+        <span class="trend-dot ${dotClass}"></span>
+        <div>
+          <div class="entity-name">${e.name}</div>
+          <div class="entity-sub">${e.sub}</div>
+        </div>`;
+      container.appendChild(div);
+    });
+  }
+
+  // ================= PITCHER/TEAM SELECTION =================
+  function selectEntity(id){
+    const list = mainTab === 'pitchers' ? db.pitchers : db.teams;
+    currentEntity = list.find(e => e.id === id);
+    if(!currentEntity) return;
+    const keys = Object.keys(currentEntity.markets);
+    currentMarketKey = keys[0];
+    currentLine = currentEntity.markets[currentMarketKey].defaultLine;
+    renderSidebar();
+    renderMarketToggles();
+    renderPropsView();
+  }
+
+  function renderMarketToggles(){
+    const wrap = document.getElementById('market-toggles');
+    wrap.innerHTML = '';
+    Object.entries(currentEntity.markets).forEach(([key, market]) => {
+      const btn = document.createElement('button');
+      btn.className = 'market-btn' + (key===currentMarketKey ? ' active' : '');
+      btn.textContent = market.label;
+      btn.onclick = () => {
+        currentMarketKey = key;
+        currentLine = currentEntity.markets[key].defaultLine;
+        renderMarketToggles();
+        renderPropsView();
+      };
+      wrap.appendChild(btn);
+    });
+  }
+
+  function renderPropsView(){
+    const market = currentEntity.markets[currentMarketKey];
+    document.getElementById('ui-entity-name').textContent = currentEntity.name;
+    document.getElementById('ui-entity-context').innerHTML =
+      `${market.label} &middot; L${market.history.length} sample &middot; <span class="opp">${currentEntity.matchup}</span>`;
+
+    renderChart(market);
+    renderHeaderStats(market, currentLine);
+    renderMetrics(market, currentLine);
+  }
+
+  function renderHeaderStats(market, line){
+    const overCount = market.history.filter(v => v > line).length;
+    const hitRate = market.history.length ? Math.round((overCount/market.history.length)*100) : 0;
+    document.getElementById('ui-hit-rate').textContent = hitRate + '%';
+    document.getElementById('ui-hit-rate').className = 'odds-val value-flash ' + (hitRate>=50?'val-green':'val-red');
+
+    const calc = calibrate(market.history, line);
+    document.getElementById('ui-dist-label').textContent = calc.distribution==='negative_binomial' ? 'NB2 Fair Odds' : 'Poisson Fair Odds';
+    const fairEl = document.getElementById('ui-fair-odds');
+    fairEl.textContent = calc.fairOdds;
+    fairEl.className = 'odds-val value-flash val-cyan';
+
+    const edgeEl = document.getElementById('ui-edge');
+    edgeEl.textContent = (calc.edgePct>=0?'+':'') + calc.edgePct.toFixed(1) + '%';
+    edgeEl.className = 'odds-val value-flash ' + (calc.edgePct>=0 ? 'val-green' : 'val-red');
+
+    document.getElementById('model-status-line').innerHTML =
+      `MODEL &middot; ${calc.distribution==='negative_binomial' ? 'Negative Binomial (NB2)' : 'Poisson'}${calc.fallback ? ' (fallback)':''} &middot; L${calc.sampleSize} sample` +
+      `<span class="dist-badge ${calc.distribution==='negative_binomial'?'nb2':'poi'}">${calc.distribution==='negative_binomial'?'NB2':'POI'}</span>` +
+      `<span class="conf-badge ${calc.confidence}">${calc.confidence}</span>`;
+  }
+
+  function renderMetrics(market, line){
+    const calc = calibrate(market.history, line);
+    const grid = document.getElementById('metrics-grid');
+    const sd = stdDev(market.history);
+    const streak = currentStreak(market.history, line);
+
+    grid.innerHTML = `
+      <div class="metric-card">
+        <span class="metric-label">Mean (&mu;)</span>
+        <span class="metric-value">${calc.mu.toFixed(2)}</span>
+        <span class="metric-caption">L${calc.sampleSize} average</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Std Dev (&sigma;)</span>
+        <span class="metric-value">${sd.toFixed(2)}</span>
+        <span class="metric-caption">Variance: ${calc.variance.toFixed(2)}</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">VMR</span>
+        <span class="metric-value">${calc.vmr.toFixed(2)}</span>
+        <span class="metric-caption">${calc.vmr>1 ? 'Over-dispersed &rarr; NB2' : 'Poisson-shaped'}</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Current Streak</span>
+        <span class="metric-value">${streak.count || '—'}${streak.dir ? ' ' + streak.dir : ''}</span>
+        <span class="metric-caption">consecutive results</span>
+      </div>
+      <div class="metric-card wide">
+        <span class="metric-label">Kelly Stake (at -110)</span>
+        <span class="metric-value">${calc.kellyPct.toFixed(2)}%</span>
+        <div class="compare-row">
+          <span class="compare-label">Model</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill model" style="width:${(calc.overProb*100).toFixed(1)}%"></div></div>
+          <span class="compare-pct">${(calc.overProb*100).toFixed(1)}%</span>
+        </div>
+        <div class="compare-row">
+          <span class="compare-label">Market</span>
+          <div class="compare-bar-track"><div class="compare-bar-fill market" style="width:${(MARKET_IMPLIED_PROB*100).toFixed(1)}%"></div></div>
+          <span class="compare-pct">${(MARKET_IMPLIED_PROB*100).toFixed(1)}%</span>
+        </div>
+      </div>`;
+  }
+
+  // ================= CHART (with draggable line) =================
+  function renderChart(market){
+    const area = document.getElementById('chart-area');
+    area.innerHTML = '';
+    const history = market.history;
+    const max = market.max;
+    const labels = currentEntity.labels || [];
+    const details = currentEntity.matchDetails || [];
+
+    for(let g=0; g<=4; g++){
+      const val = Math.round((max/4)*g);
+      const pct = (val/max)*100;
+      const line = document.createElement('div');
+      line.className = 'grid-line';
+      line.style.bottom = pct + '%';
+      const label = document.createElement('span');
+      label.className = 'grid-label';
+      label.textContent = val;
+      line.appendChild(label);
+      area.appendChild(line);
+    }
+
+    const avgVal = sampleMean(history);
+    const avgLine = document.createElement('div');
+    avgLine.className = 'avg-line';
+    avgLine.style.bottom = Math.min(100,(avgVal/max)*100) + '%';
+    avgLine.innerHTML = `<span class="avg-chip">AVG ${avgVal.toFixed(1)}</span>`;
+    area.appendChild(avgLine);
+
+    history.forEach((val, i) => {
+      const group = document.createElement('div');
+      group.className = 'bar-group';
+      const isOver = val > currentLine;
+      const barHeight = Math.min(100, (val/max)*100);
+      group.innerHTML = `
+        <div class="bar ${isOver?'over':'under'}" style="height:${barHeight}%">${val}</div>
+        <span class="x-label">${labels[i] || ''}</span>`;
+      group.onmouseenter = () => showMatchInfo(details[i], isOver);
+      group.onmouseleave = () => hideMatchInfo();
+      area.appendChild(group);
+    });
+
+    const threshold = document.createElement('div');
+    threshold.className = 'threshold-line';
+    threshold.id = 'threshold-line';
+    threshold.style.bottom = Math.min(100,(currentLine/max)*100) + '%';
+    threshold.innerHTML = `
+      <span class="drag-handle" id="drag-handle">${currentLine}</span>
+      <span class="line-chip">LINE</span>`;
+    area.appendChild(threshold);
+
+    const handle = document.getElementById('drag-handle');
+    handle.onmousedown = (e) => startDrag(e, area, market);
+    handle.ontouchstart = (e) => startDrag(e.touches[0], area, market);
+  }
+
+  function showMatchInfo(detail, isOver){
+    const box = document.getElementById('match-info-box');
+    if(!detail){ box.classList.remove('active'); return; }
+    document.getElementById('mi-title').textContent = 'GAME LOG';
+    const scoreEl = document.getElementById('mi-score');
+    scoreEl.textContent = detail.score === 'W' ? 'WIN' : 'LOSS';
+    scoreEl.className = 'mi-score' + (detail.score==='W' ? '' : ' loss');
+    document.getElementById('mi-text').textContent = detail.text;
+    box.classList.add('active');
+  }
+  function hideMatchInfo(){ document.getElementById('match-info-box').classList.remove('active'); }
+
+  function startDrag(e, area, market){
+    dragState = { area, market, startY: e.clientY, rect: area.getBoundingClientRect() };
+    document.onmousemove = dragMove;
+    document.onmouseup = endDrag;
+    document.ontouchmove = (ev) => dragMove(ev.touches[0]);
+    document.ontouchend = endDrag;
+  }
+
+  function dragMove(e){
+    if(!dragState) return;
+    const rect = dragState.rect;
+    let pct = 1 - ((e.clientY - rect.top) / rect.height);
+    pct = Math.min(1, Math.max(0, pct));
+    let rawVal = pct * dragState.market.max;
+    let snapped = Math.floor(rawVal) + 0.5;
+    if(snapped < 0.5) snapped = 0.5;
+    currentLine = snapped;
+
+    const threshold = document.getElementById('threshold-line');
+    threshold.style.bottom = Math.min(100,(currentLine/dragState.market.max)*100) + '%';
+    document.getElementById('drag-handle').textContent = currentLine;
+
+    document.querySelectorAll('#chart-area .bar').forEach((barEl, i) => {
+      const val = dragState.market.history[i];
+      barEl.classList.toggle('over', val > currentLine);
+      barEl.classList.toggle('under', val <= currentLine);
+    });
+
+    renderHeaderStats(dragState.market, currentLine);
+    renderMetrics(dragState.market, currentLine);
+  }
+
+  function endDrag(){
+    dragState = null;
+    document.onmousemove = null;
+    document.onmouseup = null;
+    document.ontouchmove = null;
+    document.ontouchend = null;
+  }
+
+  // ================= MATCHUP ANALYZER RENDER (NEW) =================
+  function selectMatchup(id){
+    currentMatchup = db.matchups.find(m => m.id === id);
+    if(!currentMatchup) return;
+    renderSidebar();
+    renderMatchupView();
+  }
+
+  function renderMatchupView(){
+    const m = currentMatchup;
+
+    document.getElementById('mx-title').innerHTML =
+      `${m.pitcherName} <span class="matchup-vs">${m.matchup}</span>`;
+    document.getElementById('mx-context').innerHTML =
+      `${m.team} &middot; ${m.pitcherName} vs the ${m.opponent} lineup &middot; ${m.totalH2hPa} total career H2H plate appearances on record`;
+
+    const statusEl = document.getElementById('mx-lineup-status');
+    statusEl.className = 'lineup-status ' + (m.lineupConfirmed ? 'confirmed' : 'projected');
+    document.getElementById('mx-lineup-status-text').textContent =
+      m.lineupConfirmed ? 'Lineup Confirmed' : 'Projected Roster';
+
+    document.getElementById('mx-edge-value').textContent = m.lineupEdgeOps.toFixed(3);
+    const tierEl = document.getElementById('mx-edge-tier');
+    tierEl.className = 'edge-tier-badge ' + m.lineupEdgeTier;
+    tierEl.textContent = m.lineupEdgeTier;
+
+    renderPitchMix(m.pitchMix);
+    renderLineupTable(m.batters);
+  }
+
+  function renderPitchMix(pitches){
+    const card = document.getElementById('mx-pitchmix');
+    if(!pitches || !pitches.length){
+      card.innerHTML = `<div class="pitchmix-empty">No pitch-usage data returned by the MLB Stats API for this pitcher yet this season (common very early in the year, or for a fresh call-up). Everything else on this page is unaffected.</div>`;
+      return;
+    }
+    const maxUsage = Math.max(...pitches.map(p => p.usagePct), 1);
+    card.innerHTML = pitches.map(p => `
+      <div class="pitchmix-row">
+        <span class="pitchmix-name">${p.type}</span>
+        <div class="pitchmix-track"><div class="pitchmix-fill" style="width:${(p.usagePct/maxUsage*100).toFixed(1)}%"></div></div>
+        <div>
+          <div class="pitchmix-pct">${p.usagePct.toFixed(1)}%</div>
+          <div class="pitchmix-velo">${p.avgVelo ? p.avgVelo.toFixed(1)+' mph' : '—'}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderLineupTable(batters){
+    const body = document.getElementById('mx-lineup-body');
+    if(!batters || !batters.length){
+      body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`;
+      return;
+    }
+    body.innerHTML = batters.map((b, i) => {
+      const h2h = b.h2h || {pa:0, avg:'.000', ops:0};
+      const small = h2h.pa < 10;
+      return `
+        <tr>
+          <td class="batter-cell"><span class="lineup-order">${i+1}</span></td>
+          <td class="batter-cell">
+            <span class="batter-name">${b.name}</span>
+            ${small ? '<span class="small-sample-tag">SMALL SAMPLE</span>' : ''}
+          </td>
+          <td>${h2h.pa}</td>
+          <td>${h2h.avg}</td>
+          <td>${h2h.pa ? h2h.ops.toFixed(3) : '—'}</td>
+          <td>${b.seasonOps.toFixed(3)}</td>
+          <td>
+            <div class="credibility-cell">
+              <div class="credibility-track"><div class="credibility-fill" style="width:${(b.credibility*100).toFixed(0)}%"></div></div>
+              <span>${(b.credibility*100).toFixed(0)}%</span>
+            </div>
+          </td>
+          <td class="blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  // ================= TICKER =================
+  function renderTicker(){
+    const rows = [];
+    ['pitchers','teams'].forEach(bucket => {
+      db[bucket].forEach(entity => {
+        Object.values(entity.markets).forEach(market => {
+          const calc = calibrate(market.history, market.defaultLine);
+          rows.push({ name: entity.name, market: market.label, line: market.defaultLine, edge: calc.edgePct, odds: calc.fairOdds });
+        });
+      });
+    });
+    rows.sort((a,b) => Math.abs(b.edge) - Math.abs(a.edge));
+    const top = rows.slice(0, 18);
+    const track = document.getElementById('ticker-track');
+    if(!top.length){ track.innerHTML = ''; return; }
+    const itemsHtml = top.map(r => `
+      <span class="ticker-item">
+        <span class="tk-name">${r.name}</span>
+        <span class="tk-market">${r.market} ${r.line}</span>
+        <span class="tk-rate">${r.odds}</span>
+        <span class="tk-edge ${r.edge>=0?'up':'down'}">${r.edge>=0?'+':''}${r.edge.toFixed(1)}%</span>
+      </span>`).join('');
+    track.innerHTML = itemsHtml + itemsHtml; // duplicated for seamless scroll loop
+  }
+
+  // ================= CLOCK =================
+  function tickClock(){
+    const now = new Date();
+    document.getElementById('nav-clock').textContent = now.toLocaleTimeString('en-US', { hour12:false });
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  // ================= INIT =================
+  loadData();
+</script>
+</body>
+</html>

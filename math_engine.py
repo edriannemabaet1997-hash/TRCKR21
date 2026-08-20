@@ -1,0 +1,428 @@
+from __future__ import annotations
+
+import math
+from typing import Callable
+
+LEAGUE_AVG_XWOBA = 0.320
+LEAGUE_AVG_XBA = 0.250
+LEAGUE_AVG_BARREL = 8.0
+LEAGUE_AVG_HARDHIT = 40.0
+LEAGUE_AVG_WHIFF = 25.0
+
+LEAGUE_AVG_BA = 0.245
+LEAGUE_AVG_RUN_RATE = 0.122
+LEAGUE_AVG_HR_RATE = 0.034
+LEAGUE_AVG_RBI_RATE = 0.108
+LEAGUE_AVG_OBP = 0.315
+LEAGUE_AVG_SLG = 0.410
+LEAGUE_AVG_ERA = 4.20
+LEAGUE_AVG_XERA = 4.15
+
+K_HITS = 60
+K_RUNS = 100
+K_RBI = 100
+K_HR = 300
+
+MIN_PROB = 0.02
+MAX_PROB = 0.95
+HOME_FIELD_ADV_RUNS = 0.25
+
+
+def clamp(value: float, lower: float, upper: float) -> float:
+    return max(lower, min(upper, value))
+
+
+def safe_float(value, default: float = 0.0) -> float:
+    try:
+        if value in (None, "", "-", ".---"):
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def american_to_prob(odds: int | float | None) -> float | None:
+    if odds is None:
+        return None
+
+    value = float(odds)
+    if value == 0:
+        return None
+
+    if value > 0:
+        return 100.0 / (value + 100.0)
+
+    return abs(value) / (abs(value) + 100.0)
+
+
+def prob_to_american(probability: float) -> int:
+    probability = clamp(probability, 0.0001, 0.9999)
+
+    if probability >= 0.5:
+        return -round((probability / (1.0 - probability)) * 100.0)
+
+    return round(((1.0 - probability) / probability) * 100.0)
+
+
+def remove_vig(
+    odds_a: int | None,
+    odds_b: int | None,
+) -> tuple[float | None, float | None]:
+    pa = american_to_prob(odds_a)
+    pb = american_to_prob(odds_b)
+
+    if pa is None or pb is None:
+        return None, None
+
+    total = pa + pb
+    if total <= 0:
+        return None, None
+
+    return pa / total, pb / total
+
+
+def shrink_rate(
+    observed: float,
+    sample_size: int,
+    league_avg: float,
+    k_factor: int,
+) -> float:
+    if sample_size <= 0:
+        return league_avg
+
+    return (
+        observed * sample_size + league_avg * k_factor
+    ) / (sample_size + k_factor)
+
+
+def projected_pa_from_order(order: int | None) -> float:
+    mapping = {
+        1: 4.6,
+        2: 4.5,
+        3: 4.4,
+        4: 4.3,
+        5: 4.2,
+        6: 4.1,
+        7: 4.0,
+        8: 4.0,
+        9: 4.0,
+    }
+    return mapping.get(order, 3.8)
+
+
+def analyze_pitcher_split(
+    pitcher_hand: str,
+    avg_vs_left: float,
+    avg_vs_right: float,
+) -> str:
+    if pitcher_hand == "R":
+        same_side_avg = avg_vs_right
+        opposite_side_avg = avg_vs_left
+    else:
+        same_side_avg = avg_vs_left
+        opposite_side_avg = avg_vs_right
+
+    difference = same_side_avg - opposite_side_avg
+
+    if abs(difference) < 0.015:
+        return "NEUTRAL"
+    if difference > 0.02:
+        return "REVERSE"
+    return "NORMAL"
+
+
+def apply_split_effect(
+    base_probability: float,
+    batter_hand: str,
+    pitcher_hand: str,
+    pitcher_type: str,
+) -> float:
+    same_side = batter_hand == pitcher_hand
+    modifier = 1.0
+
+    if pitcher_type == "NORMAL":
+        modifier = 0.93 if same_side else 1.07
+    elif pitcher_type == "REVERSE":
+        modifier = 1.07 if same_side else 0.93
+
+    return base_probability * modifier
+
+
+def compute_event_probability(
+    base_rate: float,
+    projected_pa: float,
+    starter_quality: float,
+    bullpen_quality: float,
+    park_factor: float,
+    platoon_mult: float = 1.0,
+    iso_mult: float = 1.0,
+) -> float:
+    pa_starter = min(2.5, projected_pa)
+    pa_bullpen = max(0.0, projected_pa - 2.5)
+
+    rate_starter = (
+        base_rate
+        * starter_quality
+        * park_factor
+        * platoon_mult
+        * iso_mult
+    )
+    rate_bullpen = (
+        base_rate
+        * bullpen_quality
+        * park_factor
+        * platoon_mult
+        * iso_mult
+    )
+
+    rate_starter = clamp(rate_starter, 0.0, 1.0)
+    rate_bullpen = clamp(rate_bullpen, 0.0, 1.0)
+
+    prob_no_starter = math.pow(1.0 - rate_starter, pa_starter)
+    prob_no_bullpen = math.pow(1.0 - rate_bullpen, pa_bullpen)
+
+    final_prob = 1.0 - (prob_no_starter * prob_no_bullpen)
+    return round(clamp(final_prob, MIN_PROB, MAX_PROB), 4)
+
+
+def process_hit_prob(
+    rate: float,
+    pa: float,
+    pitcher_era: float,
+    bullpen_era: float,
+    park: float,
+    platoon: float,
+    iso: float,
+) -> float:
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
+    return compute_event_probability(
+        rate,
+        pa,
+        starter_mult,
+        bullpen_mult,
+        park,
+        platoon,
+        iso,
+    )
+
+
+def process_run_prob(
+    rate: float,
+    pa: float,
+    pitcher_era: float,
+    bullpen_era: float,
+    park: float,
+    platoon: float,
+    iso: float,
+    team_obp: float,
+) -> float:
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0) * 1.2
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0) * 1.2
+    team_factor = clamp(team_obp / 0.315, 0.90, 1.10)
+
+    return compute_event_probability(
+        rate * team_factor,
+        pa,
+        starter_mult,
+        bullpen_mult,
+        park,
+        platoon,
+        iso,
+    )
+
+
+def process_hr_prob(
+    rate: float,
+    pa: float,
+    pitcher_era: float,
+    bullpen_era: float,
+    park: float,
+    platoon: float,
+    iso: float,
+) -> float:
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0) * 1.5
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0) * 1.5
+
+    return compute_event_probability(
+        rate,
+        pa,
+        starter_mult,
+        bullpen_mult,
+        park * 1.1,
+        platoon,
+        iso * 1.3,
+    )
+
+
+def process_rbi_prob(
+    rate: float,
+    pa: float,
+    pitcher_era: float,
+    bullpen_era: float,
+    park: float,
+    platoon: float,
+    iso: float,
+    team_obp: float,
+) -> float:
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0) * 1.3
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0) * 1.3
+    lineup_factor = clamp(team_obp / 0.315, 0.90, 1.15)
+
+    return compute_event_probability(
+        rate * lineup_factor,
+        pa,
+        starter_mult,
+        bullpen_mult,
+        park,
+        platoon,
+        iso * 1.1,
+    )
+
+
+def calibrate_with_statcast_full(
+    original_prob: float,
+    xwoba: float,
+    xba: float,
+    barrel: float,
+    hard_hit: float,
+    whiff: float,
+) -> dict:
+    dev_xwoba = xwoba - LEAGUE_AVG_XWOBA
+    mod_xwoba = clamp(dev_xwoba * 0.35, -0.03, 0.03)
+
+    dev_xba = xba - LEAGUE_AVG_XBA
+    mod_xba = clamp(dev_xba * 0.40, -0.03, 0.03)
+
+    dev_barrel = barrel - LEAGUE_AVG_BARREL
+    mod_barrel = clamp(dev_barrel * 0.0015, -0.02, 0.02)
+
+    dev_hardhit = hard_hit - LEAGUE_AVG_HARDHIT
+    mod_hardhit = clamp(dev_hardhit * 0.0010, -0.02, 0.02)
+
+    dev_whiff = whiff - LEAGUE_AVG_WHIFF
+    mod_whiff = clamp(-(dev_whiff * 0.0015), -0.02, 0.02)
+
+    total_adjustment = clamp(
+        mod_xwoba
+        + mod_xba
+        + mod_barrel
+        + mod_hardhit
+        + mod_whiff,
+        -0.10,
+        0.10,
+    )
+
+    final_prob = clamp(
+        original_prob + total_adjustment,
+        MIN_PROB,
+        MAX_PROB,
+    )
+
+    return {
+        "original_prob": round(original_prob, 4),
+        "mod_xwoba": round(mod_xwoba, 4),
+        "mod_xba": round(mod_xba, 4),
+        "mod_barrel": round(mod_barrel, 4),
+        "mod_hardhit": round(mod_hardhit, 4),
+        "mod_whiff": round(mod_whiff, 4),
+        "total_adjustment": round(total_adjustment, 4),
+        "final_prob": round(final_prob, 4),
+    }
+
+
+def confidence_from_edge(
+    edge: float | None,
+    probability: float,
+    sample_size: int,
+) -> str:
+    if sample_size < 20:
+        return "low"
+
+    if edge is None:
+        if probability >= 0.70:
+            return "high"
+        if probability >= 0.55:
+            return "med"
+        return "low"
+
+    if edge >= 0.08:
+        return "high"
+    if edge >= 0.03:
+        return "med"
+    return "low"
+
+
+def pythagenpat_win_prob(
+    runs_a: float,
+    runs_b: float,
+) -> tuple[float, float]:
+    if runs_a <= 0 or runs_b <= 0:
+        return 0.5, 0.5
+
+    exponent = (runs_a + runs_b) ** 0.285
+    prob_a = (runs_a**exponent) / (
+        runs_a**exponent + runs_b**exponent
+    )
+    prob_a = clamp(prob_a, MIN_PROB, MAX_PROB)
+
+    return round(prob_a, 4), round(1.0 - prob_a, 4)
+
+
+def calculate_team_xruns_v2(
+    matchup_mult: float,
+    park_factor: float,
+    weather_mult: float,
+    bullpen_era: float,
+    bullpen_fatigue_mult: float,
+) -> float:
+    base_run_projection = 4.30
+    bullpen_factor = 1.0 + (
+        (LEAGUE_AVG_ERA - bullpen_era) / 25.0
+    )
+    bullpen_factor *= bullpen_fatigue_mult
+
+    final_xruns = (
+        base_run_projection
+        * matchup_mult
+        * park_factor
+        * weather_mult
+        * bullpen_factor
+    )
+    return clamp(final_xruns, 1.5, 10.0)
+
+
+def poisson_tail_at_least(
+    expected: float,
+    threshold: int,
+) -> float:
+    if expected <= 0:
+        return 0.0
+
+    cumulative = sum(
+        math.exp(-expected)
+        * (expected**k)
+        / math.factorial(k)
+        for k in range(threshold)
+    )
+    return clamp(1.0 - cumulative, 0.0, 1.0)
+
+
+def build_pitcher_ladder(
+    expected: float,
+    lines: list[float],
+) -> list[dict]:
+    output: list[dict] = []
+
+    for line in lines:
+        threshold = math.floor(line) + 1
+        probability = poisson_tail_at_least(expected, threshold)
+        output.append(
+            {
+                "line": line,
+                "prob": round(probability, 4),
+                "odds": prob_to_american(probability),
+            }
+        )
+
+    return output
