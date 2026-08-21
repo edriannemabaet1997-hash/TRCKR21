@@ -14,7 +14,7 @@
 :root{
   --bg:#08090b; --bg-raised:#0e0f12; --bg-card:#111318; --bg-card-2:#15171d;
   --border:#212329; --border-soft:#191b20; --border-focus:#33363f;
-  --text-hi:#f2f3f5; --text-mid:#9a9ca6; --text-lo:#6b6e79; --text-ghost:#3d4048;
+  --text-hi:#f2f3f5; --text-mid:#9a9ca6; --text-lo:#5b5d68; --text-ghost:#34363d;
 
   --mlb:#f2a93b; --mlb-dim:rgba(242,169,59,.12); --mlb-border:rgba(242,169,59,.35);
   --batter:#33d6c0; --batter-dim:rgba(51,214,192,.12); --batter-border:rgba(51,214,192,.35);
@@ -26,8 +26,6 @@
   --font-mono:'JetBrains Mono',monospace;
   --ease:cubic-bezier(.2,.7,.2,1);
   --r-sm:7px; --r-md:11px; --r-lg:16px;
-
-  --glass-edge: inset 0 1px 0 rgba(255,255,255,.035), inset 0 0 0 1px rgba(255,255,255,.02);
 }
 *{box-sizing:border-box;}
 ::selection{background:var(--mlb-dim);color:var(--text-hi);}
@@ -39,7 +37,6 @@ body{
     radial-gradient(ellipse 700px 480px at 55% 105%, rgba(51,214,192,.035), transparent 55%),
     var(--bg);
   color:var(--text-mid); -webkit-font-smoothing:antialiased; user-select:none;
-  font-variant-numeric:tabular-nums;
 }
 button,[tabindex]{outline-offset:2px;}
 button:focus-visible,.list-item:focus-visible,input:focus-visible{outline:2px solid var(--mlb); border-radius:4px;}
@@ -49,53 +46,8 @@ button:focus-visible,.list-item:focus-visible,input:focus-visible{outline:2px so
 button{font-family:inherit; background:transparent; border:none; color:var(--text-mid); cursor:pointer;}
 input,select{font-family:var(--font-mono); background:var(--bg-card); border:1px solid var(--border); color:var(--text-hi); border-radius:var(--r-sm); padding:8px 12px; font-size:12.5px;}
 input:focus,select:focus{outline:none; border-color:var(--mlb);}
-.mono,td,th,.mono *{font-variant-numeric:tabular-nums;}
+.mono{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
 .hidden{display:none !important;}
-
-/* ---- reduced motion respect ---- */
-@media (prefers-reduced-motion: reduce){
-  *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
-}
-
-/* ---- live-cell flash (green = up, red = down) ---- */
-@keyframes flashUp{0%{background-color:rgba(51,193,122,.4); box-shadow:inset 0 0 0 1px rgba(51,193,122,.5);}100%{background-color:transparent; box-shadow:inset 0 0 0 1px transparent;}}
-@keyframes flashDown{0%{background-color:rgba(232,73,95,.4); box-shadow:inset 0 0 0 1px rgba(232,73,95,.5);}100%{background-color:transparent; box-shadow:inset 0 0 0 1px transparent;}}
-.flash-up{animation:flashUp 1.1s var(--ease);}
-.flash-down{animation:flashDown 1.1s var(--ease);}
-
-/* ---- skeleton shimmer ---- */
-.skel{ position:relative; overflow:hidden; background:var(--bg-raised); border-radius:5px; }
-.skel::after{
-  content:''; position:absolute; inset:0; transform:translateX(-100%);
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.045), transparent);
-  animation:shimmer 1.6s ease-in-out infinite;
-}
-@keyframes shimmer{100%{transform:translateX(100%);}}
-
-/* ---- custom tooltips ---- */
-[data-tip]{ position:relative; }
-[data-tip]::after{
-  content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 9px); transform:translate(-50%,3px);
-  background:#000; color:var(--text-hi); border:1px solid var(--border-focus); border-radius:7px;
-  padding:7px 11px; font-family:var(--font-mono); font-size:.68em; font-weight:500; white-space:nowrap;
-  box-shadow:0 12px 28px rgba(0,0,0,.55), var(--glass-edge); opacity:0; pointer-events:none; z-index:60;
-  transition:opacity .14s var(--ease), transform .14s var(--ease);
-}
-[data-tip]::before{
-  content:''; position:absolute; left:50%; bottom:calc(100% + 4px); transform:translateX(-50%);
-  border:5px solid transparent; border-top-color:#000; opacity:0; pointer-events:none; z-index:60;
-  transition:opacity .14s var(--ease);
-}
-[data-tip]:hover::after{ opacity:1; transform:translate(-50%,0); }
-[data-tip]:hover::before{ opacity:1; }
-
-/* ---- focus mode ---- */
-body.focus-mode .sidebar,
-body.focus-mode #mlb-section-nav,
-body.focus-mode .sport-tabs,
-body.focus-mode .brand{ display:none; }
-body.focus-mode .main-content{ padding:26px clamp(24px,6vw,80px); }
-.focus-btn.active{ color:var(--mlb); border-color:var(--mlb-border); background:var(--mlb-dim); }
 
 /* ============================================================
    1 · SPORT BAR — top strip, global identity + sport switcher
@@ -158,8 +110,8 @@ body.focus-mode .main-content{ padding:26px clamp(24px,6vw,80px); }
   padding:8px 3px; border-bottom:2px solid transparent; white-space:nowrap; transition:color .15s var(--ease), border-color .15s var(--ease);
 }
 .sec-tab:hover{ color:var(--text-mid); }
-.sec-tab.active.batter-active{ color:var(--text-hi); border-bottom-color:var(--batter); text-shadow:0 0 14px rgba(51,214,192,.45); }
-.sec-tab.active.pitcher-active{ color:var(--text-hi); border-bottom-color:var(--pitcher); text-shadow:0 0 14px rgba(139,123,255,.45); }
+.sec-tab.active.batter-active{ color:var(--text-hi); border-bottom-color:var(--batter); }
+.sec-tab.active.pitcher-active{ color:var(--text-hi); border-bottom-color:var(--pitcher); }
 .cluster-divider{ width:1px; align-self:stretch; margin:14px 0; background:var(--border); flex-shrink:0; }
 
 /* ============================================================
@@ -197,7 +149,7 @@ body.focus-mode .main-content{ padding:26px clamp(24px,6vw,80px); }
 .list-empty{ padding:26px 20px; font-size:.82em; color:var(--text-lo); line-height:1.6; }
 
 .main-content{ flex:1; padding:26px 32px; display:flex; flex-direction:column; overflow-y:auto; min-height:0; }
-.card{ background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--glass-edge), 0 1px 2px rgba(0,0,0,.35); }
+.card{ background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); }
 .eyebrow{ font-family:var(--font-mono); font-size:.66em; text-transform:uppercase; color:var(--text-lo); letter-spacing:1px; font-weight:700; }
 .section-heading{ font-family:var(--font-display); font-size:1.05em; font-weight:700; color:var(--text-hi); margin:4px 0 14px; display:flex; align-items:center; gap:10px; }
 .section-heading .sub{ font-family:var(--font-mono); font-size:.6em; color:var(--text-lo); font-weight:500; }
@@ -219,15 +171,15 @@ body.focus-mode .main-content{ padding:26px clamp(24px,6vw,80px); }
 .dist-badge.nb2{ background:rgba(51,214,192,.14); color:var(--batter); border:1px solid rgba(51,214,192,.35); }
 .dist-badge.poi{ background:rgba(242,169,59,.14); color:var(--amber); border:1px solid rgba(242,169,59,.35); }
 .conf-badge{ font-family:var(--font-mono); font-size:.6em; text-transform:uppercase; letter-spacing:.5px; padding:2px 6px; border-radius:4px; font-weight:700; }
-.conf-badge.high{ color:var(--green); background:rgba(51,193,122,.12); box-shadow:0 0 12px rgba(51,193,122,.28); }
+.conf-badge.high{ color:var(--green); background:rgba(51,193,122,.12); }
 .conf-badge.med,.conf-badge.medium{ color:var(--amber); background:rgba(242,169,59,.12); }
 .conf-badge.low{ color:var(--red); background:rgba(232,73,95,.12); }
 
 /* ============================================================
    7 · HIT PROPS TABLE (batter model)
    ============================================================ */
-.hud-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; align-items:stretch; }
-.hud-card{ padding:15px 17px; display:flex; flex-direction:column; gap:5px; height:100%; }
+.hud-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+.hud-card{ padding:15px 17px; display:flex; flex-direction:column; gap:5px; }
 .hud-val{ font-family:var(--font-mono); font-size:1.55em; font-weight:700; color:var(--text-hi); }
 .prop-toolbar{ display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
 .seg{ display:inline-flex; background:var(--bg-card); border:1px solid var(--border); border-radius:9px; padding:3px; gap:2px; }
@@ -237,21 +189,11 @@ body.focus-mode .main-content{ padding:26px clamp(24px,6vw,80px); }
 .table-wrap{ background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; }
 .table-scroll{ overflow:auto; max-height:calc(100vh - 330px); }
 table{ width:100%; border-collapse:collapse; text-align:left; }
-th{ font-family:var(--font-mono); font-weight:600; color:var(--text-lo); font-size:.66em; text-transform:uppercase; letter-spacing:.6px; padding:12px 14px; border-bottom:1px solid var(--border); background:var(--bg-card); position:sticky; top:0; z-index:6; }
+th{ font-family:var(--font-mono); font-weight:600; color:var(--text-lo); font-size:.66em; text-transform:uppercase; letter-spacing:.6px; padding:12px 14px; border-bottom:1px solid var(--border); background:var(--bg-card); position:sticky; top:0; }
 td{ padding:11px 14px; font-family:var(--font-mono); font-size:.82em; border-bottom:1px solid var(--border-soft); cursor:pointer; vertical-align:middle; color:var(--text-mid); }
 tr:last-child td{ border-bottom:none; }
-tr.data-row:nth-child(even) td{ background:rgba(255,255,255,.014); }
-tr.data-row:hover td{ background:var(--bg-raised) !important; }
+tr.data-row:hover td{ background:var(--bg-raised); }
 td.name-cell{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.9em; }
-/* right-align numeric columns, keep identifiers left */
-#props-table th:nth-child(n+4), #props-table td:nth-child(n+4){ text-align:right; }
-#props-table th:first-child, #props-table td:first-child,
-#props-table th:nth-child(2), #props-table td:nth-child(2),
-#props-table th:nth-child(3), #props-table td:nth-child(3){ text-align:left; }
-/* frozen identifier column */
-#props-table td.name-cell, #props-table th:first-child{ position:sticky; left:0; z-index:4; background:var(--bg-card); }
-tr.data-row:nth-child(even) td.name-cell{ background:#131519; }
-tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .edge-meter{ width:56px; height:6px; border-radius:3px; background:var(--bg-raised); overflow:hidden; display:inline-block; vertical-align:middle; margin-right:8px; }
 .edge-meter-fill{ height:100%; border-radius:3px; }
 
@@ -280,8 +222,8 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 /* ============================================================
    9 · MONEYLINE
    ============================================================ */
-.game-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px; align-items:stretch; }
-.game-card{ padding:16px; display:flex; flex-direction:column; gap:12px; height:100%; }
+.game-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px; }
+.game-card{ padding:16px; display:flex; flex-direction:column; gap:12px; }
 .team-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 8px; border-radius:8px; transition:background .15s var(--ease); cursor:pointer; }
 .team-row:hover{ background:var(--bg-raised); }
 .game-drawer{ width:520px; max-width:94vw; }
@@ -342,8 +284,8 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .mi-score{ font-family:var(--font-mono); font-size:1.05em; font-weight:700; color:var(--green); }
 .mi-score.loss{ color:var(--red); }
 .mi-text{ font-family:var(--font-mono); font-size:.8em; color:var(--text-mid); }
-.metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-top:20px; align-items:stretch; }
-.metric-card{ padding:15px 17px; display:flex; flex-direction:column; gap:6px; height:100%; }
+.metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-top:20px; }
+.metric-card{ padding:15px 17px; display:flex; flex-direction:column; gap:6px; }
 .metric-card.wide{ grid-column:span 2; }
 .metric-label{ font-family:var(--font-mono); font-size:.64em; text-transform:uppercase; color:var(--text-lo); letter-spacing:.7px; font-weight:600; }
 .metric-value{ font-family:var(--font-mono); font-size:1.4em; font-weight:700; color:var(--text-hi); }
@@ -351,6 +293,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .compare-row{ display:flex; align-items:center; gap:10px; margin-top:2px; }
 .compare-label{ font-family:var(--font-mono); font-size:.68em; color:var(--text-mid); width:78px; flex-shrink:0; }
 .compare-bar-track{ flex:1; height:7px; background:var(--bg-raised); border-radius:4px; overflow:hidden; }
+.compare-bar-fill{ height:100%; border-radius:4px; }
 .compare-bar-fill.model{ background:var(--pitcher); } .compare-bar-fill.market{ background:var(--mlb); }
 .compare-pct{ font-family:var(--font-mono); font-size:.76em; color:var(--text-hi); width:44px; text-align:right; }
 .status-bar{ margin-top:22px; padding-top:14px; border-top:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); }
@@ -377,12 +320,12 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .edge-summary-value{ font-family:var(--font-display); font-size:2.3em; font-weight:700; color:var(--pitcher); }
 .edge-summary-caption{ font-size:.78em; color:var(--text-mid); max-width:420px; line-height:1.5; }
 .edge-tier-badge{ font-family:var(--font-mono); font-weight:800; letter-spacing:.5px; text-transform:uppercase; padding:8px 18px; border-radius:10px; font-size:.83em; }
-.edge-tier-badge.elite{ color:#0a0a0a; background:var(--green); box-shadow:0 0 22px rgba(51,193,122,.5); }
+.edge-tier-badge.elite{ color:#0a0a0a; background:var(--green); }
 .edge-tier-badge.strong{ color:#0a0a0a; background:var(--batter); }
 .edge-tier-badge.average{ color:#0a0a0a; background:var(--amber); }
 .edge-tier-badge.soft{ color:var(--text-hi); background:var(--bg-raised); border:1px solid var(--border); }
-.pitch-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-bottom:26px; align-items:stretch; }
-.pitch-card{ padding:18px; position:relative; overflow:hidden; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; }
+.pitch-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-bottom:26px; }
+.pitch-card{ padding:18px; position:relative; overflow:hidden; }
 .pitch-card::before{ content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--pc,var(--pitcher)); }
 .pitch-card-top{ display:flex; justify-content:space-between; gap:10px; margin-bottom:16px; }
 .pitch-card-name{ font-weight:700; font-size:.9em; color:var(--text-hi); }
@@ -397,19 +340,11 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .lineup-table thead th{ font-family:var(--font-mono); font-size:.62em; text-transform:uppercase; color:var(--text-lo); font-weight:700; text-align:right; padding:12px 14px; border-bottom:1px solid var(--border); background:var(--bg-raised); cursor:pointer; }
 .lineup-table thead th:first-child,.lineup-table thead th:nth-child(2){ text-align:left; cursor:default; }
 .lineup-table thead th.sort-active{ color:var(--pitcher); }
-.lineup-table tbody tr:nth-child(even) td{ background:rgba(255,255,255,.014); }
-.lineup-table tbody tr:hover td{ background:var(--bg-raised); }
-.lineup-table tbody td{ font-family:var(--font-mono); font-size:.8em; color:var(--text-mid); text-align:right; padding:11px 14px; border-bottom:1px solid var(--border-soft); transition:background-color .12s var(--ease); }
+.lineup-table tbody td{ font-family:var(--font-mono); font-size:.8em; color:var(--text-mid); text-align:right; padding:11px 14px; border-bottom:1px solid var(--border-soft); }
 .lineup-table td.batter-cell{ text-align:left; }
-.lineup-table th:nth-child(-n+2), .lineup-table td:nth-child(-n+2){ position:sticky; z-index:4; background:var(--bg-card); }
-.lineup-table th:first-child, .lineup-table td:first-child{ left:0; }
-.lineup-table th:nth-child(2), .lineup-table td:nth-child(2){ left:36px; }
-.lineup-table tbody tr:nth-child(even) td:nth-child(-n+2){ background:#131519; }
-.lineup-table tbody tr:hover td:nth-child(-n+2){ background:var(--bg-raised); }
 .lineup-order{ color:var(--text-lo); font-size:.78em; margin-right:8px; }
 .batter-name{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.92em; }
-.small-sample-tag{ font-family:var(--font-mono); font-size:.55em; color:var(--red); background:rgba(232,73,95,.1); border:1px dashed rgba(232,73,95,.4); border-radius:4px; padding:1px 5px; margin-left:7px; cursor:help; }
-.credibility-cell{ cursor:help; }
+.small-sample-tag{ font-family:var(--font-mono); font-size:.55em; color:var(--red); background:rgba(232,73,95,.1); border:1px solid rgba(232,73,95,.3); border-radius:4px; padding:1px 5px; margin-left:7px; }
 .credibility-cell{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
 .credibility-track{ width:56px; height:5px; background:var(--bg-raised); border-radius:3px; overflow:hidden; }
 .credibility-fill{ height:100%; background:var(--text-lo); border-radius:3px; }
@@ -483,7 +418,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
   <div class="sport-bar-right">
     <span class="global-clock mono" id="global-clock">--:--:--</span>
     <span class="live-pill"><span class="live-dot" id="live-dot"></span><span id="live-label">CONNECTING</span></span>
-    <button class="refresh-btn focus-btn" id="focus-btn" onclick="toggleFocusMode()" data-tip="Hide nav for full-screen tables">&#10021; FOCUS</button>
     <button class="refresh-btn" id="refresh-btn" onclick="refreshCurrent()"><span class="spin">&#8635;</span> REFRESH</button>
   </div>
 </div>
@@ -911,11 +845,7 @@ function renderSidebar(){
     return;
   }
 }
-function skeletonList(){ return Array(5).fill('<div class="list-item" style="pointer-events:none;"><div style="width:100%;"><div class="skel" style="height:14px;width:70%;margin-bottom:6px;"></div><div class="skel" style="height:10px;width:50%;"></div></div></div>').join(''); }
-function toggleFocusMode(){
-  const on = document.body.classList.toggle('focus-mode');
-  document.getElementById('focus-btn').classList.toggle('active', on);
-}
+function skeletonList(){ return Array(5).fill('<div class="list-item" style="pointer-events:none;"><div style="width:100%;"><div style="height:14px;width:70%;background:var(--bg-raised);border-radius:4px;margin-bottom:6px;"></div><div style="height:10px;width:50%;background:var(--bg-raised);border-radius:4px;"></div></div></div>').join(''); }
 
 /* ================================================================
    BATTER MODEL — data load (FastAPI :8000)
@@ -957,7 +887,7 @@ async function loadBatterModel(refresh=false){
 function renderHUD(){
   const c = document.getElementById('hud-container');
   if(State.batter.error){ c.innerHTML = errorCard('Batter model offline', State.batter.error); return; }
-  if(State.batter.loading){ c.innerHTML = Array(4).fill('<div class="card hud-card skel" style="height:76px;"></div>').join(''); return; }
+  if(State.batter.loading){ c.innerHTML = Array(4).fill('<div class="card hud-card" style="height:76px;"></div>').join(''); return; }
   const p = State.batter.players;
   if(!p.length){ c.innerHTML=''; return; }
   const highCount = p.filter(x=>x.props[State.ui.activeProp]?.conf==='high').length;
@@ -998,27 +928,21 @@ function renderPropsTable(){
   const propTitle = STAT_LABELS[State.ui.activeProp];
   thead.innerHTML = `<tr><th>Player</th><th>Team</th><th>Opp Pitcher</th><th>${propTitle} Prob</th><th>Edge</th><th>Fair Odds</th><th>Conviction</th></tr>`;
   if(State.batter.error){ tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--red);">${escapeHTML(State.batter.error)}</td></tr>`; return; }
-  if(State.batter.loading){ tbody.innerHTML = Array(6).fill('<tr><td colspan="7" style="padding:14px;"><div class="skel" style="height:16px;"></div></td></tr>').join(''); return; }
+  if(State.batter.loading){ tbody.innerHTML = Array(6).fill('<tr><td colspan="7" style="padding:14px;"><div style="height:16px;background:var(--bg-raised);border-radius:4px;"></div></td></tr>').join(''); return; }
   const filtered = getFilteredPlayers();
   if(!filtered.length){ tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-lo);">No data matches filters.</td></tr>`; return; }
-  if(!State.ui.prevProbs) State.ui.prevProbs = {};
   tbody.innerHTML = filtered.map(p=>{
     const propData = p.props[State.ui.activeProp] || {prob:0, odds:null, conf:'low', edge:null};
     const edge = safeEdge(propData.edge);
     const edgePct = edge===null ? 0 : Math.max(0, Math.min(1,(edge+.05)/.25));
-    const cacheKey = `${p.id}:${State.ui.activeProp}`;
-    const prevProb = State.ui.prevProbs[cacheKey];
-    let flashClass = '';
-    if(prevProb!==undefined && Math.abs(prevProb-propData.prob)>0.0005){ flashClass = propData.prob>prevProb ? ' flash-up' : ' flash-down'; }
-    State.ui.prevProbs[cacheKey] = propData.prob;
     return `<tr class="data-row" data-player-id="${p.id}" onclick="openDrawer('${p.id}')">
       <td class="name-cell">${escapeHTML(p.name)}</td>
       <td>${escapeHTML(p.team)}</td>
       <td>${escapeHTML(p.oppPitcher||'—')}</td>
-      <td style="color:var(--batter);" class="${flashClass.trim()}">${(propData.prob*100).toFixed(1)}%</td>
+      <td style="color:var(--batter);">${(propData.prob*100).toFixed(1)}%</td>
       <td><span class="edge-meter"><span class="edge-meter-fill" style="width:${edgePct*100}%;background:${edge===null?'var(--text-lo)':edgeColor(edge)};"></span></span><span style="font-size:.9em;color:${edge===null?'var(--text-lo)':edgeColor(edge)};">${edge===null?'Model only':(edge*100).toFixed(1)+'%'}</span></td>
       <td>${formatAmerican(propData.odds)}</td>
-      <td><span class="conf-badge ${propData.conf}" data-tip="Model conviction tier, driven by sample size &amp; edge magnitude">${propData.conf.toUpperCase()}</span></td>
+      <td><span class="conf-badge ${propData.conf}">${propData.conf.toUpperCase()}</span></td>
     </tr>`;
   }).join('');
 }
@@ -1132,16 +1056,14 @@ async function runCalibration(playerId){
 function renderMoneylines(){
   const grid = document.getElementById('ml-grid');
   if(State.batter.error){ grid.innerHTML = errorCard('Batter model offline', State.batter.error); return; }
-  if(State.batter.loading){ grid.innerHTML = Array(4).fill('<div class="card game-card skel" style="height:140px;"></div>').join(''); return; }
+  if(State.batter.loading){ grid.innerHTML = Array(4).fill('<div class="card game-card" style="height:140px;"></div>').join(''); return; }
   if(!State.batter.games.length){ grid.innerHTML = '<div class="matchup-empty-state" style="grid-column:1/-1;">No games scheduled for today\'s slate.</div>'; return; }
-  if(!State.ui.prevMlProbs) State.ui.prevMlProbs = {};
-  const mlFlash = (key,val)=>{ const prev=State.ui.prevMlProbs[key]; State.ui.prevMlProbs[key]=val; return (prev!==undefined && Math.abs(prev-val)>0.0005) ? (val>prev?' flash-up':' flash-down') : ''; };
   grid.innerHTML = State.batter.games.map(g=>`
     <div class="card game-card">
       <div style="display:flex;justify-content:space-between;font-size:.7em;color:var(--text-lo);font-family:var(--font-mono);"><span>GAME ${String(g.id).toUpperCase()}</span><span>FAIR LINE</span></div>
-      <div class="team-row" onclick="openGameDrawer('${g.id}','away')"><div style="display:flex;align-items:center;gap:12px;"><span style="font-family:var(--font-display);font-weight:600;width:42px;color:var(--text-hi);">${escapeHTML(g.away)}</span><span style="font-size:.75em;color:var(--text-lo);">${escapeHTML(g.awayPitcher||'TBD')}</span></div><div class="mono" style="display:flex;gap:14px;"><span class="${mlFlash(g.id+':away',g.awayProb).trim()}">${(g.awayProb*100).toFixed(1)}%</span><span style="width:44px;text-align:right;color:${g.awayOdds>0?'var(--amber)':'var(--text-hi)'};">${formatAmerican(g.awayOdds)}</span></div></div>
+      <div class="team-row" onclick="openGameDrawer('${g.id}','away')"><div style="display:flex;align-items:center;gap:12px;"><span style="font-family:var(--font-display);font-weight:600;width:42px;color:var(--text-hi);">${escapeHTML(g.away)}</span><span style="font-size:.75em;color:var(--text-lo);">${escapeHTML(g.awayPitcher||'TBD')}</span></div><div class="mono" style="display:flex;gap:14px;"><span>${(g.awayProb*100).toFixed(1)}%</span><span style="width:44px;text-align:right;color:${g.awayOdds>0?'var(--amber)':'var(--text-hi)'};">${formatAmerican(g.awayOdds)}</span></div></div>
       <div style="height:1px;background:var(--border);"></div>
-      <div class="team-row" onclick="openGameDrawer('${g.id}','home')"><div style="display:flex;align-items:center;gap:12px;"><span style="font-family:var(--font-display);font-weight:600;width:42px;color:var(--text-hi);">${escapeHTML(g.home)}</span><span style="font-size:.75em;color:var(--text-lo);">${escapeHTML(g.homePitcher||'TBD')}</span></div><div class="mono" style="display:flex;gap:14px;"><span class="${mlFlash(g.id+':home',g.homeProb).trim()}">${(g.homeProb*100).toFixed(1)}%</span><span style="width:44px;text-align:right;color:${g.homeOdds>0?'var(--amber)':'var(--text-hi)'};">${formatAmerican(g.homeOdds)}</span></div></div>
+      <div class="team-row" onclick="openGameDrawer('${g.id}','home')"><div style="display:flex;align-items:center;gap:12px;"><span style="font-family:var(--font-display);font-weight:600;width:42px;color:var(--text-hi);">${escapeHTML(g.home)}</span><span style="font-size:.75em;color:var(--text-lo);">${escapeHTML(g.homePitcher||'TBD')}</span></div><div class="mono" style="display:flex;gap:14px;"><span>${(g.homeProb*100).toFixed(1)}%</span><span style="width:44px;text-align:right;color:${g.homeOdds>0?'var(--amber)':'var(--text-hi)'};">${formatAmerican(g.homeOdds)}</span></div></div>
     </div>`).join('');
 }
 async function openGameDrawer(gameId,side){
@@ -1187,7 +1109,7 @@ async function renderGameDrawer(){
 function renderTrackRecord(){
   const calibGrid = document.getElementById('calib-grid'), body = document.getElementById('trackrecord-body');
   if(State.batter.error){ calibGrid.innerHTML = errorCard('Batter model offline', State.batter.error); body.innerHTML=''; return; }
-  if(State.batter.loading || !State.batter.calibration.length){ calibGrid.innerHTML = Array(4).fill('<div class="card calib-card skel" style="height:90px;"></div>').join(''); body.innerHTML=''; return; }
+  if(State.batter.loading || !State.batter.calibration.length){ calibGrid.innerHTML = Array(4).fill('<div class="card calib-card" style="height:90px;"></div>').join(''); body.innerHTML=''; return; }
   calibGrid.innerHTML = State.batter.calibration.map(c=>{
     const diff = c.actual-c.predicted;
     const clr = Math.abs(diff)<.03 ? 'var(--batter)' : (diff<0?'var(--red)':'var(--amber)');
@@ -1265,27 +1187,15 @@ function renderPtView(){
   document.getElementById('pt-entity-context').innerHTML = `${market.label} &middot; L${market.history.length} sample &middot; <span class="opp">${escapeHTML(State.ui.ptEntity.matchup)}</span>`;
   renderPtChart(market); renderPtHeaderStats(market, State.ui.ptLine); renderPtMetrics(market, State.ui.ptLine);
 }
-function flashNumber(el, baseClass, newVal, prevVal, threshold){
-  const changed = prevVal!==undefined && Math.abs(newVal-prevVal)>threshold;
-  const dirClass = changed ? (newVal>prevVal?' flash-up':' flash-down') : '';
-  el.className = baseClass + dirClass;
-}
 function renderPtHeaderStats(market,line){
-  if(!State.ui.prevPt) State.ui.prevPt = {};
   const overCount = market.history.filter(v=>v>line).length;
   const hitRate = market.history.length ? Math.round((overCount/market.history.length)*100) : 0;
-  const hrEl = document.getElementById('pt-hit-rate');
-  flashNumber(hrEl, 'odds-val '+(hitRate>=50?'val-green':'val-red'), hitRate, State.ui.prevPt.hitRate, 0.5);
-  hrEl.textContent = hitRate+'%';
-  State.ui.prevPt.hitRate = hitRate;
+  const hrEl = document.getElementById('pt-hit-rate'); hrEl.textContent = hitRate+'%'; hrEl.className = 'odds-val '+(hitRate>=50?'val-green':'val-red');
   const calc = calibrateMarket(market.history, line);
   document.getElementById('pt-dist-label').textContent = calc.distribution==='negative_binomial'?'NB2 Fair Odds':'Poisson Fair Odds';
   const fairEl = document.getElementById('pt-fair-odds'); fairEl.textContent = calc.fairOdds; fairEl.className = 'odds-val val-cyan';
-  const edgeEl = document.getElementById('pt-edge');
-  flashNumber(edgeEl, 'odds-val '+(calc.edgePct>=0?'val-green':'val-red'), calc.edgePct, State.ui.prevPt.edgePct, 0.05);
-  edgeEl.textContent = (calc.edgePct>=0?'+':'')+calc.edgePct.toFixed(1)+'%';
-  State.ui.prevPt.edgePct = calc.edgePct;
-  document.getElementById('pt-model-status').innerHTML = `MODEL &middot; ${calc.distribution==='negative_binomial'?'Negative Binomial (NB2)':'Poisson'}${calc.fallback?' (fallback)':''} &middot; L${calc.sampleSize} sample<span class="dist-badge ${calc.distribution==='negative_binomial'?'nb2':'poi'}">${calc.distribution==='negative_binomial'?'NB2':'POI'}</span><span class="conf-badge ${calc.confidence}" data-tip="High = 10+ sample, Medium = 6-9, Low = under 6">${calc.confidence}</span>`;
+  const edgeEl = document.getElementById('pt-edge'); edgeEl.textContent = (calc.edgePct>=0?'+':'')+calc.edgePct.toFixed(1)+'%'; edgeEl.className = 'odds-val '+(calc.edgePct>=0?'val-green':'val-red');
+  document.getElementById('pt-model-status').innerHTML = `MODEL &middot; ${calc.distribution==='negative_binomial'?'Negative Binomial (NB2)':'Poisson'}${calc.fallback?' (fallback)':''} &middot; L${calc.sampleSize} sample<span class="dist-badge ${calc.distribution==='negative_binomial'?'nb2':'poi'}">${calc.distribution==='negative_binomial'?'NB2':'POI'}</span><span class="conf-badge ${calc.confidence}">${calc.confidence}</span>`;
 }
 function renderPtMetrics(market,line){
   const calc = calibrateMarket(market.history,line), grid = document.getElementById('pt-metrics-grid'), sd = stdDev(market.history), streak = currentStreak(market.history,line);
@@ -1425,9 +1335,9 @@ function renderLineupTable(){
     const h2h = b.h2h||{pa:0,avg:'.000',ops:0}; const small = h2h.pa<10;
     return `<tr>
       <td class="batter-cell"><span class="lineup-order">${b._order}</span></td>
-      <td class="batter-cell"><span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}</td>
+      <td class="batter-cell"><span class="batter-name">${escapeHTML(b.name)}</span>${small?'<span class="small-sample-tag">SMALL SAMPLE</span>':''}</td>
       <td>${h2h.pa}</td><td>${h2h.avg}</td><td>${h2h.pa?h2h.ops.toFixed(3):'—'}</td><td>${b.seasonOps.toFixed(3)}</td>
-      <td><div class="credibility-cell" data-tip="Weight given to career H2H OPS vs. season OPS in the blend"><div class="credibility-track"><div class="credibility-fill" style="width:${(b.credibility*100).toFixed(0)}%"></div></div><span>${(b.credibility*100).toFixed(0)}%</span></div></td>
+      <td><div class="credibility-cell"><div class="credibility-track"><div class="credibility-fill" style="width:${(b.credibility*100).toFixed(0)}%"></div></div><span>${(b.credibility*100).toFixed(0)}%</span></div></td>
       <td class="blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</td></tr>`;
   }).join('');
 }
