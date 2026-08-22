@@ -1053,7 +1053,7 @@ function renderDrawerContent(){
     content.innerHTML = `
       <div style="margin-bottom:22px;"><h2 style="font-family:var(--font-display);color:var(--text-hi);margin:0 0 4px;">${escapeHTML(p.name)}</h2><div style="font-family:var(--font-mono);font-size:.8em;color:var(--text-lo);">${escapeHTML(p.team)} · Batting ${p.order??'—'} · vs ${escapeHTML(p.oppPitcher||'TBD')}</div></div>
       <div class="card" style="padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;"><span class="eyebrow">Statcast Baseline</span><button class="btn btn-primary" id="btn-calibrate" ${State.ui.drawer.calibrating?'disabled':''}>${State.ui.drawer.calibrating?'<span class=\\"spinner\\"></span> Calibrating':'Calibrate'}</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><span class="eyebrow">Statcast Baseline</span><button class="btn btn-primary" id="btn-calibrate" ${State.ui.drawer.calibrating?'disabled':''}>${State.ui.drawer.calibrating?'<span class=\"spinner\"></span> Calibrating':'Calibrate'}</button></div>
         <div class="field-row"><div class="flabel"><span>xwOBA</span><span>.320 lg</span></div><input type="number" id="in-xwoba" value="${p.stats?.xwoba??''}" step="0.001" placeholder="Enter verified value"></div>
         <div class="field-row"><div class="flabel"><span>xBA</span><span>.250 lg</span></div><input type="number" id="in-xba" value="${p.stats?.xba??''}" step="0.001" placeholder="Enter verified value"></div>
         <div class="field-row" style="margin-bottom:0;"><div class="flabel"><span>Barrel %</span><span>8.0% lg</span></div><input type="number" id="in-barrel" value="${p.stats?.barrel??''}" step="0.1" placeholder="Enter verified value"></div>
@@ -1393,31 +1393,15 @@ function pitchColor(name){
   if(n.includes('splitter')||n.includes('forkball')) return '#2bb8a6';
   return '#9a9ca6';
 }
-function fmtPct(v){ return v===null||v===undefined ? '—' : v.toFixed(1)+'%'; }
-
 function renderPitchMix(pitches){
   const card = document.getElementById('mx-pitchmix');
   if(!pitches||!pitches.length){ card.innerHTML = `<div class="pitchmix-empty" style="grid-column:1/-1;">No pitch-usage data returned by the MLB Stats API for this pitcher yet this season. Everything else on this page is unaffected.</div>`; return; }
   card.innerHTML = pitches.map((p,i)=>{
     const color = pitchColor(p.type);
-    const sample = p.lethalitySample||0;
-    const lowSample = sample>0 && sample<15;
-    const lethalityRow = sample>0
-      ? `<div class="mono" style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px 10px;font-size:.66em;color:var(--text-mid);margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);">
-           <span>Whiff <b style="color:var(--text-hi);">${fmtPct(p.whiffPct)}</b></span>
-           <span>Chase <b style="color:var(--text-hi);">${fmtPct(p.chasePct)}</b></span>
-           <span>PutAway <b style="color:var(--text-hi);">${fmtPct(p.putAwayPct)}</b></span>
-           <span>Hard-Hit <b style="color:var(--text-hi);">${fmtPct(p.hardHitPct)}</b></span>
-         </div>
-         <div class="mono" style="font-size:.58em;color:var(--text-lo);margin-top:6px;" data-tip="Counted from real pitch-by-pitch live-feed data across this pitcher's last 5 starts — not estimated">
-           n=${sample} pitches (L5 starts)${lowSample?' · small sample':''}
-         </div>`
-      : `<div class="mono" style="font-size:.6em;color:var(--text-lo);margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);">No recent-start pitch data yet</div>`;
     return `<div class="card pitch-card" style="--pc:${color};">
       <div class="pitch-card-top"><div><div class="pitch-card-name">${escapeHTML(p.type)}</div><div class="pitch-card-rank">USAGE RANK #${i+1}</div></div>
       <div class="pitch-ring" style="--pct:${p.usagePct};--pc:${color};"><div class="pitch-ring-inner">${p.usagePct.toFixed(0)}%</div></div></div>
-      <div><span class="pitch-velo-badge"><span class="dot"></span>${p.avgVelo?p.avgVelo.toFixed(1)+' mph':'—'}</span></div>
-      ${lethalityRow}</div>`;
+      <div><span class="pitch-velo-badge"><span class="dot"></span>${p.avgVelo?p.avgVelo.toFixed(1)+' mph':'—'}</span></div></div>`;
   }).join('');
 }
 function onH2hSearch(e){ State.ui.h2hFilter = (e.target.value||'').toLowerCase(); renderLineupTable(); }
@@ -1429,15 +1413,6 @@ function sortH2h(key){
 function h2hSortValue(b,key){
   switch(key){ case 'pa': return b.h2h?b.h2h.pa:0; case 'avg': return b.h2h?parseFloat(b.h2h.avg)||0:0; case 'ops': return b.h2h?(b.h2h.pa?b.h2h.ops:-1):-1; case 'seasonOps': return b.seasonOps; case 'credibility': return b.credibility; case 'blendedOps': return b.blendedOps; default: return 0; }
 }
-function toggleH2hAccordion(rowId){
-  const detail = document.getElementById(rowId);
-  if(!detail) return;
-  const isOpen = detail.style.display !== 'none';
-  detail.style.display = isOpen ? 'none' : 'table-row';
-  const btn = document.getElementById(rowId+'-toggle');
-  if(btn) btn.textContent = isOpen ? '+' : '−';
-}
-
 function renderLineupTable(){
   const body = document.getElementById('mx-lineup-body');
   const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
@@ -1446,33 +1421,14 @@ function renderLineupTable(){
   let rows = batters.filter(b=>!State.ui.h2hFilter || b.name.toLowerCase().includes(State.ui.h2hFilter));
   rows = rows.slice().sort((a,b)=>{ const av=h2hSortValue(a,State.ui.h2hSort.key), bv=h2hSortValue(b,State.ui.h2hSort.key); return State.ui.h2hSort.dir==='desc'?bv-av:av-bv; });
   if(!rows.length){ body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
-  body.innerHTML = rows.map((b,idx)=>{
+  body.innerHTML = rows.map(b=>{
     const h2h = b.h2h||{pa:0,avg:'.000',ops:0}; const small = h2h.pa<10;
-    const rowId = `mx-h2h-detail-${idx}`;
-    const proxyXba = b.proxyXba!==undefined ? b.proxyXba.toFixed(3) : '—';
-    const proxyXslg = b.proxyXslg!==undefined ? b.proxyXslg.toFixed(3) : '—';
     return `<tr>
       <td class="batter-cell"><span class="lineup-order">${b._order}</span></td>
-      <td class="batter-cell">
-        <button id="${rowId}-toggle" onclick="toggleH2hAccordion('${rowId}')" style="color:var(--text-lo);font-family:var(--font-mono);width:16px;margin-right:4px;cursor:pointer;">+</button>
-        <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
-      </td>
+      <td class="batter-cell"><span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}</td>
       <td>${h2h.pa}</td><td>${h2h.avg}</td><td>${h2h.pa?h2h.ops.toFixed(3):'—'}</td><td>${b.seasonOps.toFixed(3)}</td>
       <td><div class="credibility-cell" data-tip="Weight given to career H2H OPS vs. season OPS in the blend"><div class="credibility-track"><div class="credibility-fill" style="width:${(b.credibility*100).toFixed(0)}%"></div></div><span>${(b.credibility*100).toFixed(0)}%</span></div></td>
-      <td class="blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</td></tr>
-    <tr id="${rowId}" style="display:none;">
-      <td></td>
-      <td colspan="7" style="padding:12px 14px;background:var(--bg-raised);">
-        <div class="mono" style="display:flex;gap:24px;flex-wrap:wrap;font-size:.72em;color:var(--text-mid);">
-          <span data-tip="Career H2H AVG/SLG shrunk toward season AVG/SLG, weighted by real H2H PA — not launch-angle Statcast xBA">
-            Proxy xBA <b style="color:var(--text-hi);">${proxyXba}</b>
-          </span>
-          <span data-tip="Same shrinkage method applied to SLG">
-            Proxy xSLG <b style="color:var(--text-hi);">${proxyXslg}</b>
-          </span>
-        </div>
-      </td>
-    </tr>`;
+      <td class="blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</td></tr>`;
   }).join('');
 }
 function initials(name){ return (name||'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }

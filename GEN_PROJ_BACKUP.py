@@ -1,5 +1,5 @@
 """
-trckr21 — MLB Quant Terminal Data Engine  (v2.3 — Real Pitch-Level Lethality)
+trckr21 — MLB Quant Terminal Data Engine  (v2.2 — Matchup Analyzer)
 ====================================================================
 Pulls today's slate from the MLB Stats API and produces `projections.json`
 in the shape the frontend consumes: db.pitchers / db.teams / db.matchups.
@@ -15,45 +15,65 @@ per game, based on the actual shape of the last-10-game sample:
     VMR <= 1  ->  Standard Poisson        (no clustering / contagion)
     VMR >  1  ->  Negative Binomial (NB2) (over-dispersed / "contagious")
 
-NEW IN v2.3 — REAL PITCH-LEVEL LETHALITY (replaces the old "not attempted"
-note from v2.2) + SHRUNK PROXY xBA/xSLG
---------------------------------------------------------------------------
-v2.2 explicitly declined to fake Whiff%/Chase%/PutAway%/Hard-Hit%, since
-they looked Statcast-only. They aren't — the free MLB Stats API's LIVE
-GAME FEED (v1.1, not the v1 summary endpoints used elsewhere in this file)
-carries real per-pitch outcome data:
+Two deliberate upgrades on top of that baseline, both additive:
+  1. Unbiased sample variance (n-1 denominator) instead of population
+     variance — matters right at the VMR = 1 decision boundary.
+  2. Numerically stable NB2 PMF in log-space via math.lgamma, safe for
+     any k (the raw rising-factorial form can overflow).
 
-  - `pitchData.coordinates.pX/pZ` + `pitchData.strikeZoneTop/Bottom`
-    -> real, batter-specific zone location per pitch (Chase%)
-  - `details.description` (Swinging Strike, Foul, In play, ...)
-    -> real swing/miss outcomes (Whiff%)
-  - `count.strikes == 2` filtered against `play.result.eventType`
-    -> real two-strike lethality (PutAway%)
-  - `hitData.launchSpeed` on batted-ball events
-    -> real exit velocity (Hard-Hit%, >=95mph)
+Safety net: if a market's variance collapses to ~mu (or below it), the
+engine falls back to Poisson for that single market rather than producing
+garbage odds.
 
-Every ratio below is `real_count / real_count`, aggregated across a
-pitcher's last LETHALITY_LOOKBACK_STARTS starts, per pitch type. No
-estimated/fit coefficients anywhere in this path. Small-sample pitch
-types (e.g. a rarely-thrown changeup) will show low sampleSize — the
-frontend should treat that the same way it already treats low-PA H2H:
-flag it, don't hide it, don't pretend it's more solid than it is.
+NEW IN v2.2 — MATCHUP ANALYZER
+--------------------------------
+Third data pipeline, `db.matchups`, one entry per today's probable pitcher.
+Two parts, both built ONLY from the free MLB Stats API (no Statcast/
+Baseball Savant subscription — this is a deliberate constraint, not an
+oversight):
 
-Proxy xBA / Proxy xSLG are NOT the same technique — there's no per-pitch
-"hit or not" signal to count the way Whiff% counts swings-and-misses.
-Instead this is credibility-weighted shrinkage (same philosophy as the
-existing blendedOps code): real career H2H AVG/SLG blended toward real
-season AVG/SLG, weighted by real H2H PA. This is legitimate sabermetric
-practice, but it is explicitly NOT equivalent to Statcast's launch-angle-
-based xBA/xSLG — label it "shrunk" in the UI, don't imply it's the same
-metric.
+  1. PITCH MIX  — `stats=pitchArsenal` for the pitcher: pitch type, usage%,
+     avg velocity. This is the free-tier ceiling; whiff%/chase%/CSW% are
+     Statcast-derived and are NOT available without Savant, so they are not
+     attempted here rather than being faked.
 
-FIXES CARRIED FROM v2.1 / v2.2
--------------------------------
-  1. Schedule call hydrates `probablePitcher` explicitly.
-  2. Every pitcher/team record carries today's actual opponent.
-  3. VERIFY-BEFORE-TRUST note on pitchArsenal field names still applies —
-     see DEBUG_DUMP_RAW below.
+     ⚠ VERIFY-BEFORE-TRUST: I could not hit the live API from this sandbox
+     (no network egress) to confirm the exact JSON key names for the
+     pitchArsenal split. The parser below tries the field names documented
+     in public MLB-StatsAPI usage (`pitchType.description`, `percentage`,
+     `averageSpeed`) with defensive fallbacks, but you should log one raw
+     response (see `DEBUG_DUMP_RAW` below) and confirm before trusting the
+     numbers in production. This mirrors the same class of bug the v2.1
+     revision already found and fixed for `strikeOuts` vs `strikeouts`.
+
+  2. LINEUP H2H — for today's opposing lineup (pulled from the live
+     boxscore's `battingOrder` once MLB posts it, ~30-90 min pre-game;
+     falls back to the team's active-roster hitters, unordered, flagged
+     `lineupConfirmed: false`, if the real lineup isn't out yet), each
+     batter's career at-bats against THIS specific pitcher via the
+     `vsPlayer` stat group.
+
+     H2H sample sizes are frequently tiny (a batter may have 2-3 career
+     PA against a given starter), so raw H2H OPS is mostly noise. Rather
+     than presenting noise as signal, every batter's H2H OPS is blended
+     toward his season OPS using a simple credibility-weighted shrinkage:
+
+         credibility = PA / (PA + K)          K = STABILIZATION_PA
+         blendedOps  = credibility * h2hOps + (1 - credibility) * seasonOps
+
+     This is the same philosophy as the VMR gate elsewhere in this file:
+     don't trust a statistic more than its sample size earns. K=100 is a
+     single flat constant used across all batters for simplicity (a real
+     sabermetric stabilization point differs per rate stat — OBP ~460 PA,
+     SLG ~320 PA — using one flat K for a blended OPS is a deliberate
+     simplification, flag if you want per-component shrinkage instead).
+
+FIXES CARRIED FROM v2.1
+-------------------------
+  1. Schedule call hydrates `probablePitcher` explicitly (opt-in on the
+     MLB Stats API — without it every pitcher job silently disappears).
+  2. Every pitcher/team record carries today's actual opponent + a
+     human-readable matchup string, folded into the sidebar `sub` line.
 """
 
 from __future__ import annotations
@@ -71,6 +91,7 @@ from datetime import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo
 
+# MLB schedules run on the US slate date, not the machine's local date.
 MLB_TZ = ZoneInfo("America/New_York")
 
 
@@ -84,20 +105,15 @@ RETRY_BACKOFF_SECS = 1.5
 MAX_WORKERS = 6
 
 MARKET_VIG_AMERICAN = -110
-MARKET_IMPLIED_PROB = 110 / 210
-DECIMAL_B = 100 / 110
+MARKET_IMPLIED_PROB = 110 / 210          # p(-110) on both sides of a two-way market
+DECIMAL_B = 100 / 110                    # net-profit-per-$1-staked at -110, used in Kelly
 
+# Credibility knob for H2H OPS shrinkage — see docstring above.
 STABILIZATION_PA = 100
-LEAGUE_AVG_OPS_FALLBACK = 0.710
-LEAGUE_AVG_AVG_FALLBACK = 0.245
-LEAGUE_AVG_SLG_FALLBACK = 0.400
+LEAGUE_AVG_OPS_FALLBACK = 0.710          # used only if a batter has zero season PA logged
 
-# --- NEW v2.3: pitch-level lethality knobs ---
-PLATE_HALF_WIDTH_FT = 0.708          # 17-inch plate, half-width in feet
-HARD_HIT_THRESHOLD_MPH = 95.0
-LETHALITY_LOOKBACK_STARTS = 5        # real games aggregated per pitcher
-MIN_LETHALITY_SAMPLE = 8             # below this, report None not a noisy ratio
-
+# Set True to dump one raw pitchArsenal response to stderr on first call,
+# so you can eyeball real field names against what the parser expects.
 DEBUG_DUMP_RAW = False
 
 DEFAULT_LINES = {
@@ -118,7 +134,7 @@ def fetch_json(url: str) -> dict:
     last_err = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.3"})
+            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.2"})
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
                 return json.loads(resp.read().decode())
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
@@ -144,6 +160,9 @@ def matchup_label(opponent_name: str, is_home: bool) -> str:
 
 
 def safe_float(v, default: float = 0.0) -> float:
+    """MLB Stats API frequently returns rate stats as strings (e.g. '.318',
+    or '-' for undefined). Centralized so every parser handles it the
+    same way instead of re-deriving this edge case per field."""
     if v is None:
         return default
     if isinstance(v, (int, float)):
@@ -157,7 +176,7 @@ def safe_float(v, default: float = 0.0) -> float:
         return default
 
 
-# ================= STATISTICS CORE (unchanged) =================
+# ================= STATISTICS CORE =================
 def sample_mean(values: list[float]) -> float:
     n = len(values)
     return sum(values) / n if n else 0.0
@@ -233,7 +252,7 @@ def confidence_tier(n: int) -> str:
     return "low"
 
 
-# ================= MODEL (unchanged) =================
+# ================= MODEL =================
 @dataclass
 class MarketModel:
     distribution: str
@@ -298,7 +317,7 @@ def build_market(label: str, history: list[int], default_line: float, pad: int =
     }
 
 
-# ================= PITCHER ENGINE (unchanged) =================
+# ================= PITCHER ENGINE =================
 def get_pitcher_data(pitcher_id: int, pitcher_name: str, team_name: str,
                       opponent_name: str, is_home: bool) -> Optional[dict]:
     season = datetime.now(MLB_TZ).year
@@ -349,7 +368,7 @@ def get_pitcher_data(pitcher_id: int, pitcher_name: str, team_name: str,
         return None
 
 
-# ================= TEAM ENGINE (unchanged) =================
+# ================= TEAM ENGINE =================
 def get_team_data(team_id: int, team_name: str, opponent_name: str, is_home: bool) -> Optional[dict]:
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/teams/{team_id}/stats?stats=gameLog&group=hitting&season={season}"
@@ -408,12 +427,13 @@ def get_team_data(team_id: int, team_name: str, opponent_name: str, is_home: boo
         return None
 
 
-# ================= MATCHUP ANALYZER ENGINE =================
+# ================= MATCHUP ANALYZER ENGINE (NEW) =================
 _raw_dump_done = False
 
 
 def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
-    """Pitch type usage% + avg velocity, free-tier MLB Stats API only."""
+    """Pitch type usage% + avg velocity, free-tier MLB Stats API only.
+    See VERIFY-BEFORE-TRUST note in the module docstring."""
     global _raw_dump_done
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=pitchArsenal&group=pitching&season={season}"
@@ -428,11 +448,14 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
         splits = data.get("stats", [{}])[0].get("splits", [])
         pitches = []
         for s in splits:
-            stat = s.get("stat", s)
+            stat = s.get("stat", s)  # some stat groups nest under "stat", some don't
             pt = stat.get("pitchType") or stat.get("type") or {}
             name = pt.get("description") or pt.get("displayName") or stat.get("pitchName") or "Unknown"
 
             usage_raw = safe_float(stat.get("percentage", stat.get("usage", 0)))
+            # API has returned this as either a 0-1 fraction or an already-
+            # scaled 0-100 number across different stat groups historically —
+            # normalize defensively rather than assume one or the other.
             usage_pct = round(usage_raw * 100, 1) if usage_raw <= 1 else round(usage_raw, 1)
 
             velo = safe_float(stat.get("averageSpeed", stat.get("avgSpeed", 0)))
@@ -448,127 +471,13 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
         return []
 
 
-# --- NEW v2.3: real per-pitch lethality from the live feed ---
-
-def get_live_feed(game_pk: int) -> dict:
-    """The v1 endpoints elsewhere in this file are season/summary stats.
-    Real pitch-by-pitch data — coordinates, descriptions, hit data — lives
-    on the v1.1 live feed, a genuinely different endpoint family."""
-    url = f"https://statsapi.mlb.com/api/v1.1/game/{game_pk}/feed/live"
-    return fetch_json(url)
-
-
-def get_pitcher_recent_game_pks(pitcher_id: int, limit: int = LETHALITY_LOOKBACK_STARTS) -> list[int]:
-    season = datetime.now(MLB_TZ).year
-    url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=gameLog&group=pitching&season={season}"
-    try:
-        data = fetch_json(url)
-        splits = data.get("stats", [{}])[0].get("splits", [])
-        pks = [s.get("game", {}).get("gamePk") for s in splits if s.get("game", {}).get("gamePk")]
-        return pks[-limit:]
-    except Exception as e:
-        log.warning(f"Recent-start lookup failed for pitcher {pitcher_id}: {e}")
-        return []
-
-
-_SWING_DESCRIPTIONS = {
-    "Swinging Strike", "Swinging Strike (Blocked)", "Foul", "Foul Tip", "Foul Bunt", "Missed Bunt",
-    "In play, out(s)", "In play, no out", "In play, run(s)",
-}
-_WHIFF_DESCRIPTIONS = {"Swinging Strike", "Swinging Strike (Blocked)", "Missed Bunt"}
-_IN_PLAY_DESCRIPTIONS = {"In play, out(s)", "In play, no out", "In play, run(s)"}
-_STRIKEOUT_EVENT_TYPES = {"strikeout", "strikeout_double_play", "strikeout_triple_play"}
-
-
-def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[str, dict]:
-    """Real, counted Whiff%/Chase%/PutAway%/Hard-Hit% per pitch type,
-    aggregated over `game_pks` (this pitcher's actual recent starts).
-    Every number here is real_count / real_count — no fitted constants."""
-    buckets: dict[str, dict] = {}
-
-    def _bucket(pitch_type: str) -> dict:
-        return buckets.setdefault(pitch_type, {
-            "pitches": 0, "swings": 0, "whiffs": 0,
-            "outOfZonePitches": 0, "outOfZoneSwings": 0,
-            "twoStrikePitches": 0, "twoStrikeKs": 0,
-            "battedBalls": 0, "hardHitBalls": 0,
-        })
-
-    for game_pk in game_pks:
-        try:
-            feed = get_live_feed(game_pk)
-        except Exception as e:
-            log.warning(f"Live feed fetch failed for game {game_pk}: {e}")
-            continue
-
-        plays = feed.get("liveData", {}).get("plays", {}).get("allPlays", [])
-        for play in plays:
-            matchup = play.get("matchup", {})
-            if matchup.get("pitcher", {}).get("id") != pitcher_id:
-                continue
-
-            events = play.get("playEvents", [])
-            pitch_events = [e for e in events if e.get("isPitch")]
-            result_event_type = play.get("result", {}).get("eventType", "")
-
-            for i, event in enumerate(pitch_events):
-                details = event.get("details", {})
-                pitch_type = (details.get("type", {}) or {}).get("description") or "Unknown"
-                description = details.get("description", "")
-                b = _bucket(pitch_type)
-                b["pitches"] += 1
-
-                is_swing = description in _SWING_DESCRIPTIONS
-                is_whiff = description in _WHIFF_DESCRIPTIONS
-                if is_swing:
-                    b["swings"] += 1
-                if is_whiff:
-                    b["whiffs"] += 1
-
-                # Chase% — real zone check with this pitch's own coordinates
-                # and this batter's actual strike-zone bounds.
-                pitch_data = event.get("pitchData", {})
-                coords = pitch_data.get("coordinates", {})
-                px, pz = coords.get("pX"), coords.get("pZ")
-                sz_top, sz_bot = pitch_data.get("strikeZoneTop"), pitch_data.get("strikeZoneBottom")
-                if px is not None and pz is not None and sz_top is not None and sz_bot is not None:
-                    out_of_zone = abs(px) > PLATE_HALF_WIDTH_FT or pz < sz_bot or pz > sz_top
-                    if out_of_zone:
-                        b["outOfZonePitches"] += 1
-                        if is_swing:
-                            b["outOfZoneSwings"] += 1
-
-                # PutAway% — real two-strike-count filter, matched against
-                # this specific play's terminal strikeout result.
-                count = event.get("count", {})
-                is_last_pitch_of_pa = i == len(pitch_events) - 1
-                if count.get("strikes") == 2:
-                    b["twoStrikePitches"] += 1
-                    if is_last_pitch_of_pa and result_event_type in _STRIKEOUT_EVENT_TYPES:
-                        b["twoStrikeKs"] += 1
-
-                # Hard-Hit% — real exit velocity off this pitch type.
-                if description in _IN_PLAY_DESCRIPTIONS:
-                    hit_data = event.get("hitData", {})
-                    launch_speed = hit_data.get("launchSpeed")
-                    if launch_speed is not None:
-                        b["battedBalls"] += 1
-                        if launch_speed >= HARD_HIT_THRESHOLD_MPH:
-                            b["hardHitBalls"] += 1
-
-    results: dict[str, dict] = {}
-    for pitch_type, b in buckets.items():
-        results[pitch_type] = {
-            "sampleSize": b["pitches"],
-            "whiffPct": round(b["whiffs"] / b["swings"] * 100, 1) if b["swings"] >= 3 else None,
-            "chasePct": round(b["outOfZoneSwings"] / b["outOfZonePitches"] * 100, 1) if b["outOfZonePitches"] >= 3 else None,
-            "putAwayPct": round(b["twoStrikeKs"] / b["twoStrikePitches"] * 100, 1) if b["twoStrikePitches"] >= 3 else None,
-            "hardHitPct": round(b["hardHitBalls"] / b["battedBalls"] * 100, 1) if b["battedBalls"] >= 3 else None,
-        }
-    return results
-
-
 def get_probable_lineup(game_pk: int, team_id: int) -> tuple[list[dict], bool]:
+    """(batters, confirmed). Tries the live boxscore's posted battingOrder
+    first (real, official, usually up ~30-90min pre-game). Falls back to
+    the team's active-roster hitters — unordered, confirmed=False — if
+    the real lineup isn't posted yet. The frontend must show the
+    confirmed/projected distinction; never present a roster guess as a
+    confirmed lineup."""
     try:
         box = fetch_json(f"https://statsapi.mlb.com/api/v1/game/{game_pk}/boxscore")
         for side in ("home", "away"):
@@ -603,6 +512,7 @@ def get_probable_lineup(game_pk: int, team_id: int) -> tuple[list[dict], bool]:
 
 
 def get_batter_vs_pitcher(batter_id: int, pitcher_id: int) -> dict:
+    """Career batter-vs-this-pitcher line via the vsPlayer stat group."""
     url = (f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats"
            f"?stats=vsPlayer&opposingPlayerId={pitcher_id}&group=hitting&sportId=1")
     empty = {"pa": 0, "ab": 0, "h": 0, "hr": 0, "bb": 0, "so": 0,
@@ -630,61 +540,33 @@ def get_batter_vs_pitcher(batter_id: int, pitcher_id: int) -> dict:
         return empty
 
 
-def get_batter_season_slash(batter_id: int) -> dict:
-    """Real season AVG/SLG/OPS/PA — used both for the existing OPS blend
-    and (new) for Proxy xBA/xSLG shrinkage."""
+def get_batter_season_ops(batter_id: int) -> float:
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=season&group=hitting&season={season}"
-    fallback = {"avg": LEAGUE_AVG_AVG_FALLBACK, "slg": LEAGUE_AVG_SLG_FALLBACK, "ops": LEAGUE_AVG_OPS_FALLBACK}
     try:
         data = fetch_json(url)
         splits = data.get("stats", [{}])[0].get("splits", [])
         if not splits:
-            return fallback
-        stat = splits[0].get("stat", {})
-        avg = safe_float(stat.get("avg"), fallback["avg"])
-        slg = safe_float(stat.get("slg"), fallback["slg"])
-        ops = safe_float(stat.get("ops"), fallback["ops"])
-        return {
-            "avg": avg if avg > 0 else fallback["avg"],
-            "slg": slg if slg > 0 else fallback["slg"],
-            "ops": ops if ops > 0 else fallback["ops"],
-        }
+            return LEAGUE_AVG_OPS_FALLBACK
+        ops = safe_float(splits[0].get("stat", {}).get("ops"), LEAGUE_AVG_OPS_FALLBACK)
+        return ops if ops > 0 else LEAGUE_AVG_OPS_FALLBACK
     except Exception:
-        return fallback
+        return LEAGUE_AVG_OPS_FALLBACK
 
 
 def shrink_h2h_ops(h2h_pa: int, h2h_ops: float, season_ops: float) -> dict:
+    """Empirical-Bayes-style credibility blend — see module docstring for
+    why raw small-sample H2H OPS is not trustworthy on its own."""
     credibility = h2h_pa / (h2h_pa + STABILIZATION_PA)
     blended = credibility * h2h_ops + (1 - credibility) * season_ops
     return {"credibility": round(credibility, 3), "blendedOps": round(blended, 3)}
 
 
-def shrink_proxy_xba_xslg(h2h_pa: int, h2h_avg: float, h2h_slg: float, season_avg: float, season_slg: float) -> dict:
-    """Proxy xBA / Proxy xSLG — credibility-weighted shrinkage of real
-    career H2H AVG/SLG toward real season AVG/SLG. NOT launch-angle-based
-    Statcast xBA/xSLG; label it 'shrunk' in the UI to keep that honest."""
-    credibility = h2h_pa / (h2h_pa + STABILIZATION_PA)
-    proxy_xba = credibility * h2h_avg + (1 - credibility) * season_avg
-    proxy_xslg = credibility * h2h_slg + (1 - credibility) * season_slg
-    return {"proxyXba": round(proxy_xba, 3), "proxyXslg": round(proxy_xslg, 3)}
-
-
 def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
     h2h = get_batter_vs_pitcher(batter["id"], pitcher_id)
-    season_slash = get_batter_season_slash(batter["id"])
-    shrink = shrink_h2h_ops(h2h["pa"], h2h["ops"], season_slash["ops"])
-    proxy = shrink_proxy_xba_xslg(
-        h2h["pa"], safe_float(h2h["avg"]), safe_float(h2h["slg"]),
-        season_slash["avg"], season_slash["slg"],
-    )
-    return {
-        **batter,
-        "h2h": h2h,
-        "seasonOps": round(season_slash["ops"], 3),
-        **shrink,
-        **proxy,
-    }
+    season_ops = get_batter_season_ops(batter["id"])
+    shrink = shrink_h2h_ops(h2h["pa"], h2h["ops"], season_ops)
+    return {**batter, "h2h": h2h, "seasonOps": round(season_ops, 3), **shrink}
 
 
 def edge_tier(blended_ops: float) -> str:
@@ -701,25 +583,6 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
                           opponent_team_id: int, opponent_name: str,
                           is_home: bool, game_pk: int) -> Optional[dict]:
     pitch_mix = get_pitch_arsenal(pitcher_id)
-
-    # --- NEW v2.3: merge real per-pitch lethality onto each pitch entry ---
-    recent_pks = get_pitcher_recent_game_pks(pitcher_id)
-    lethality = get_pitcher_pitch_lethality(pitcher_id, recent_pks) if recent_pks else {}
-    for p in pitch_mix:
-        stats = lethality.get(p["type"])
-        if not stats and lethality:
-            # Best-effort case-insensitive fallback — pitchArsenal and the
-            # live feed both draw from MLB's pitch-type dictionary, so
-            # names usually match exactly, but don't silently drop data
-            # over a casing difference.
-            lower_map = {k.lower(): v for k, v in lethality.items()}
-            stats = lower_map.get(p["type"].lower())
-        p["whiffPct"] = stats["whiffPct"] if stats else None
-        p["chasePct"] = stats["chasePct"] if stats else None
-        p["putAwayPct"] = stats["putAwayPct"] if stats else None
-        p["hardHitPct"] = stats["hardHitPct"] if stats else None
-        p["lethalitySample"] = stats["sampleSize"] if stats else 0
-
     lineup, confirmed = get_probable_lineup(game_pk, opponent_team_id)
     if not lineup:
         return None
@@ -752,7 +615,7 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
     }
 
 
-# ================= SLATE RUNNER (unchanged) =================
+# ================= SLATE RUNNER =================
 def get_slate(date_str: str) -> list[dict]:
     url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date_str}&hydrate=probablePitcher,team"
     data = fetch_json(url)
@@ -842,6 +705,7 @@ def run(date_str: Optional[str] = None, output_path: str = "projections.json") -
                 if pid not in seen_pitcher_ids:
                     seen_pitcher_ids.add(pid)
                     jobs.append(("pitcher", (pid, pname, team_name, opponent_name, is_home)))
+                    # Matchup Analyzer: this pitcher vs the OPPOSING team's lineup.
                     jobs.append(("matchup", (pid, pname, team_name, opponent_id, opponent_name, is_home, game_pk)))
 
     if pitcher_count_expected == 0:
