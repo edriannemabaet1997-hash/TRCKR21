@@ -306,7 +306,9 @@ def get_pitcher_data(pitcher_id: int, pitcher_name: str, team_name: str,
 
     try:
         data = fetch_json(url)
-        games = data.get("stats", [{}])[0].get("splits", [])[-10:]
+        stats = data.get("stats", [])
+        splits = stats[0].get("splits", []) if stats else []
+        games = splits[-10:]
         if not games:
             return None
 
@@ -425,7 +427,9 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
             print(json.dumps(data, indent=2)[:3000], file=sys.stderr)
             _raw_dump_done = True
 
-        splits = data.get("stats", [{}])[0].get("splits", [])
+        stats = data.get("stats", [])
+        splits = stats[0].get("splits", []) if stats else []
+        
         pitches = []
         for s in splits:
             stat = s.get("stat", s)
@@ -447,7 +451,6 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
         log.warning(f"Pitch arsenal fetch failed for pitcher {pitcher_id}: {e}")
         return []
 
-
 # --- NEW v2.3: real per-pitch lethality from the live feed ---
 
 def get_live_feed(game_pk: int) -> dict:
@@ -463,7 +466,8 @@ def get_pitcher_recent_game_pks(pitcher_id: int, limit: int = LETHALITY_LOOKBACK
     url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=gameLog&group=pitching&season={season}"
     try:
         data = fetch_json(url)
-        splits = data.get("stats", [{}])[0].get("splits", [])
+        stats = data.get("stats", [])
+        splits = stats[0].get("splits", []) if stats else []
         pks = [s.get("game", {}).get("gamePk") for s in splits if s.get("game", {}).get("gamePk")]
         return pks[-limit:]
     except Exception as e:
