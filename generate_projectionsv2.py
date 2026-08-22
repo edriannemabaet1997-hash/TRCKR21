@@ -1,5 +1,5 @@
 """
-trckr21 — MLB Quant Terminal Data Engine  (v2.4 — Pitch-Code Fix + PutAway% Fix)
+trckr21 — MLB Quant Terminal Data Engine  (v2.3 — Real Pitch-Level Lethality)
 ====================================================================
 Pulls today's slate from the MLB Stats API and produces `projections.json`
 in the shape the frontend consumes: db.pitchers / db.teams / db.matchups.
@@ -15,50 +15,45 @@ per game, based on the actual shape of the last-10-game sample:
     VMR <= 1  ->  Standard Poisson        (no clustering / contagion)
     VMR >  1  ->  Negative Binomial (NB2) (over-dispersed / "contagious")
 
-v2.3 — REAL PITCH-LEVEL LETHALITY (unchanged core approach)
+NEW IN v2.3 — REAL PITCH-LEVEL LETHALITY (replaces the old "not attempted"
+note from v2.2) + SHRUNK PROXY xBA/xSLG
 --------------------------------------------------------------------------
-The free MLB Stats API's LIVE GAME FEED (v1.1) carries real per-pitch
-outcome data used to compute Whiff% / Chase% / PutAway% / Hard-Hit%,
-aggregated across a pitcher's last LETHALITY_LOOKBACK_STARTS starts,
-per pitch type. No estimated/fit coefficients anywhere in this path.
+v2.2 explicitly declined to fake Whiff%/Chase%/PutAway%/Hard-Hit%, since
+they looked Statcast-only. They aren't — the free MLB Stats API's LIVE
+GAME FEED (v1.1, not the v1 summary endpoints used elsewhere in this file)
+carries real per-pitch outcome data:
 
-FIXES IN v2.4
--------------
-  1. PITCH-CODE MISMATCH FIX
-     The season-summary `pitchArsenal` endpoint and the live-feed
-     `playEvents[].details.type` sometimes label the *same* pitch
-     differently as free text ("Four-seam FB" vs "Four-Seam Fastball"),
-     while both carry the same short MLB pitch `code` ("FF"). v2.3
-     joined lethality data onto the arsenal list by matching the free-text
-     *description* (case-insensitively), so any wording mismatch silently
-     dropped a pitch's lethality stats ("No recent-start pitch data yet").
+  - `pitchData.coordinates.pX/pZ` + `pitchData.strikeZoneTop/Bottom`
+    -> real, batter-specific zone location per pitch (Chase%)
+  - `details.description` (Swinging Strike, Foul, In play, ...)
+    -> real swing/miss outcomes (Whiff%)
+  - `count.strikes == 2` filtered against `play.result.eventType`
+    -> real two-strike lethality (PutAway%)
+  - `hitData.launchSpeed` on batted-ball events
+    -> real exit velocity (Hard-Hit%, >=95mph)
 
-     v2.4 buckets and joins lethality data by pitch `code` first (the
-     stable, short identifier both endpoints emit), and only falls back
-     to a normalized-description match when a code is missing from either
-     side. PITCH_CODE_NAMES gives a canonical display name per code so
-     the UI always shows one consistent pitch name regardless of which
-     endpoint's wording happened to come through.
+Every ratio below is `real_count / real_count`, aggregated across a
+pitcher's last LETHALITY_LOOKBACK_STARTS starts, per pitch type. No
+estimated/fit coefficients anywhere in this path. Small-sample pitch
+types (e.g. a rarely-thrown changeup) will show low sampleSize — the
+frontend should treat that the same way it already treats low-PA H2H:
+flag it, don't hide it, don't pretend it's more solid than it is.
 
-  2. PUTAWAY% BUG FIX (was showing 0.0% for every pitch type)
-     v2.3 checked `event["count"]["strikes"] == 2` on the *same* pitch
-     event that resulted in the strikeout. But the MLB Stats API's
-     per-pitch `count` object reports the count *after* that pitch was
-     thrown/resolved — so the deciding, strikeout-ending pitch itself
-     never carries `strikes: 2` (a strikeout isn't recorded as "2
-     strikes"). That meant every 2-strike **rendered** count came from
-     a foul ball or take that didn't end the at-bat, so the numerator
-     (`twoStrikeKs`) stayed at 0 while the denominator kept growing —
-     hence a permanent 0.0% PutAway rate.
+Proxy xBA / Proxy xSLG are NOT the same technique — there's no per-pitch
+"hit or not" signal to count the way Whiff% counts swings-and-misses.
+Instead this is credibility-weighted shrinkage (same philosophy as the
+existing blendedOps code): real career H2H AVG/SLG blended toward real
+season AVG/SLG, weighted by real H2H PA. This is legitimate sabermetric
+practice, but it is explicitly NOT equivalent to Statcast's launch-angle-
+based xBA/xSLG — label it "shrunk" in the UI, don't imply it's the same
+metric.
 
-     v2.4 tracks the *entering* strike count (the count the batter had
-     BEFORE the current pitch was thrown, i.e. the previous pitch's
-     resulting count within the same plate appearance, starting at 0-0).
-     A pitch is a genuine "putaway pitch" when the batter enters it
-     already at 2 strikes; it counts as converted when that same pitch
-     is also the final pitch of the plate appearance and the play's
-     result is a strikeout. This matches how PutAway% is defined
-     everywhere else in the industry (Baseball Savant included).
+FIXES CARRIED FROM v2.1 / v2.2
+-------------------------------
+  1. Schedule call hydrates `probablePitcher` explicitly.
+  2. Every pitcher/team record carries today's actual opponent.
+  3. VERIFY-BEFORE-TRUST note on pitchArsenal field names still applies —
+     see DEBUG_DUMP_RAW below.
 """
 
 from __future__ import annotations
@@ -97,7 +92,7 @@ LEAGUE_AVG_OPS_FALLBACK = 0.710
 LEAGUE_AVG_AVG_FALLBACK = 0.245
 LEAGUE_AVG_SLG_FALLBACK = 0.400
 
-# --- pitch-level lethality knobs ---
+# --- NEW v2.3: pitch-level lethality knobs ---
 PLATE_HALF_WIDTH_FT = 0.708          # 17-inch plate, half-width in feet
 HARD_HIT_THRESHOLD_MPH = 95.0
 LETHALITY_LOOKBACK_STARTS = 5        # real games aggregated per pitcher
@@ -105,55 +100,13 @@ MIN_LETHALITY_SAMPLE = 8             # below this, report None not a noisy ratio
 
 DEBUG_DUMP_RAW = False
 
-# --- NEW v2.4: canonical pitch-code -> display-name map ---------------
-# Both the pitchArsenal endpoint and the live-feed pitch `details.type`
-# object carry a short `code` field using this same MLB dictionary.
-# Joining on `code` instead of free-text description is what fixes the
-# "Four-seam FB" vs "Four-Seam Fastball" mismatch.
-PITCH_CODE_NAMES = {
-    "FF": "Four-Seam Fastball", "FA": "Fastball", "FT": "Two-Seam Fastball",
-    "SI": "Sinker", "FC": "Cutter", "SL": "Slider", "ST": "Sweeper",
-    "SV": "Slurve", "CU": "Curveball", "KC": "Knuckle Curve", "CS": "Slow Curve",
-    "CH": "Changeup", "FS": "Splitter", "FO": "Forkball", "SC": "Screwball",
-    "KN": "Knuckleball", "EP": "Eephus", "PO": "Pitchout", "IN": "Intentional Ball",
-    "AB": "Automatic Ball", "UN": "Unknown", "NP": "No Pitch",
+DEFAULT_LINES = {
+    "strikeouts": 4.5,
+    "earned_runs": 1.5,
+    "walks": 2.5,
+    "f5_runs": 1.5,
+    "total_runs": 4.5,
 }
-# Reverse lookup used only as a fallback when a `code` is missing on one
-# side — normalizes free-text pitch names ("four-seam fb", "4-seam
-# fastball", "fastball (four-seam)"...) to the same code above.
-_NAME_TO_CODE = {
-    "fourseamfastball": "FF", "fourseamfb": "FF", "4seamfastball": "FF", "fastballfourseam": "FF",
-    "fastball": "FA", "twoseamfastball": "FT", "2seamfastball": "FT", "sinkingfastball": "FT",
-    "sinker": "SI", "cutter": "FC", "cutfastball": "FC",
-    "slider": "SL", "sweeper": "ST", "sweepingslider": "ST", "slurve": "SV",
-    "curveball": "CU", "curve": "CU", "knucklecurve": "KC", "slowcurve": "CS",
-    "changeup": "CH", "change": "CH", "splitter": "FS", "splitfingeredfastball": "FS",
-    "forkball": "FO", "screwball": "SC", "knuckleball": "KN", "eephus": "EP",
-    "pitchout": "PO", "intentionalball": "IN", "automaticball": "AB",
-    "unknown": "UN", "nopitch": "NP",
-}
-
-
-def _normalize_key(s: str) -> str:
-    return "".join(ch for ch in (s or "").lower() if ch.isalnum())
-
-
-def resolve_pitch_code(code: Optional[str], description: Optional[str]) -> str:
-    """Best-effort resolution to a canonical MLB pitch code.
-    Prefers the short `code` field (stable across endpoints); falls back
-    to normalizing the free-text description only when code is missing
-    or unrecognized."""
-    if code:
-        c = code.strip().upper()
-        if c in PITCH_CODE_NAMES:
-            return c
-    key = _normalize_key(description or "")
-    return _NAME_TO_CODE.get(key, "UN")
-
-
-def pitch_display_name(code: str, fallback_description: Optional[str] = None) -> str:
-    return PITCH_CODE_NAMES.get(code, fallback_description or "Unknown")
-
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-7s  %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger("trckr21")
@@ -165,7 +118,7 @@ def fetch_json(url: str) -> dict:
     last_err = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.4"})
+            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.3"})
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
                 return json.loads(resp.read().decode())
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
@@ -398,15 +351,6 @@ def get_pitcher_data(pitcher_id: int, pitcher_name: str, team_name: str,
         return None
 
 
-DEFAULT_LINES = {
-    "strikeouts": 4.5,
-    "earned_runs": 1.5,
-    "walks": 2.5,
-    "f5_runs": 1.5,
-    "total_runs": 4.5,
-}
-
-
 # ================= TEAM ENGINE (unchanged) =================
 def get_team_data(team_id: int, team_name: str, opponent_name: str, is_home: bool) -> Optional[dict]:
     season = datetime.now(MLB_TZ).year
@@ -471,9 +415,7 @@ _raw_dump_done = False
 
 
 def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
-    """Pitch type usage% + avg velocity, free-tier MLB Stats API only.
-    v2.4: now also captures the short pitch `code` (e.g. 'FF') alongside
-    the display name, so it can be joined to lethality data reliably."""
+    """Pitch type usage% + avg velocity, free-tier MLB Stats API only."""
     global _raw_dump_done
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=pitchArsenal&group=pitching&season={season}"
@@ -487,15 +429,12 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
 
         stats = data.get("stats", [])
         splits = stats[0].get("splits", []) if stats else []
-
+        
         pitches = []
         for s in splits:
             stat = s.get("stat", s)
             pt = stat.get("pitchType") or stat.get("type") or {}
-            raw_code = pt.get("code") or stat.get("code")
-            description = pt.get("description") or pt.get("displayName") or stat.get("pitchName") or "Unknown"
-            code = resolve_pitch_code(raw_code, description)
-            name = pitch_display_name(code, description)
+            name = pt.get("description") or pt.get("displayName") or stat.get("pitchName") or "Unknown"
 
             usage_raw = safe_float(stat.get("percentage", stat.get("usage", 0)))
             usage_pct = round(usage_raw * 100, 1) if usage_raw <= 1 else round(usage_raw, 1)
@@ -504,7 +443,7 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
 
             if name == "Unknown" and usage_pct == 0:
                 continue
-            pitches.append({"type": name, "code": code, "usagePct": usage_pct, "avgVelo": round(velo, 1)})
+            pitches.append({"type": name, "usagePct": usage_pct, "avgVelo": round(velo, 1)})
 
         pitches.sort(key=lambda p: p["usagePct"], reverse=True)
         return pitches
@@ -512,7 +451,7 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
         log.warning(f"Pitch arsenal fetch failed for pitcher {pitcher_id}: {e}")
         return []
 
-# --- real per-pitch lethality from the live feed ---
+# --- NEW v2.3: real per-pitch lethality from the live feed ---
 
 def get_live_feed(game_pk: int) -> dict:
     """The v1 endpoints elsewhere in this file are season/summary stats.
@@ -546,24 +485,13 @@ _STRIKEOUT_EVENT_TYPES = {"strikeout", "strikeout_double_play", "strikeout_tripl
 
 
 def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[str, dict]:
-    """Real, counted Whiff%/Chase%/PutAway%/Hard-Hit% per pitch type
-    (bucketed by pitch CODE — see v2.4 notes at top of file), aggregated
-    over `game_pks` (this pitcher's actual recent starts). Every number
-    here is real_count / real_count — no fitted constants.
-
-    v2.4 PutAway% fix: `count` on a pitch event reflects the count AFTER
-    that pitch resolves, so a strikeout-ending pitch never itself carries
-    strikes==2. We instead track the ENTERING strike count for each pitch
-    (the previous pitch's resulting count within the same PA, 0 for the
-    first pitch) to correctly identify genuine 2-strike ("putaway")
-    pitches, then check whether that specific pitch ended the PA in a
-    strikeout.
-    """
+    """Real, counted Whiff%/Chase%/PutAway%/Hard-Hit% per pitch type,
+    aggregated over `game_pks` (this pitcher's actual recent starts).
+    Every number here is real_count / real_count — no fitted constants."""
     buckets: dict[str, dict] = {}
-    display_names: dict[str, str] = {}
 
-    def _bucket(code: str) -> dict:
-        return buckets.setdefault(code, {
+    def _bucket(pitch_type: str) -> dict:
+        return buckets.setdefault(pitch_type, {
             "pitches": 0, "swings": 0, "whiffs": 0,
             "outOfZonePitches": 0, "outOfZoneSwings": 0,
             "twoStrikePitches": 0, "twoStrikeKs": 0,
@@ -587,22 +515,15 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
             pitch_events = [e for e in events if e.get("isPitch")]
             result_event_type = play.get("result", {}).get("eventType", "")
 
-            entering_strikes = 0  # count BEFORE the current pitch, within this PA
-
             for i, event in enumerate(pitch_events):
                 details = event.get("details", {})
-                type_obj = details.get("type", {}) or {}
-                raw_code = type_obj.get("code")
-                description = type_obj.get("description")
-                code = resolve_pitch_code(raw_code, description)
-                display_names.setdefault(code, pitch_display_name(code, description))
-
-                description_text = details.get("description", "")
-                b = _bucket(code)
+                pitch_type = (details.get("type", {}) or {}).get("description") or "Unknown"
+                description = details.get("description", "")
+                b = _bucket(pitch_type)
                 b["pitches"] += 1
 
-                is_swing = description_text in _SWING_DESCRIPTIONS
-                is_whiff = description_text in _WHIFF_DESCRIPTIONS
+                is_swing = description in _SWING_DESCRIPTIONS
+                is_whiff = description in _WHIFF_DESCRIPTIONS
                 if is_swing:
                     b["swings"] += 1
                 if is_whiff:
@@ -621,23 +542,17 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
                         if is_swing:
                             b["outOfZoneSwings"] += 1
 
-                # PutAway% — v2.4: use the ENTERING count (state before this
-                # pitch was thrown), not the post-pitch count field.
+                # PutAway% — real two-strike-count filter, matched against
+                # this specific play's terminal strikeout result.
+                count = event.get("count", {})
                 is_last_pitch_of_pa = i == len(pitch_events) - 1
-                if entering_strikes == 2:
+                if count.get("strikes") == 2:
                     b["twoStrikePitches"] += 1
                     if is_last_pitch_of_pa and result_event_type in _STRIKEOUT_EVENT_TYPES:
                         b["twoStrikeKs"] += 1
 
-                # Advance entering_strikes to this pitch's resulting count
-                # for the next pitch in the same plate appearance.
-                post_count = event.get("count", {})
-                post_strikes = post_count.get("strikes")
-                if post_strikes is not None:
-                    entering_strikes = min(int(post_strikes), 2)
-
                 # Hard-Hit% — real exit velocity off this pitch type.
-                if description_text in _IN_PLAY_DESCRIPTIONS:
+                if description in _IN_PLAY_DESCRIPTIONS:
                     hit_data = event.get("hitData", {})
                     launch_speed = hit_data.get("launchSpeed")
                     if launch_speed is not None:
@@ -646,9 +561,8 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
                             b["hardHitBalls"] += 1
 
     results: dict[str, dict] = {}
-    for code, b in buckets.items():
-        results[code] = {
-            "type": display_names.get(code, code),
+    for pitch_type, b in buckets.items():
+        results[pitch_type] = {
             "sampleSize": b["pitches"],
             "whiffPct": round(b["whiffs"] / b["swings"] * 100, 1) if b["swings"] >= 3 else None,
             "chasePct": round(b["outOfZoneSwings"] / b["outOfZonePitches"] * 100, 1) if b["outOfZonePitches"] >= 3 else None,
@@ -722,7 +636,7 @@ def get_batter_vs_pitcher(batter_id: int, pitcher_id: int) -> dict:
 
 def get_batter_season_slash(batter_id: int) -> dict:
     """Real season AVG/SLG/OPS/PA — used both for the existing OPS blend
-    and for Proxy xBA/xSLG shrinkage."""
+    and (new) for Proxy xBA/xSLG shrinkage."""
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=season&group=hitting&season={season}"
     fallback = {"avg": LEAGUE_AVG_AVG_FALLBACK, "slg": LEAGUE_AVG_SLG_FALLBACK, "ops": LEAGUE_AVG_OPS_FALLBACK}
@@ -792,11 +706,18 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
                           is_home: bool, game_pk: int) -> Optional[dict]:
     pitch_mix = get_pitch_arsenal(pitcher_id)
 
-    # --- merge real per-pitch lethality onto each pitch entry, joined by CODE ---
+    # --- NEW v2.3: merge real per-pitch lethality onto each pitch entry ---
     recent_pks = get_pitcher_recent_game_pks(pitcher_id)
     lethality = get_pitcher_pitch_lethality(pitcher_id, recent_pks) if recent_pks else {}
     for p in pitch_mix:
-        stats = lethality.get(p.get("code", "UN"))
+        stats = lethality.get(p["type"])
+        if not stats and lethality:
+            # Best-effort case-insensitive fallback — pitchArsenal and the
+            # live feed both draw from MLB's pitch-type dictionary, so
+            # names usually match exactly, but don't silently drop data
+            # over a casing difference.
+            lower_map = {k.lower(): v for k, v in lethality.items()}
+            stats = lower_map.get(p["type"].lower())
         p["whiffPct"] = stats["whiffPct"] if stats else None
         p["chasePct"] = stats["chasePct"] if stats else None
         p["putAwayPct"] = stats["putAwayPct"] if stats else None
@@ -835,10 +756,9 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
     }
 
 
-# ================= SLATE RUNNER =================
+# ================= SLATE RUNNER (unchanged) =================
 def get_slate(date_str: str) -> list[dict]:
-    url = (f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date_str}"
-           f"&hydrate=probablePitcher,team,venue")
+    url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date_str}&hydrate=probablePitcher,team"
     data = fetch_json(url)
     return data.get("dates", [{}])[0].get("games", []) if data.get("dates") else []
 
@@ -956,23 +876,6 @@ def run(date_str: Optional[str] = None, output_path: str = "projections.json") -
                 frontend_db["pitchers"].append(result)
             else:
                 frontend_db["matchups"].append(result)
-
-    # --- NEW v2.4: attach game start time + venue for the frontend's
-    # game-context header (Moneylines tab) ---
-    game_context = {}
-    for game in games:
-        gd = game.get("gameDate")
-        venue = (game.get("venue") or {}).get("name")
-        away_id = game["teams"]["away"]["team"]["id"]
-        home_id = game["teams"]["home"]["team"]["id"]
-        ctx = {"startTimeUTC": gd, "venue": venue}
-        game_context[f"t_{away_id}"] = ctx
-        game_context[f"t_{home_id}"] = ctx
-    for team in frontend_db["teams"]:
-        ctx = game_context.get(team["id"])
-        if ctx:
-            team["startTimeUTC"] = ctx["startTimeUTC"]
-            team["venue"] = ctx["venue"]
 
     with open(output_path, "w") as f:
         json.dump(frontend_db, f, indent=2)
