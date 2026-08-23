@@ -377,19 +377,16 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 
 /* --- BATTER POPOVER (Replaces Inline Dots) --- */
 .batter-hover-wrap { position: relative; display: inline-flex; align-items: center; cursor: help; }
-
-/* --- FLOATING TOOLTIP (used for batter arsenal popover + pitcher list hover) ---
-   Rendered as a single shared element positioned with JS (position:fixed) and
-   appended once to <body>, so it can never be clipped by an ancestor's
-   overflow:hidden/auto (e.g. .table-scroll, .lineup-table-card, .sidebar). */
-.float-tip-card {
-    position: fixed; top: -9999px; left: -9999px;
+.batter-hover-card {
+    position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 14px;
     background: #08090b; border: 1px solid var(--border-focus);
-    padding: 12px 16px; border-radius: 8px; width: max-content; max-width: 300px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); z-index: 10000;
-    opacity: 0; pointer-events: none; transition: opacity 0.12s var(--ease);
+    padding: 12px 16px; border-radius: 8px; width: max-content;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); z-index: 100;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
 }
-.float-tip-card.visible { opacity: 1; }
+.batter-hover-wrap:hover .batter-hover-card { 
+    opacity: 1; pointer-events: auto; transform: translateY(-50%) translateX(4px); 
+}
 
 .pitch-card{ transition:box-shadow .15s var(--ease), transform .15s var(--ease), opacity .15s var(--ease); cursor:pointer; }
 .pitch-card.pitch-hover-active{ box-shadow:0 0 0 1.5px var(--pc), 0 0 18px rgba(255,255,255,.08); transform:translateY(-2px); }
@@ -927,8 +924,6 @@ function renderSidebar(){
         <div><div class="entity-name">${escapeHTML(m.pitcherName)}</div><div class="entity-sub">${escapeHTML(m.team)} &middot; <span class="opp">${escapeHTML(m.matchup)}</span></div>
         <span class="entity-flag ${m.lineupConfirmed?'confirmed':'projected'}">${m.lineupConfirmed?'LINEUP CONFIRMED':'PROJECTED ROSTER'}</span></div>`;
       div.onclick = ()=>selectMatchup(m.id);
-      div.onmouseenter = ()=>showFloatTip(div, mxPitcherTipHTML(m));
-      div.onmouseleave = hideFloatTip;
       container.appendChild(div);
     });
     return;
@@ -1639,65 +1634,6 @@ function mxClearHighlight(){
   document.querySelectorAll('#mx-pitchmix .pitch-card').forEach(card=>card.classList.remove('pitch-hover-active','pitch-hover-inactive'));
   document.querySelectorAll('#mx-lineup-body tr[data-batter-id]').forEach(row=>row.classList.remove('pitch-hover-match','pitch-hover-dim'));
 }
-
-/* ---- Shared floating tooltip: appended once to <body>, positioned with
-   getBoundingClientRect + position:fixed, so it always escapes any
-   ancestor's overflow:hidden/auto clipping (scroll tables, sidebar, etc). ---- */
-let __floatTipEl = null;
-function ensureFloatTip(){
-  if(!__floatTipEl){
-    __floatTipEl = document.createElement('div');
-    __floatTipEl.className = 'float-tip-card';
-    document.body.appendChild(__floatTipEl);
-  }
-  return __floatTipEl;
-}
-function showFloatTip(anchorEl, html){
-  if(!anchorEl || !html) return;
-  const tip = ensureFloatTip();
-  tip.innerHTML = html;
-  tip.classList.add('visible');
-  const rect = anchorEl.getBoundingClientRect();
-  const tipRect = tip.getBoundingClientRect();
-  const margin = 14;
-  let left = rect.right + margin;
-  if(left + tipRect.width > window.innerWidth - 12){ left = rect.left - margin - tipRect.width; }
-  if(left < 8) left = 8;
-  let top = rect.top + (rect.height/2) - (tipRect.height/2);
-  if(top < 8) top = 8;
-  if(top + tipRect.height > window.innerHeight - 8) top = window.innerHeight - 8 - tipRect.height;
-  tip.style.left = left+'px';
-  tip.style.top = top+'px';
-}
-function hideFloatTip(){
-  if(__floatTipEl) __floatTipEl.classList.remove('visible');
-}
-window.addEventListener('scroll', hideFloatTip, true);
-window.addEventListener('resize', hideFloatTip);
-function mxShowBatterTip(anchorEl, idx){
-  const html = (window.__mxBatterTips||[])[idx];
-  showFloatTip(anchorEl, html);
-}
-
-/* ---- Pitcher hover tooltip (Matchup Analyzer sidebar list) ----
-   Whiff% is the pitcher's arsenal usage-weighted whiff rate (pitcherArsenalWhiffPct),
-   ERA is season ERA (pitcherEra), and "expected vs lineup" reuses the model's
-   own lineupEdgeOps/lineupEdgeTier — its projection of how this pitcher performs
-   against today's opposing lineup. */
-function mxPitcherTipHTML(m){
-  const era = (m.pitcherEra!=null) ? Number(m.pitcherEra).toFixed(2) : '—';
-  const whiff = (m.pitcherArsenalWhiffPct!=null) ? Number(m.pitcherArsenalWhiffPct).toFixed(1)+'%' : '—';
-  const tierColor = {elite:'var(--green)', strong:'var(--green)', average:'var(--amber)', soft:'var(--red)'}[m.lineupEdgeTier] || 'var(--text-mid)';
-  const tierLabel = {elite:'Elite Edge', strong:'Strong Edge', average:'Average', soft:'Soft Matchup'}[m.lineupEdgeTier] || '—';
-  const edgeOps = (m.lineupEdgeOps!=null) ? Number(m.lineupEdgeOps).toFixed(3) : '—';
-  return `<div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">${escapeHTML(m.pitcherName)} <span style="color:var(--text-lo); font-weight:500;">${escapeHTML(m.matchup||'')}</span></div>
-    <div style="display:flex; flex-direction:column; gap:6px; font-family:var(--font-mono); font-size:11px;">
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Season ERA</span><span style="color:var(--text-hi); font-weight:700;">${era}</span></div>
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Arsenal Whiff%</span><span style="color:var(--text-hi); font-weight:700;">${whiff}</span></div>
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Expected vs Lineup</span><span style="color:${tierColor}; font-weight:700;">${edgeOps} OPS &middot; ${tierLabel}</span></div>
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Roster Status</span><span style="color:var(--text-mid);">${m.lineupConfirmed?'Confirmed':'Projected'}</span></div>
-    </div>`;
-}
 function onH2hSearch(e){ State.ui.h2hFilter = (e.target.value||'').toLowerCase(); renderLineupTable(); }
 function sortH2h(key){
   if(State.ui.h2hSort.key===key){ State.ui.h2hSort.dir = State.ui.h2hSort.dir==='desc'?'asc':'desc'; }
@@ -1734,8 +1670,7 @@ function renderLineupTable(){
   rows = rows.slice().sort((a,b)=>{ const av=h2hSortValue(a,State.ui.h2hSort.key), bv=h2hSortValue(b,State.ui.h2hSort.key); return State.ui.h2hSort.dir==='desc'?bv-av:av-bv; });
   if(!rows.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
   
-  window.__mxBatterTips = [];
-  body.innerHTML = rows.map((b, idx)=>{
+  body.innerHTML = rows.map((b)=>{
     const h2h = b.h2h||{pa:0,avg:'.000',ops:0}; const small = h2h.pa<10;
     const proxyXba = b.proxyXba!==undefined ? b.proxyXba.toFixed(3) : '—';
     const proxyXslg = b.proxyXslg!==undefined ? b.proxyXslg.toFixed(3) : '—';
@@ -1749,14 +1684,14 @@ function renderLineupTable(){
       </div>`;
     }).filter(Boolean).join('');
 
-    const popoverHTML = popoverContent ? `<div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">vs ${escapeHTML(State.ui.mxMatchup.pitcherName)}'s Arsenal</div>${popoverContent}` : '';
-    window.__mxBatterTips[idx] = popoverHTML || null;
-
+    const popoverHTML = popoverContent ? `<div class="batter-hover-card"><div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">vs ${escapeHTML(State.ui.mxMatchup.pitcherName)}'s Arsenal</div>${popoverContent}</div>` : '';
+    
     let rowHtml = `<tr data-batter-id="${b.id}" onmouseenter="mxHighlightBatter('${b.id}')" onmouseleave="mxClearHighlight()">
       <td class="batter-cell"><span class="lineup-order">${b._order}</span></td>
-      <td class="batter-cell">
-        <div class="batter-hover-wrap"${popoverHTML?` onmouseenter="mxShowBatterTip(this, ${idx})" onmouseleave="hideFloatTip()"`:''}>
+      <td class="batter-cell" style="position:relative; overflow:visible;">
+        <div class="batter-hover-wrap">
           <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
+          ${popoverHTML}
         </div>
       </td>`;
 

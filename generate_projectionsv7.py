@@ -918,39 +918,6 @@ def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
     }
 
 
-def get_pitcher_season_stats(pitcher_id: int) -> dict:
-    """Season-to-date ERA/WHIP for the pitcher hover card in Matchup Analyzer."""
-    season = datetime.now(MLB_TZ).year
-    url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=season&group=pitching&season={season}"
-    fallback = {"era": None, "whip": None, "inningsPitched": None}
-    try:
-        data = fetch_json(url)
-        stats = data.get("stats", [])
-        splits = stats[0].get("splits", []) if stats else []
-        if not splits:
-            return fallback
-        s = splits[0].get("stat", {})
-        era_raw, whip_raw = s.get("era"), s.get("whip")
-        return {
-            "era": round(safe_float(era_raw), 2) if era_raw not in (None, "-", "", "-.--") else None,
-            "whip": round(safe_float(whip_raw), 2) if whip_raw not in (None, "-", "", "-.--") else None,
-            "inningsPitched": s.get("inningsPitched"),
-        }
-    except Exception as e:
-        log.warning(f"Season stats fetch failed for pitcher {pitcher_id}: {e}")
-        return fallback
-
-
-def pitcher_arsenal_whiff_pct(pitch_mix: list[dict]) -> Optional[float]:
-    """Usage-weighted whiff% across the pitcher's arsenal (real per-pitch lethality data)."""
-    weighted, total_usage = 0.0, 0.0
-    for p in pitch_mix:
-        if p.get("whiffPct") is not None:
-            weighted += p["whiffPct"] * p["usagePct"]
-            total_usage += p["usagePct"]
-    return round(weighted / total_usage, 1) if total_usage > 0 else None
-
-
 def edge_tier(blended_ops: float) -> str:
     if blended_ops >= 0.820:
         return "elite"
@@ -991,8 +958,6 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
     lineup_edge_ops = round(sum(b["blendedOps"] for b in batters) / len(batters), 3) if batters else 0.0
     total_h2h_pa = sum(b["h2h"]["pa"] for b in batters)
 
-    season_stats = get_pitcher_season_stats(pitcher_id)
-
     return {
         "id": f"m_{pitcher_id}",
         "pitcherId": str(pitcher_id),
@@ -1008,9 +973,6 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
         "lineupEdgeOps": lineup_edge_ops,
         "lineupEdgeTier": edge_tier(lineup_edge_ops),
         "totalH2hPa": total_h2h_pa,
-        "pitcherEra": season_stats["era"],
-        "pitcherWhip": season_stats["whip"],
-        "pitcherArsenalWhiffPct": pitcher_arsenal_whiff_pct(pitch_mix),
     }
 
 
