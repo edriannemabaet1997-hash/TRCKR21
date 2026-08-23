@@ -388,48 +388,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .game-context{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:.66em; color:var(--text-lo); padding:2px 0 8px; border-bottom:1px dashed var(--border-soft); margin-bottom:2px; flex-wrap:wrap; }
 .game-context .gc-sep{ color:var(--text-ghost); }
 .game-context .gc-tbd{ color:var(--text-ghost); font-style:italic; }
-
-/* NEW — team logos (MLB Static CDN) */
-.team-logo-wrap{ position:relative; display:inline-flex; flex-shrink:0; }
-.team-logo{ display:block; object-fit:contain; }
-.team-logo-fallback{ align-items:center; justify-content:center; border-radius:50%; background:var(--bg-raised); border:1px solid var(--border); color:var(--text-mid); font-family:var(--font-mono); font-weight:700; letter-spacing:.2px; }
-
-/* NEW — team-first Moneyline card */
-.gc-v2{ padding:16px 18px; gap:12px; }
-.gc-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
-.gc-topline{ display:flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); overflow:hidden; }
-.gc-topline .gc-sep{ color:var(--text-ghost); }
-.gc-fairline{ font-family:var(--font-mono); font-size:.66em; color:var(--text-ghost); letter-spacing:.6px; flex-shrink:0; }
-.gc-matchup{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
-.gc-team-block{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 4px; border-radius:10px; cursor:pointer; transition:background .15s var(--ease); text-align:center; min-width:0; }
-.gc-team-block:hover{ background:var(--bg-raised); }
-.gc-team-code{ font-family:var(--font-display); font-weight:700; font-size:1.05em; color:var(--text-hi); letter-spacing:.3px; }
-.gc-badge{ font-family:var(--font-mono); font-size:.64em; font-weight:700; letter-spacing:.4px; padding:3px 9px; border-radius:20px; white-space:nowrap; }
-.gc-badge.fav{ color:var(--green); background:rgba(51,193,122,.14); border:1px solid rgba(51,193,122,.35); }
-.gc-badge.dog{ color:var(--amber); background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.35); }
-.gc-center{ display:flex; flex-direction:column; align-items:center; gap:6px; width:78px; flex-shrink:0; }
-.gc-vs{ font-family:var(--font-mono); font-size:.6em; color:var(--text-ghost); letter-spacing:1.5px; }
-.gc-prob-track{ width:100%; height:6px; border-radius:3px; background:var(--amber); opacity:.3; overflow:hidden; position:relative; }
-.gc-prob-fill{ position:absolute; inset:0 auto 0 0; height:100%; background:var(--green); }
-.gc-prob-labels{ display:flex; justify-content:space-between; width:100%; font-family:var(--font-mono); font-size:.6em; color:var(--text-lo); }
-
-/* NEW — side-by-side dual-pitcher game drawer */
-.gd-pitchers-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
-.gd-col{ display:flex; flex-direction:column; gap:12px; min-width:0; }
-.gd-col-head{ display:flex; align-items:center; gap:10px; }
-.gd-col-name{ font-family:var(--font-display); font-weight:600; color:var(--text-hi); font-size:.9em; line-height:1.25; }
-.gd-col-sub{ font-family:var(--font-mono); font-size:.64em; color:var(--text-lo); margin-top:2px; }
-.gd-hud-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.gd-lineup-head{ font-family:var(--font-mono); font-size:.62em; text-transform:uppercase; letter-spacing:.5px; color:var(--text-lo); font-weight:700; margin-top:2px; display:flex; justify-content:space-between; align-items:baseline; gap:6px; }
-.gd-lineup-head .sub{ color:var(--text-ghost); text-transform:none; letter-spacing:0; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.gd-lineup-list{ display:flex; flex-direction:column; gap:1px; border:1px solid var(--border-soft); border-radius:8px; overflow:hidden; }
-.gd-lineup-row{ display:flex; align-items:center; gap:7px; padding:7px 9px; background:var(--bg-card-2); font-size:.76em; }
-.gd-lineup-row.adv{ background:rgba(51,193,122,.09); }
-.gd-lineup-order{ font-family:var(--font-mono); color:var(--text-lo); width:14px; flex-shrink:0; }
-.gd-lineup-name{ font-family:var(--font-body); color:var(--text-hi); font-weight:500; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.gd-hand{ font-family:var(--font-mono); font-size:.6em; color:var(--text-lo); flex-shrink:0; }
-.gd-adv-badge{ font-family:var(--font-mono); font-size:.56em; font-weight:700; color:var(--green); background:rgba(51,193,122,.16); border:1px solid rgba(51,193,122,.4); border-radius:10px; padding:1px 6px; cursor:help; flex-shrink:0; }
-@media(max-width:600px){ .gd-pitchers-grid{ grid-template-columns:1fr; } }
 @media(max-width:900px){ .hud-grid{ grid-template-columns:repeat(2,1fr); } .intel-grid{ grid-template-columns:1fr; } }
 @media(max-width:860px){
   .app-container{ flex-direction:column; }
@@ -640,33 +598,6 @@ const MARKET_B = 100/110;
 
 function escapeHTML(v){ return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
 function formatAmerican(v){ if(v===null||v===undefined) return 'N/A'; return Number(v)>0?`+${v}`:String(v); }
-
-/* ---- Team logos — MLB Static CDN, keyed off MLB team id ---- */
-const TEAM_META = {
-  ARI:109, AZ:109, ATL:144, BAL:110, BOS:111, CHC:112, CHW:145, CWS:145,
-  CIN:113, CLE:114, COL:115, DET:116, HOU:117, KC:118, KCR:118,
-  LAA:108, LAD:119, MIA:146, MIL:158, MIN:142, NYM:121, NYY:147,
-  OAK:133, ATH:133, PHI:143, PIT:134, SD:135, SDP:135, SEA:136,
-  SF:137, SFG:137, STL:138, TB:139, TBR:139, TEX:140, TOR:141,
-  WSH:120, WSN:120, WAS:120
-};
-function teamLogoImg(code, size){
-  const s = size || 24;
-  const key = String(code||'').toUpperCase().trim();
-  const id = TEAM_META[key];
-  const initials = escapeHTML(key.slice(0,3) || '—');
-  const fallback = `<span class="team-logo-fallback" style="width:${s}px;height:${s}px;font-size:${Math.max(8,Math.round(s*0.34))}px;display:${id?'none':'inline-flex'};">${initials}</span>`;
-  const img = id ? `<img class="team-logo" src="https://www.mlbstatic.com/team-logos/${id}.svg" alt="${initials}" width="${s}" height="${s}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">` : '';
-  return `<span class="team-logo-wrap" style="width:${s}px;height:${s}px;">${img}${fallback}</span>`;
-}
-function seasonSeriesLabel(g){
-  if(g.recentH2H) return g.recentH2H;
-  if(g.awaySeasonSeriesWins!==undefined && g.awaySeasonSeriesWins!==null){
-    const w = g.awaySeasonSeriesWins, l = g.awaySeasonSeriesLosses??0;
-    return `Season Series: ${escapeHTML(g.away)} ${w}-${l}`;
-  }
-  return 'Season series — no data yet';
-}
 function safeEdge(v){ return v===null||v===undefined?null:Number(v); }
 function debounce(fn,d){ let h; return(...a)=>{clearTimeout(h); h=setTimeout(()=>fn(...a),d);}; }
 function showToast(msg,type){
@@ -845,9 +776,7 @@ function renderSidebar(){
     State.batter.games.forEach(g=>{
       const div = document.createElement('div');
       div.className='list-item';
-      div.innerHTML = `<span class="trend-dot neutral"></span>
-        <span style="display:flex;align-items:center;gap:4px;flex-shrink:0;">${teamLogoImg(g.away,18)}${teamLogoImg(g.home,18)}</span>
-        <div style="min-width:0;"><div class="entity-name">${escapeHTML(g.away)} @ ${escapeHTML(g.home)}</div><div class="entity-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(seasonSeriesLabel(g))}</div></div>`;
+      div.innerHTML = `<span class="trend-dot neutral"></span><div><div class="entity-name">${escapeHTML(g.away)} @ ${escapeHTML(g.home)}</div><div class="entity-sub">${escapeHTML(g.awayPitcher||'TBD')} vs ${escapeHTML(g.homePitcher||'TBD')}</div></div>`;
       div.onclick = ()=>openGameDrawer(g.id,'away');
       container.appendChild(div);
     });
@@ -908,7 +837,7 @@ function renderSidebarTeamList(){
   filtered.forEach(team=>{
     const div = document.createElement('div');
     div.className='list-item'+(State.ui.filters.team===team?' active batter-line':'');
-    div.innerHTML = `${teamLogoImg(team,26)}<div><div class="entity-name">${escapeHTML(team)}</div><div class="entity-sub">${State.batter.players.filter(p=>p.team===team).length} tracked batters</div></div>`;
+    div.innerHTML = `<div><div class="entity-name">${escapeHTML(team)}</div><div class="entity-sub">${State.batter.players.filter(p=>p.team===team).length} tracked batters</div></div>`;
     div.onclick = ()=>{ State.ui.filters.team = team; document.getElementById('sel-team') && (document.getElementById('sel-team').value=team); renderSidebarTeamList(); renderPropsTable(); };
     listWrap.appendChild(div);
   });
@@ -1150,40 +1079,14 @@ function renderMoneylines(){
   if(!State.batter.games.length){ grid.innerHTML = '<div class="matchup-empty-state" style="grid-column:1/-1;">No games scheduled for today\'s slate.</div>'; return; }
   if(!State.ui.prevMlProbs) State.ui.prevMlProbs = {};
   const mlFlash = (key,val)=>{ const prev=State.ui.prevMlProbs[key]; State.ui.prevMlProbs[key]=val; return (prev!==undefined && Math.abs(prev-val)>0.0005) ? (val>prev?' flash-up':' flash-down') : ''; };
-  grid.innerHTML = State.batter.games.map(g=>{
-    const awayFav = g.awayProb >= g.homeProb;
-    const awayFlash = mlFlash(g.id+':away',g.awayProb).trim();
-    const homeFlash = mlFlash(g.id+':home',g.homeProb).trim();
-    const startTime = formatGameStartTime(g.startTimeUTC || g.startTime || g.gameDate);
-    const venue = g.venue || null;
-    return `
-    <div class="card game-card gc-v2">
-      <div class="gc-top">
-        <div class="gc-topline">
-          <span>${escapeHTML(startTime||'Time TBD')}</span>
-          ${venue?`<span class="gc-sep">&middot;</span><span>${escapeHTML(venue)}</span>`:''}
-        </div>
-        <span class="gc-fairline">FAIR LINE</span>
-      </div>
-      <div class="gc-matchup">
-        <div class="gc-team-block${awayFlash?' '+awayFlash:''}" onclick="openGameDrawer('${g.id}','away')" data-tip="${(g.awayProb*100).toFixed(1)}% win probability">
-          ${teamLogoImg(g.away,40)}
-          <span class="gc-team-code">${escapeHTML(g.away)}</span>
-          <span class="gc-badge ${awayFav?'fav':'dog'}">${awayFav?'FAV':'DOG'} ${formatAmerican(g.awayOdds)}</span>
-        </div>
-        <div class="gc-center">
-          <span class="gc-vs">VS</span>
-          <div class="gc-prob-track"><div class="gc-prob-fill" style="width:${(g.awayProb*100).toFixed(1)}%;"></div></div>
-          <span class="gc-prob-labels"><span>${(g.awayProb*100).toFixed(0)}%</span><span>${(g.homeProb*100).toFixed(0)}%</span></span>
-        </div>
-        <div class="gc-team-block${homeFlash?' '+homeFlash:''}" onclick="openGameDrawer('${g.id}','home')" data-tip="${(g.homeProb*100).toFixed(1)}% win probability">
-          ${teamLogoImg(g.home,40)}
-          <span class="gc-team-code">${escapeHTML(g.home)}</span>
-          <span class="gc-badge ${!awayFav?'fav':'dog'}">${!awayFav?'FAV':'DOG'} ${formatAmerican(g.homeOdds)}</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  grid.innerHTML = State.batter.games.map(g=>`
+    <div class="card game-card">
+      <div style="display:flex;justify-content:space-between;font-size:.7em;color:var(--text-lo);font-family:var(--font-mono);"><span>GAME ${String(g.id).toUpperCase()}</span><span>FAIR LINE</span></div>
+      ${gameContextHTML(g)}
+      <div class="team-row" onclick="openGameDrawer('${g.id}','away')"><div style="display:flex;align-items:center;gap:12px;"><span style="font-family:var(--font-display);font-weight:600;width:42px;color:var(--text-hi);">${escapeHTML(g.away)}</span><span style="font-size:.75em;color:var(--text-lo);">${escapeHTML(g.awayPitcher||'TBD')}</span></div><div class="mono" style="display:flex;gap:14px;"><span class="${mlFlash(g.id+':away',g.awayProb).trim()}">${(g.awayProb*100).toFixed(1)}%</span><span style="width:44px;text-align:right;color:${g.awayOdds>0?'var(--amber)':'var(--text-hi)'};">${formatAmerican(g.awayOdds)}</span></div></div>
+      <div style="height:1px;background:var(--border);"></div>
+      <div class="team-row" onclick="openGameDrawer('${g.id}','home')"><div style="display:flex;align-items:center;gap:12px;"><span style="font-family:var(--font-display);font-weight:600;width:42px;color:var(--text-hi);">${escapeHTML(g.home)}</span><span style="font-size:.75em;color:var(--text-lo);">${escapeHTML(g.homePitcher||'TBD')}</span></div><div class="mono" style="display:flex;gap:14px;"><span class="${mlFlash(g.id+':home',g.homeProb).trim()}">${(g.homeProb*100).toFixed(1)}%</span><span style="width:44px;text-align:right;color:${g.homeOdds>0?'var(--amber)':'var(--text-hi)'};">${formatAmerican(g.homeOdds)}</span></div></div>
+    </div>`).join('');
 }
 async function openGameDrawer(gameId,side){
   State.ui.gameDrawer.gameId = gameId; State.ui.gameDrawer.side = side||'away';
@@ -1195,72 +1098,34 @@ function closeGameDrawer(){ document.getElementById('game-drawer-overlay').class
 async function renderGameDrawer(){
   const game = State.batter.games.find(g=>g.id===State.ui.gameDrawer.gameId);
   if(!game) return;
+  const side = State.ui.gameDrawer.side;
+  const pitcherName = side==='away'?game.awayPitcher:game.homePitcher;
+  const pitcherTeam = side==='away'?game.away:game.home;
+  const pitcherId = side==='away'?game.awayPitcherId:game.homePitcherId;
   document.getElementById('gd-eyebrow').textContent = `Game ${String(game.id).toUpperCase()}`;
-  document.getElementById('gd-title').innerHTML = `${teamLogoImg(game.away,20)} ${escapeHTML(game.away)} @ ${escapeHTML(game.home)} ${teamLogoImg(game.home,20)}`;
+  document.getElementById('gd-title').textContent = `${game.away} @ ${game.home}`;
   document.getElementById('gd-score').innerHTML = `
     ${gameContextHTML(game)}
-    <div class="side" style="display:flex;justify-content:space-between;align-items:center;"><span style="display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:600;color:var(--text-hi);">${teamLogoImg(game.away,22)}${escapeHTML(game.away)}</span><span class="mono" style="display:flex;gap:12px;"><span>${(game.awayProb*100).toFixed(1)}%</span><span style="color:var(--text-lo);width:44px;text-align:right;">${formatAmerican(game.awayOdds)}</span></span></div>
-    <div class="side" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:600;color:var(--text-hi);">${teamLogoImg(game.home,22)}${escapeHTML(game.home)}</span><span class="mono" style="display:flex;gap:12px;"><span>${(game.homeProb*100).toFixed(1)}%</span><span style="color:var(--text-lo);width:44px;text-align:right;">${formatAmerican(game.homeOdds)}</span></span></div>`;
-
+    <div class="side ${side==='away'?'current':''}" style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:var(--font-display);font-weight:600;color:var(--text-hi);">${escapeHTML(game.away)}<span style="font-weight:400;color:var(--text-lo);"> · ${escapeHTML(game.awayPitcher||'TBD')}</span></span><span class="mono" style="display:flex;gap:12px;"><span>${(game.awayProb*100).toFixed(1)}%</span><span style="color:var(--text-lo);width:44px;text-align:right;">${formatAmerican(game.awayOdds)}</span></span></div>
+    <div class="side ${side==='home'?'current':''}" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-family:var(--font-display);font-weight:600;color:var(--text-hi);">${escapeHTML(game.home)}<span style="font-weight:400;color:var(--text-lo);"> · ${escapeHTML(game.homePitcher||'TBD')}</span></span><span class="mono" style="display:flex;gap:12px;"><span>${(game.homeProb*100).toFixed(1)}%</span><span style="color:var(--text-lo);width:44px;text-align:right;">${formatAmerican(game.homeOdds)}</span></span></div>`;
   const content = document.getElementById('gd-content');
-  content.innerHTML = '<div class="spinner"></div> Loading pitcher matchups...';
-
-  const sides = [
-    {side:'away', pitcherId:game.awayPitcherId, pitcherName:game.awayPitcher, pitcherTeam:game.away, oppTeam:game.home},
-    {side:'home', pitcherId:game.homePitcherId, pitcherName:game.homePitcher, pitcherTeam:game.home, oppTeam:game.away}
-  ];
-  const results = await Promise.all(sides.map(s => s.pitcherId
-    ? BatterAPI.fetchPitcher(s.pitcherId).catch(e => ({__error:e.message||'Failed to load pitcher data.'}))
-    : Promise.resolve(null)));
-
-  if(game.id !== State.ui.gameDrawer.gameId) return; // drawer moved on while we were loading
-  content.innerHTML = `<div class="gd-pitchers-grid">${sides.map((s,i)=>pitcherColumnHTML(s, results[i])).join('')}</div>`;
-}
-function pitcherColumnHTML(side, data){
-  if(!side.pitcherId){
-    return `<div class="gd-col"><div class="gd-col-head"><div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">—</div><div><div class="gd-col-name">${escapeHTML(side.pitcherTeam)}</div><div class="gd-col-sub">Starting pitcher TBD</div></div></div></div>`;
-  }
-  if(!data || data.__error){
-    return `<div class="gd-col"><div class="gd-col-head"><div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">—</div><div><div class="gd-col-name">${escapeHTML(side.pitcherName||side.pitcherTeam)}</div><div class="gd-col-sub" style="color:var(--red);">${escapeHTML((data&&data.__error)||'Failed to load pitcher data.')}</div></div></div></div>`;
-  }
-  const initials = (side.pitcherName||'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const vsL = data.splits.vsL, vsR = data.splits.vsR;
-  return `<div class="gd-col">
-    <div class="gd-col-head">
-      <div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">${initials}</div>
-      <div><div class="gd-col-name">${escapeHTML(side.pitcherName)}</div><div class="gd-col-sub">${escapeHTML(side.pitcherTeam)} &middot; Throws ${data.throws}</div></div>
-    </div>
-    <div class="gd-hud-row">
-      <div class="card hud-card" style="padding:10px 12px;"><span class="eyebrow">Proj K</span><span class="hud-val" style="font-size:1.1em;color:var(--batter);">${data.projK.toFixed(1)}</span></div>
-      <div class="card hud-card" style="padding:10px 12px;"><span class="eyebrow">Proj ER</span><span class="hud-val" style="font-size:1.1em;">${data.projER.toFixed(1)}</span></div>
-    </div>
-    <table class="split-table"><thead><tr><th></th><th>BAA</th><th>K%</th><th>BB%</th><th>HR%</th></tr></thead><tbody>
-      <tr><td>vs LHB</td><td>${vsL.baa.toFixed(3)}</td><td>${vsL.k.toFixed(1)}%</td><td>${vsL.bb.toFixed(1)}%</td><td>${vsL.hr.toFixed(1)}%</td></tr>
-      <tr><td>vs RHB</td><td>${vsR.baa.toFixed(3)}</td><td>${vsR.k.toFixed(1)}%</td><td>${vsR.bb.toFixed(1)}%</td><td>${vsR.hr.toFixed(1)}%</td></tr>
-    </tbody></table>
-    <div class="gd-lineup-head">Opposing Lineup <span class="sub">${escapeHTML(side.oppTeam)}</span></div>
-    ${opposingLineupHTML(side.pitcherId, data.throws)}
-  </div>`;
-}
-function opposingLineupHTML(pitcherId, pitcherThrows){
-  const matchup = State.pitcher.matchups.find(m=>String(m.pitcherId)===String(pitcherId));
-  if(!matchup || !matchup.batters || !matchup.batters.length){
-    return `<div class="matchup-empty-state" style="padding:14px;font-size:.76em;">Lineup not available yet — run the pitcher props sync (generate_projections.py) to populate this.</div>`;
-  }
-  const batters = matchup.batters.slice().sort((a,b)=>(a.order??99)-(b.order??99));
-  const rows = batters.map((b,i)=>{
-    const player = State.batter.players.find(p=>String(p.mlbId)===String(b.id));
-    const bats = player ? player.bats : null;
-    const adv = !!(bats && pitcherThrows && (bats==='S' || bats!==pitcherThrows));
-    const handTag = bats ? `<span class="gd-hand">${bats==='S'?'SWITCH':bats+'HB'}</span>` : '';
-    const advBadge = adv ? `<span class="gd-adv-badge" data-tip="Platoon advantage — vs ${escapeHTML(pitcherThrows)}HP">ADV</span>` : '';
-    return `<div class="gd-lineup-row${adv?' adv':''}">
-      <span class="gd-lineup-order">${b.order ?? (i+1)}</span>
-      <span class="gd-lineup-name">${escapeHTML(b.name)}</span>
-      ${handTag}${advBadge}
-    </div>`;
-  }).join('');
-  return `<div class="gd-lineup-list">${rows}</div>`;
+  if(!pitcherId){ content.innerHTML = '<div class="card" style="padding:16px;color:var(--text-lo);">Starting pitcher TBD for this side.</div>'; return; }
+  content.innerHTML = '<div class="spinner"></div> Loading pitcher data...';
+  try{
+    const data = await BatterAPI.fetchPitcher(pitcherId);
+    const initials = (pitcherName||'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const vsL=data.splits.vsL, vsR=data.splits.vsR;
+    const ladderSections = Object.keys(data.propLadder||{}).map(key=>{
+      const rows = data.propLadder[key].map(r=>`<div class="ladder-row"><span class="ladder-line mono">O ${r.line}</span><div class="ladder-bar-track"><div class="ladder-bar-fill" style="width:${r.prob*100}%;background:${r.prob>=.65?'var(--batter)':r.prob>=.4?'var(--amber)':'var(--red)'};"></div></div><span class="ladder-prob mono">${(r.prob*100).toFixed(0)}%</span><span class="ladder-odds mono">${formatAmerican(r.odds)}</span></div>`).join('');
+      const label = {k:'Strikeouts',bb:'Walks Allowed',er:'Earned Runs'}[key]||key;
+      return `<div class="card" style="padding:14px 16px;margin-top:12px;"><div class="eyebrow">${label}</div>${rows}</div>`;
+    }).join('');
+    content.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin:18px 0;"><div class="avatar-circle">${initials}</div><div><h2 style="font-family:var(--font-display);color:var(--text-hi);margin:0 0 2px;font-size:1.2em;">${escapeHTML(pitcherName)}</h2><div style="font-size:.8em;color:var(--text-lo);">${escapeHTML(pitcherTeam)} · Throws ${data.throws}</div></div></div>
+      <div class="hud-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px;"><div class="card hud-card"><span class="eyebrow">Projected K</span><span class="hud-val" style="color:var(--batter);">${data.projK.toFixed(1)}</span></div><div class="card hud-card"><span class="eyebrow">Projected ER</span><span class="hud-val">${data.projER.toFixed(1)}</span></div></div>
+      <div class="card" style="padding:14px 16px;"><div class="eyebrow">Platoon Splits</div><table class="split-table"><thead><tr><th></th><th>BAA</th><th>K%</th><th>BB%</th><th>HR%</th></tr></thead><tbody><tr><td>vs LHB</td><td>${vsL.baa.toFixed(3)}</td><td>${vsL.k.toFixed(1)}%</td><td>${vsL.bb.toFixed(1)}%</td><td>${vsL.hr.toFixed(1)}%</td></tr><tr><td>vs RHB</td><td>${vsR.baa.toFixed(3)}</td><td>${vsR.k.toFixed(1)}%</td><td>${vsR.bb.toFixed(1)}%</td><td>${vsR.hr.toFixed(1)}%</td></tr></tbody></table></div>
+      ${ladderSections}`;
+  }catch(e){ content.innerHTML = `<div class="card" style="padding:16px;color:var(--red);">${escapeHTML(e.message||'Failed to load pitcher data.')}</div>`; }
 }
 
 function renderTrackRecord(){

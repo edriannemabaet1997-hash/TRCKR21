@@ -831,13 +831,8 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         batters = list(pool.map(lambda b: batter_matchup_job(b, pitcher_id), lineup))
 
-    # `lineup` (and therefore `batters`, via pool.map) is still in real
-    # batting-order — capture that as "order" before we re-sort by
-    # blendedOps below. The frontend's game-drawer lineup panel needs the
-    # true 1-9 batting order, not the OPS-ranked position.
-    for idx, b in enumerate(batters):
+    for b in batters:
         b["edgeTier"] = edge_tier(b["blendedOps"])
-        b["order"] = idx + 1
 
     ranked = sorted(batters, key=lambda b: b["blendedOps"], reverse=True)
     lineup_edge_ops = round(sum(b["blendedOps"] for b in batters) / len(batters), 3) if batters else 0.0

@@ -108,14 +108,6 @@ class GameResponse(BaseModel):
     homePitcherId: int | None = None
     awayXRuns: float
     homeXRuns: float
-    # NEW: season-series / recent head-to-head context for the Moneylines
-    # sidebar subtitle (replaces the redundant pitcher-vs-pitcher line that
-    # already appears on the main game card). All optional — populate from
-    # prediction_service/mlb_client once wired; the frontend degrades
-    # gracefully when these are absent.
-    awaySeasonSeriesWins: int | None = None
-    awaySeasonSeriesLosses: int | None = None
-    recentH2H: str | None = None
 
 
 class SlateMeta(BaseModel):
