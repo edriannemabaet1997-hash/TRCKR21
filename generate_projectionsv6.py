@@ -194,7 +194,7 @@ def fetch_json(url: str) -> dict:
     last_err = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.5"})
+            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.4"})
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
                 return json.loads(resp.read().decode())
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
@@ -208,34 +208,11 @@ def format_date_label(date_str: str, is_home: bool, opp_name: str) -> str:
     try:
         dt = datetime.strptime(date_str, "%Y-%m-%d")
         formatted_date = dt.strftime("%m/%d")
+        opp_abbr = "".join(word[0] for word in opp_name.split())[:3].upper()
         location = "vs" if is_home else "@"
-
-        # Handle nulls or unexpected types gracefully
-        if not isinstance(opp_name, str) or not opp_name or opp_name == "OPP":
-            return f"{formatted_date} {location} OPP"
-
-        # Map common full names to standard abbreviations to avoid string-split glitches
-        TEAM_ABBR = {
-            "Arizona Diamondbacks": "ARI", "Atlanta Braves": "ATL", "Baltimore Orioles": "BAL",
-            "Boston Red Sox": "BOS", "Chicago Cubs": "CHC", "Chicago White Sox": "CHW",
-            "Cincinnati Reds": "CIN", "Cleveland Guardians": "CLE", "Colorado Rockies": "COL",
-            "Detroit Tigers": "DET", "Houston Astros": "HOU", "Kansas City Royals": "KC",
-            "Los Angeles Angels": "LAA", "Los Angeles Dodgers": "LAD", "Miami Marlins": "MIA",
-            "Milwaukee Brewers": "MIL", "Minnesota Twins": "MIN", "New York Mets": "NYM",
-            "New York Yankees": "NYY", "Oakland Athletics": "OAK", "Philadelphia Phillies": "PHI",
-            "Pittsburgh Pirates": "PIT", "San Diego Padres": "SD", "San Francisco Giants": "SF",
-            "Seattle Mariners": "SEA", "St. Louis Cardinals": "STL", "Tampa Bay Rays": "TB",
-            "Texas Rangers": "TEX", "Toronto Blue Jays": "TOR", "Washington Nationals": "WSH"
-        }
-
-        abbr = TEAM_ABBR.get(opp_name)
-        if not abbr:
-            # Fallback: take the first 3 letters of the first word (e.g., "ATL", "BOS")
-            abbr = opp_name.split()[0][:3].upper()
-
-        return f"{formatted_date} {location} {abbr}"
+        return f"{formatted_date} {location} {opp_abbr}"
     except (ValueError, TypeError):
-        return str(date_str) or "—"
+        return date_str or "—"
 
 
 def matchup_label(opponent_name: str, is_home: bool) -> str:
@@ -256,7 +233,7 @@ def safe_float(v, default: float = 0.0) -> float:
         return default
 
 
-# ================= STATISTICS CORE =================
+# ================= STATISTICS CORE (unchanged) =================
 def sample_mean(values: list[float]) -> float:
     n = len(values)
     return sum(values) / n if n else 0.0
@@ -332,7 +309,7 @@ def confidence_tier(n: int) -> str:
     return "low"
 
 
-# ================= MODEL =================
+# ================= MODEL (unchanged) =================
 @dataclass
 class MarketModel:
     distribution: str
@@ -397,7 +374,7 @@ def build_market(label: str, history: list[int], default_line: float, pad: int =
     }
 
 
-# ================= PITCHER ENGINE =================
+# ================= PITCHER ENGINE (unchanged) =================
 def get_pitcher_data(pitcher_id: int, pitcher_name: str, team_name: str,
                       opponent_name: str, is_home: bool) -> Optional[dict]:
     season = datetime.now(MLB_TZ).year
@@ -459,7 +436,7 @@ DEFAULT_LINES = {
 }
 
 
-# ================= TEAM ENGINE =================
+# ================= TEAM ENGINE (unchanged) =================
 def get_team_data(team_id: int, team_name: str, opponent_name: str, is_home: bool) -> Optional[dict]:
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/teams/{team_id}/stats?stats=gameLog&group=hitting&season={season}"
@@ -523,7 +500,9 @@ _raw_dump_done = False
 
 
 def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
-    """Pitch type usage% + avg velocity, free-tier MLB Stats API only."""
+    """Pitch type usage% + avg velocity, free-tier MLB Stats API only.
+    v2.4: now also captures the short pitch `code` (e.g. 'FF') alongside
+    the display name, so it can be joined to lethality data reliably."""
     global _raw_dump_done
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=pitchArsenal&group=pitching&season={season}"
@@ -562,11 +541,22 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
         log.warning(f"Pitch arsenal fetch failed for pitcher {pitcher_id}: {e}")
         return []
 
+# --- real per-pitch lethality from the live feed ---
 
 _LIVE_FEED_CACHE: dict[int, dict] = {}
 
 
 def get_live_feed(game_pk: int) -> dict:
+    """The v1 endpoints elsewhere in this file are season/summary stats.
+    Real pitch-by-pitch data — coordinates, descriptions, hit data — lives
+    on the v1.1 live feed, a genuinely different endpoint family.
+
+    v2.5: cached by game_pk. Once we added batter-side vulnerability
+    lookups, teammates in the same lineup started requesting the same
+    handful of recent games over and over (9 batters x their last 7
+    games overlaps heavily) — caching turns that from ~63 redundant
+    live-feed pulls down to however many distinct games actually exist.
+    """
     if game_pk in _LIVE_FEED_CACHE:
         return _LIVE_FEED_CACHE[game_pk]
     url = f"https://statsapi.mlb.com/api/v1.1/game/{game_pk}/feed/live"
@@ -599,6 +589,19 @@ _STRIKEOUT_EVENT_TYPES = {"strikeout", "strikeout_double_play", "strikeout_tripl
 
 
 def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[str, dict]:
+    """Real, counted Whiff%/Chase%/PutAway%/Hard-Hit% per pitch type
+    (bucketed by pitch CODE — see v2.4 notes at top of file), aggregated
+    over `game_pks` (this pitcher's actual recent starts). Every number
+    here is real_count / real_count — no fitted constants.
+
+    v2.4 PutAway% fix: `count` on a pitch event reflects the count AFTER
+    that pitch resolves, so a strikeout-ending pitch never itself carries
+    strikes==2. We instead track the ENTERING strike count for each pitch
+    (the previous pitch's resulting count within the same PA, 0 for the
+    first pitch) to correctly identify genuine 2-strike ("putaway")
+    pitches, then check whether that specific pitch ended the PA in a
+    strikeout.
+    """
     buckets: dict[str, dict] = {}
     display_names: dict[str, str] = {}
 
@@ -627,7 +630,7 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
             pitch_events = [e for e in events if e.get("isPitch")]
             result_event_type = play.get("result", {}).get("eventType", "")
 
-            entering_strikes = 0  
+            entering_strikes = 0  # count BEFORE the current pitch, within this PA
 
             for i, event in enumerate(pitch_events):
                 details = event.get("details", {})
@@ -648,6 +651,8 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
                 if is_whiff:
                     b["whiffs"] += 1
 
+                # Chase% — real zone check with this pitch's own coordinates
+                # and this batter's actual strike-zone bounds.
                 pitch_data = event.get("pitchData", {})
                 coords = pitch_data.get("coordinates", {})
                 px, pz = coords.get("pX"), coords.get("pZ")
@@ -659,17 +664,22 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
                         if is_swing:
                             b["outOfZoneSwings"] += 1
 
+                # PutAway% — v2.4: use the ENTERING count (state before this
+                # pitch was thrown), not the post-pitch count field.
                 is_last_pitch_of_pa = i == len(pitch_events) - 1
                 if entering_strikes == 2:
                     b["twoStrikePitches"] += 1
                     if is_last_pitch_of_pa and result_event_type in _STRIKEOUT_EVENT_TYPES:
                         b["twoStrikeKs"] += 1
 
+                # Advance entering_strikes to this pitch's resulting count
+                # for the next pitch in the same plate appearance.
                 post_count = event.get("count", {})
                 post_strikes = post_count.get("strikes")
                 if post_strikes is not None:
                     entering_strikes = min(int(post_strikes), 2)
 
+                # Hard-Hit% — real exit velocity off this pitch type.
                 if description_text in _IN_PLAY_DESCRIPTIONS:
                     hit_data = event.get("hitData", {})
                     launch_speed = hit_data.get("launchSpeed")
@@ -692,6 +702,9 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
 
 
 def get_batter_recent_game_pks(batter_id: int, limit: int = BATTER_VULN_LOOKBACK_GAMES) -> list[int]:
+    """Batter's own last `limit` games this season (hitting game log),
+    used as the window for their real per-pitch-type vulnerability —
+    separate from the pitcher's own recent-starts window."""
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=gameLog&group=hitting&season={season}"
     try:
@@ -706,6 +719,20 @@ def get_batter_recent_game_pks(batter_id: int, limit: int = BATTER_VULN_LOOKBACK
 
 
 def get_batter_pitch_vulnerability(batter_id: int, game_pks: list[int]) -> dict[str, dict]:
+    """Real, counted Whiff%/Chase%/Hard-Hit% for THIS BATTER, bucketed by
+    pitch code, aggregated over their own last `game_pks` games — across
+    whichever pitchers they actually faced, not fitted from K%.
+
+    This is the piece the frontend's pitch-mix hover-highlight needs:
+    'this batter whiffs 41% against sliders' as a real per-pitch number,
+    not the seasonWhiff/seasonChase proxies (which are just K%-derived
+    and identical in shape for every batter with the same K%).
+
+    Same play-by-play walk as get_pitcher_pitch_lethality, filtered by
+    matchup.batter.id instead of matchup.pitcher.id. PutAway% is omitted
+    here — that's a pitcher's-eye stat (finishing the AB), not a batter
+    vulnerability metric.
+    """
     buckets: dict[str, dict] = {}
     display_names: dict[str, str] = {}
 
@@ -843,6 +870,9 @@ def get_batter_vs_pitcher(batter_id: int, pitcher_id: int) -> dict:
 
 
 def get_batter_season_slash(batter_id: int) -> dict:
+    """Real season AVG/SLG/OPS/PA — used both for the existing OPS blend
+    and for Proxy xBA/xSLG shrinkage. Mod: Also pulls PA & K% + proxies Whiff/Chase 
+    per user request to 'reverse engineer' for the Discipline table."""
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=season&group=hitting&season={season}"
     fallback = {"avg": LEAGUE_AVG_AVG_FALLBACK, "slg": LEAGUE_AVG_SLG_FALLBACK, "ops": LEAGUE_AVG_OPS_FALLBACK, "pa": 0.0, "kPct": 0.0, "whiff": 0.0, "chase": 0.0, "csw": 0.0}
@@ -860,6 +890,7 @@ def get_batter_season_slash(batter_id: int) -> dict:
         so = safe_float(stat.get("strikeOuts"), 0.0)
         kPct = round((so / pa * 100), 1) if pa > 0 else 0.0
         
+        # Proxy calculations based on K% to drive the new K / Discipline UI
         whiff_proxy = round((kPct * 1.05) + 2.0, 1) if pa > 0 else 0.0
         chase_proxy = round((kPct * 0.95) + 4.0, 1) if pa > 0 else 0.0
         csw_proxy = round((kPct * 0.85) + 8.0, 1) if pa > 0 else 0.0
@@ -885,6 +916,9 @@ def shrink_h2h_ops(h2h_pa: int, h2h_ops: float, season_ops: float) -> dict:
 
 
 def shrink_proxy_xba_xslg(h2h_pa: int, h2h_avg: float, h2h_slg: float, season_avg: float, season_slg: float) -> dict:
+    """Proxy xBA / Proxy xSLG — credibility-weighted shrinkage of real
+    career H2H AVG/SLG toward real season AVG/SLG. NOT launch-angle-based
+    Statcast xBA/xSLG; label it 'shrunk' in the UI to keep that honest."""
     credibility = h2h_pa / (h2h_pa + STABILIZATION_PA)
     proxy_xba = credibility * h2h_avg + (1 - credibility) * season_avg
     proxy_xslg = credibility * h2h_slg + (1 - credibility) * season_slg
@@ -900,6 +934,11 @@ def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
         season_slash["avg"], season_slash["slg"],
     )
 
+    # v2.5: real per-pitch-type vulnerability for THIS batter (their own
+    # last BATTER_VULN_LOOKBACK_GAMES games), keyed by pitch code so the
+    # frontend can join it against the pitcher's pitchMix codes directly.
+    # This powers the pitch-mix hover-highlight — it's real counted data,
+    # not the K%-derived seasonWhiff/seasonChase proxies above.
     recent_pks = get_batter_recent_game_pks(batter["id"])
     pitch_vuln = get_batter_pitch_vulnerability(batter["id"], recent_pks) if recent_pks else {}
 
@@ -933,6 +972,7 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
                           is_home: bool, game_pk: int) -> Optional[dict]:
     pitch_mix = get_pitch_arsenal(pitcher_id)
 
+    # --- merge real per-pitch lethality onto each pitch entry, joined by CODE ---
     recent_pks = get_pitcher_recent_game_pks(pitcher_id)
     lethality = get_pitcher_pitch_lethality(pitcher_id, recent_pks) if recent_pks else {}
     for p in pitch_mix:
@@ -950,6 +990,10 @@ def get_matchup_analyzer(pitcher_id: int, pitcher_name: str, team_name: str,
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         batters = list(pool.map(lambda b: batter_matchup_job(b, pitcher_id), lineup))
 
+    # `lineup` (and therefore `batters`, via pool.map) is still in real
+    # batting-order — capture that as "order" before we re-sort by
+    # blendedOps below. The frontend's game-drawer lineup panel needs the
+    # true 1-9 batting order, not the OPS-ranked position.
     for idx, b in enumerate(batters):
         b["edgeTier"] = edge_tier(b["blendedOps"])
         b["order"] = idx + 1
@@ -1098,6 +1142,8 @@ def run(date_str: Optional[str] = None, output_path: str = "projections.json") -
             else:
                 frontend_db["matchups"].append(result)
 
+    # --- NEW v2.4: attach game start time + venue for the frontend's
+    # game-context header (Moneylines tab) ---
     game_context = {}
     for game in games:
         gd = game.get("gameDate")

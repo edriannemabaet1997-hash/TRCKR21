@@ -261,12 +261,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .market-btn:hover{ background:var(--bg-raised); color:var(--text-mid); }
 .market-btn.active{ background:var(--pitcher-dim); border-color:var(--pitcher-border); color:var(--pitcher); }
 .chart-card{ padding:26px 36px 26px 62px; flex-shrink:0; display:flex; flex-direction:column; position:relative; }
-/* --- CHART FIXES --- */
-.chart-area { 
-  position: relative; display: flex; align-items: flex-end; justify-content: space-around; 
-  height: 250px; margin-bottom: 22px; 
-  margin-top: 35px; /* Fix: Adds visual headroom so line badges don't clip the top */
-}
+.chart-area{ position:relative; display:flex; align-items:flex-end; justify-content:space-around; height:250px; margin-bottom:22px; }
 .grid-line{ position:absolute; left:0; right:0; border-top:1px solid var(--border-soft); }
 .grid-label{ position:absolute; left:-46px; top:-7px; font-family:var(--font-mono); font-size:.66em; color:var(--text-lo); width:38px; text-align:right; }
 .threshold-line{ position:absolute; left:0; right:0; border-top:2px dashed var(--mlb); z-index:10; display:flex; align-items:center; cursor:ns-resize; }
@@ -275,9 +270,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .avg-line{ position:absolute; left:0; right:0; border-top:1.5px dashed var(--pitcher); z-index:8; opacity:.75; }
 .avg-chip{ position:absolute; right:-2px; top:-9px; transform:translateY(-100%); font-family:var(--font-mono); font-size:.63em; color:var(--pitcher); background:var(--pitcher-dim); border:1px solid var(--pitcher-border); padding:2px 6px; border-radius:4px; font-weight:600; }
 .bar-group{ display:flex; flex-direction:column; align-items:center; z-index:2; width:6.5%; height:100%; justify-content:flex-end; cursor:crosshair; position:relative; }
-.bar { 
-  width: 100%; border-radius: 4px 4px 0 0; transition: height .4s var(--ease);
-}
+.bar{ width:100%; border-radius:4px 4px 0 0; display:flex; justify-content:center; padding-top:6px; font-weight:700; font-family:var(--font-mono); font-size:.95em; color:#fff; transition:height .4s var(--ease); }
 .bar.over{ background:var(--green); } .bar.under{ background:var(--red); }
 .x-label{ margin-top:14px; font-family:var(--font-mono); font-size:.7em; color:var(--text-lo); position:absolute; bottom:-28px; }
 .match-info-box{ padding:13px 18px; display:flex; flex-direction:column; gap:5px; opacity:0; transition:opacity .18s var(--ease); min-height:52px; background:#000; border:1px solid var(--border); border-radius:8px; }
@@ -315,6 +308,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .mx-panel{ display:none; } .mx-panel.active{ display:block; }
 .edge-summary-card{ background:linear-gradient(155deg,rgba(139,123,255,.09),rgba(139,123,255,.02)); border:1px solid rgba(139,123,255,.3); border-radius:14px; padding:22px 26px; display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; gap:24px; flex-wrap:wrap; }
 .edge-summary-value{ font-family:var(--font-display); font-size:2.3em; font-weight:700; color:var(--pitcher); }
+.edge-summary-caption{ font-size:.78em; color:var(--text-mid); max-width:420px; line-height:1.5; }
 .edge-tier-badge{ font-family:var(--font-mono); font-weight:800; letter-spacing:.5px; text-transform:uppercase; padding:8px 18px; border-radius:10px; font-size:.83em; }
 .edge-tier-badge.elite{ color:#0a0a0a; background:var(--green); box-shadow:0 0 22px rgba(51,193,122,.5); }
 .edge-tier-badge.strong{ color:#0a0a0a; background:var(--batter); }
@@ -375,19 +369,15 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .tier-legend-dot.average{ background:var(--amber); } .tier-legend-dot.soft{ background:var(--text-lo); }
 .tier-legend-count{ color:var(--text-hi); font-weight:700; }
 
-/* --- BATTER POPOVER (Replaces Inline Dots) --- */
-.batter-hover-wrap { position: relative; display: inline-flex; align-items: center; cursor: help; }
-.batter-hover-card {
-    position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 14px;
-    background: #08090b; border: 1px solid var(--border-focus);
-    padding: 12px 16px; border-radius: 8px; width: max-content;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); z-index: 100;
-    opacity: 0; pointer-events: none; transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
-}
-.batter-hover-wrap:hover .batter-hover-card { 
-    opacity: 1; pointer-events: auto; transform: translateY(-50%) translateX(4px); 
-}
-
+/* ---- Batter-vs-Pitch-Type Heat Strip + hover cross-highlight (v2.5) ---- */
+.heat-strip{ display:flex; gap:4px; justify-content:flex-end; align-items:center; }
+.heat-dot{ width:11px; height:11px; border-radius:50%; flex-shrink:0; cursor:help; position:relative;
+  border:1.5px solid rgba(255,255,255,.15); transition:transform .12s var(--ease), box-shadow .12s var(--ease); }
+.heat-dot.dim{ opacity:.28; border-style:dashed; }
+.heat-dot.pitch-hover-match{ transform:scale(1.35); box-shadow:0 0 0 2px var(--bg-card),0 0 8px rgba(255,255,255,.35); }
+.heat-dot.no-data{ background:transparent !important; border:1.5px dashed var(--border-soft); }
+.lineup-table tbody tr.pitch-hover-match td{ background:rgba(255,255,255,.045); }
+.lineup-table tbody tr.pitch-hover-dim{ opacity:.35; }
 .pitch-card{ transition:box-shadow .15s var(--ease), transform .15s var(--ease), opacity .15s var(--ease); cursor:pointer; }
 .pitch-card.pitch-hover-active{ box-shadow:0 0 0 1.5px var(--pc), 0 0 18px rgba(255,255,255,.08); transform:translateY(-2px); }
 .pitch-card.pitch-hover-inactive{ opacity:.45; }
@@ -395,6 +385,9 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .pitchmix-bar-seg{ height:100%; cursor:pointer; transition:filter .12s var(--ease); }
 .pitchmix-bar-seg:hover, .pitchmix-bar-seg.pitch-hover-active{ filter:brightness(1.35); }
 .dual-tone-dot{ background:conic-gradient(var(--dot-whiff, #9a9ca6) 0% var(--whiff-share,50%), var(--dot-hardhit, #33c17a) var(--whiff-share,50%) 100%); }
+.heat-strip-legend{ display:flex; align-items:center; gap:12px; font-family:var(--font-mono); font-size:.62em; color:var(--text-lo); margin-top:6px; }
+.heat-strip-legend .lg-item{ display:flex; align-items:center; gap:5px; }
+.heat-strip-legend .lg-swatch{ width:9px; height:9px; border-radius:50%; }
 .intel-stats-row{ display:flex; gap:14px; flex-wrap:wrap; margin-top:16px; }
 .intel-stat{ flex:1; min-width:120px; background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; padding:12px 14px; }
 .intel-stat-label{ font-family:var(--font-mono); font-size:.6em; text-transform:uppercase; color:var(--text-lo); font-weight:700; }
@@ -593,6 +586,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
         <div class="card lineup-table-card"><table class="lineup-table">
           <thead><tr id="mx-lineup-head">
             <th>#</th><th>Batter</th>
+            <th data-tip="Real per-pitch-type whiff/hard-hit vs this pitcher's arsenal, from the batter's own last 7 games — not a season K% proxy">vs Arsenal</th>
             <th data-key="pa" class="view-contact" onclick="sortH2h('pa')">H2H PA</th>
             <th data-key="avg" class="view-contact" onclick="sortH2h('avg')">H2H AVG</th>
             <th data-key="proxyXba" class="view-contact" onclick="sortH2h('proxyXba')">Proxy xBA</th>
@@ -606,16 +600,14 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
           </tr></thead>
           <tbody id="mx-lineup-body"></tbody>
         </table></div>
+        <div class="heat-strip-legend">
+          <span class="lg-item"><span class="lg-swatch" style="background:conic-gradient(#e8495f 0% 50%, #33c17a 50% 100%);"></span>Left half = whiff rate, right half = hard-hit rate on that pitch</span>
+          <span class="lg-item"><span class="lg-swatch" style="border:1.5px dashed var(--border-soft);background:transparent;"></span>Dashed / dim = under 6-pitch sample, treat as noisy</span>
+        </div>
       </div>
       <div class="mx-panel" id="mx-panel-teamintel">
         <div class="edge-summary-card">
-          <div>
-            <span class="eyebrow" style="display:flex; align-items:center; gap:6px;">
-              Lineup Threat Index &middot; Shrunk OPS
-              <span data-tip="Each batter's career OPS vs this pitcher is blended with season OPS, weighted by career PA sample size. Higher = tougher matchup for the pitcher." style="cursor:help; font-size:1.4em;">ℹ️</span>
-            </span>
-            <br><span class="edge-summary-value" id="mx-edge-value">.000</span>
-          </div>
+          <div><span class="eyebrow">Lineup Threat Index &middot; Shrunk OPS</span><br><span class="edge-summary-value" id="mx-edge-value">.000</span><br><span class="edge-summary-caption">Each batter's career OPS vs this pitcher is blended with season OPS, weighted by career PA sample size. Higher = tougher matchup for the pitcher.</span></div>
           <div class="edge-tier-badge" id="mx-edge-tier">—</div>
         </div>
         <div class="intel-grid">
@@ -1276,6 +1268,12 @@ function pitcherColumnHTML(side, data){
     ${opposingLineupHTML(side.pitcherId, data.throws, side.side)}
   </div>`;
 }
+/* ---- v2.5: mini stacked pitch-mix bar under the pitcher's face in the
+   Dual Pitcher Drawer. Hovering a segment highlights every opposing
+   batter who is a real match/miss on that pitch (per pitchVulnerability);
+   hovering a batter row highlights their single weakest pitch back on
+   this bar. Scoped per-side (away/home) so the two drawer columns never
+   cross-highlight each other. ---- */
 function pitchMixMiniBarHTML(pitcherId, scopeSide){
   const matchup = State.pitcher.matchups.find(m=>String(m.pitcherId)===String(pitcherId));
   const mix = (matchup && matchup.pitchMix) || [];
@@ -1471,7 +1469,7 @@ function renderPtChart(market){
   history.forEach((val,i)=>{
     const group = document.createElement('div'); group.className='bar-group';
     const isOver = val>State.ui.ptLine, barHeight = Math.min(100,(val/max)*100);
-    group.innerHTML = `<span class="mono" style="margin-bottom:6px; font-weight:700; font-size:.95em; color:var(--text-hi); z-index:10;">${val}</span><div class="bar ${isOver?'over':'under'}" style="height:${barHeight}%"></div><span class="x-label mono">${labels[i]||''}</span>`;
+    group.innerHTML = `<div class="bar ${isOver?'over':'under'}" style="height:${barHeight}%">${val}</div><span class="x-label mono">${labels[i]||''}</span>`;
     group.onmouseenter = ()=>showPtMatchInfo(details[i]);
     group.onmouseleave = ()=>document.getElementById('pt-match-info').classList.remove('active');
     area.appendChild(group);
@@ -1595,11 +1593,17 @@ function renderPitchMix(pitches){
   }).join('');
 }
 
-const PITCH_HOVER_WHIFF_THRESHOLD = 32;
-const PITCH_HOVER_HARDHIT_THRESHOLD = 45;
+/* ---- v2.5: bidirectional hover between pitch cards and the lineup's
+   per-pitch heat strip. Hover a pitch card -> tag every batter row as a
+   real match (whiff/hard-hit vs that pitch is meaningfully high) or dim
+   it. Hover a batter row -> light up whichever pitch they're weakest
+   against. All thresholds below are display heuristics, not the raw
+   backend numbers — the tooltip on each dot always shows the real %. ---- */
+const PITCH_HOVER_WHIFF_THRESHOLD = 32;   // %, swing-and-miss weak
+const PITCH_HOVER_HARDHIT_THRESHOLD = 45; // %, contact-damage weak
 
 function isWeakVsPitch(vuln){
-  if(!vuln || (vuln.whiffPct===null && vuln.hardHitPct===null)) return null;
+  if(!vuln || (vuln.whiffPct===null && vuln.hardHitPct===null)) return null; // no data
   return (vuln.whiffPct??0) >= PITCH_HOVER_WHIFF_THRESHOLD || (vuln.hardHitPct??0) >= PITCH_HOVER_HARDHIT_THRESHOLD;
 }
 function mxHighlightPitch(code){
@@ -1607,6 +1611,7 @@ function mxHighlightPitch(code){
     card.classList.toggle('pitch-hover-active', card.dataset.code===code);
     card.classList.toggle('pitch-hover-inactive', card.dataset.code!==code);
   });
+  document.querySelectorAll('#mx-lineup-body .heat-dot[data-code="'+code+'"]').forEach(dot=>dot.classList.add('pitch-hover-match'));
   document.querySelectorAll('#mx-lineup-body tr[data-batter-id]').forEach(row=>{
     const b = (State.ui.mxMatchup.batters||[]).find(x=>String(x.id)===row.dataset.batterId);
     const vuln = b && b.pitchVulnerability && b.pitchVulnerability[code];
@@ -1632,7 +1637,23 @@ function mxHighlightBatter(batterId){
 }
 function mxClearHighlight(){
   document.querySelectorAll('#mx-pitchmix .pitch-card').forEach(card=>card.classList.remove('pitch-hover-active','pitch-hover-inactive'));
+  document.querySelectorAll('#mx-lineup-body .heat-dot').forEach(dot=>dot.classList.remove('pitch-hover-match'));
   document.querySelectorAll('#mx-lineup-body tr[data-batter-id]').forEach(row=>row.classList.remove('pitch-hover-match','pitch-hover-dim'));
+}
+function heatStripHTML(batter, pitchMix){
+  const top = (pitchMix||[]).slice(0,4);
+  if(!top.length) return '<span class="mono" style="color:var(--text-lo);font-size:.72em;">—</span>';
+  const dots = top.map(p=>{
+    const v = batter.pitchVulnerability && batter.pitchVulnerability[p.code];
+    if(!v || (v.whiffPct===null && v.hardHitPct===null)){
+      return `<span class="heat-dot no-data" data-code="${p.code}" data-tip="${escapeHTML(p.type)} — no recent-game sample yet for this batter"></span>`;
+    }
+    const whiff = v.whiffPct??0, hard = v.hardHitPct??0;
+    const whiffShare = (whiff+hard)>0 ? Math.round(whiff/(whiff+hard)*100) : 50;
+    const dim = (v.sampleSize||0) < 6 ? ' dim':'';
+    return `<span class="heat-dot dual-tone-dot${dim}" data-code="${p.code}" style="--whiff-share:${whiffShare}%;--dot-whiff:#e8495f;--dot-hardhit:#33c17a;" data-tip="${escapeHTML(p.type)} vs this batter (L7 games) — Whiff ${fmtPct(v.whiffPct)} · Hard-Hit ${fmtPct(v.hardHitPct)} · n=${v.sampleSize}${dim?' (small sample)':''}"></span>`;
+  }).join('');
+  return `<div class="heat-strip">${dots}</div>`;
 }
 function onH2hSearch(e){ State.ui.h2hFilter = (e.target.value||'').toLowerCase(); renderLineupTable(); }
 function sortH2h(key){
@@ -1665,35 +1686,22 @@ function renderLineupTable(){
   const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
   const pitchMix = (State.ui.mxMatchup && State.ui.mxMatchup.pitchMix) || [];
   document.querySelectorAll('.lineup-table thead th[data-key]').forEach(th=>th.classList.toggle('sort-active', th.dataset.key===State.ui.h2hSort.key));
-  if(!batters.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
+  if(!batters.length){ body.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
   let rows = batters.filter(b=>!State.ui.h2hFilter || b.name.toLowerCase().includes(State.ui.h2hFilter));
   rows = rows.slice().sort((a,b)=>{ const av=h2hSortValue(a,State.ui.h2hSort.key), bv=h2hSortValue(b,State.ui.h2hSort.key); return State.ui.h2hSort.dir==='desc'?bv-av:av-bv; });
-  if(!rows.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
+  if(!rows.length){ body.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
   
   body.innerHTML = rows.map((b)=>{
     const h2h = b.h2h||{pa:0,avg:'.000',ops:0}; const small = h2h.pa<10;
     const proxyXba = b.proxyXba!==undefined ? b.proxyXba.toFixed(3) : '—';
     const proxyXslg = b.proxyXslg!==undefined ? b.proxyXslg.toFixed(3) : '—';
-
-    const popoverContent = (pitchMix||[]).map(p => {
-      const v = b.pitchVulnerability && b.pitchVulnerability[p.code];
-      if(!v || (v.whiffPct===null && v.hardHitPct===null)) return '';
-      return `<div style="display:flex; justify-content:space-between; gap:16px; margin-bottom:6px; font-family:var(--font-mono); font-size:11px;">
-          <span style="color:${pitchColor(p.type)}; font-weight:700;">${p.type}</span>
-          <span style="color:var(--text-mid);">Whiff ${fmtPct(v.whiffPct)} | Hard ${fmtPct(v.hardHitPct)} | n=${v.sampleSize}</span>
-      </div>`;
-    }).filter(Boolean).join('');
-
-    const popoverHTML = popoverContent ? `<div class="batter-hover-card"><div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">vs ${escapeHTML(State.ui.mxMatchup.pitcherName)}'s Arsenal</div>${popoverContent}</div>` : '';
     
     let rowHtml = `<tr data-batter-id="${b.id}" onmouseenter="mxHighlightBatter('${b.id}')" onmouseleave="mxClearHighlight()">
       <td class="batter-cell"><span class="lineup-order">${b._order}</span></td>
-      <td class="batter-cell" style="position:relative; overflow:visible;">
-        <div class="batter-hover-wrap">
-          <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
-          ${popoverHTML}
-        </div>
-      </td>`;
+      <td class="batter-cell">
+        <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
+      </td>
+      <td>${heatStripHTML(b, pitchMix)}</td>`;
 
     if (State.ui.mxTableView === 'contact') {
       rowHtml += `
@@ -1732,7 +1740,7 @@ function renderTeamIntel(m){
     <div class="intel-stat"><div class="intel-stat-label">Stable Sample Batters</div><div class="intel-stat-value">${confirmedBatters}/${batters.length}</div></div>`;
   const ranked = batters.slice().sort((a,b)=>b.blendedOps-a.blendedOps);
   const top3 = ranked.slice(0,3), bottom3 = ranked.slice(-3).reverse();
-  const threatRow = (b,rankLabel)=>`<div class="threat-row"><span class="threat-rank">${rankLabel}</span><img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${b.id}/headshot/silo/current" class="threat-avatar" style="object-fit:cover; padding:0;"><div><div class="threat-name">${escapeHTML(b.name)}</div><div class="threat-sub">${b.h2h&&b.h2h.pa?b.h2h.pa+' H2H PA':'No H2H history'} &middot; ${(b.credibility*100).toFixed(0)}% credibility</div></div><span class="threat-ops blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</span></div>`;
+  const threatRow = (b,rankLabel)=>`<div class="threat-row"><span class="threat-rank">${rankLabel}</span><span class="threat-avatar">${initials(b.name)}</span><div><div class="threat-name">${escapeHTML(b.name)}</div><div class="threat-sub">${b.h2h&&b.h2h.pa?b.h2h.pa+' H2H PA':'No H2H history'} &middot; ${(b.credibility*100).toFixed(0)}% credibility</div></div><span class="threat-ops blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</span></div>`;
   document.getElementById('mx-top-threats').innerHTML = top3.length ? top3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
   document.getElementById('mx-soft-threats').innerHTML = bottom3.length ? bottom3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
 }
