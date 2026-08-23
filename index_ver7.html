@@ -248,7 +248,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .calib-bar-track{ height:6px; background:var(--bg-raised); border-radius:3px; margin-top:8px; overflow:hidden; position:relative; }
 .calib-bar-fill{ position:absolute; top:0; bottom:0; border-radius:3px; }
 .header-stats{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:18px; gap:20px; flex-wrap:wrap; }
-.player-title{ font-family:var(--font-display); font-size:1.7em; font-weight:700; color:var(--text-hi); letter-spacing:-.3px; display:flex; align-items:center; gap:12px; }
+.player-title{ font-family:var(--font-display); font-size:1.7em; font-weight:700; color:var(--text-hi); letter-spacing:-.3px; }
 .player-context{ font-family:var(--font-mono); font-size:.76em; color:var(--text-lo); margin-top:5px; }
 .player-context .opp{ color:var(--pitcher); }
 .odds-box{ display:flex; gap:24px; }
@@ -513,27 +513,18 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
       <div class="mx-panel" id="mx-panel-pitchmix"><div class="section-heading">Pitch Arsenal <span class="sub" id="mx-pitchmix-sub">Season usage &amp; velocity &middot; MLB Stats API</span></div><div class="pitch-grid" id="mx-pitchmix"></div></div>
       <div class="mx-panel" id="mx-panel-h2h">
         <div class="section-heading">Opposing Lineup — Batter vs Pitcher <span class="sub">Career H2H, shrunk toward season form</span></div>
-        <div class="h2h-toolbar">
-          <div class="seg" id="mx-table-view-toggle">
-            <button class="seg-btn active" data-view="contact" onclick="switchMxTableView('contact')">Contact / Hit</button>
-            <button class="seg-btn" data-view="discipline" onclick="switchMxTableView('discipline')">K / Discipline</button>
-          </div>
-          <input type="text" id="mx-h2h-search" placeholder="Search batter…" oninput="onH2hSearch(event)" style="flex:1;min-width:180px;">
-          <span class="mono" style="font-size:.68em;color:var(--text-lo);">Click a column to sort</span>
-        </div>
+        <div class="h2h-toolbar"><input type="text" id="mx-h2h-search" placeholder="Search batter…" oninput="onH2hSearch(event)" style="flex:1;min-width:180px;"><span class="mono" style="font-size:.68em;color:var(--text-lo);">Click a column to sort</span></div>
         <div class="card lineup-table-card"><table class="lineup-table">
           <thead><tr id="mx-lineup-head">
             <th>#</th><th>Batter</th>
-            <th data-key="pa" class="view-contact" onclick="sortH2h('pa')">H2H PA</th>
-            <th data-key="avg" class="view-contact" onclick="sortH2h('avg')">H2H AVG</th>
-            <th data-key="proxyXba" class="view-contact" onclick="sortH2h('proxyXba')">Proxy xBA</th>
-            <th data-key="proxyXslg" class="view-contact" onclick="sortH2h('proxyXslg')">Proxy xSLG</th>
-            <th data-key="blendedOps" class="view-contact" onclick="sortH2h('blendedOps')">Blended OPS</th>
-            <th data-key="seasonPa" class="view-discipline hidden" onclick="sortH2h('seasonPa')">PA</th>
-            <th data-key="seasonKPct" class="view-discipline hidden" onclick="sortH2h('seasonKPct')">K%</th>
-            <th data-key="seasonChase" class="view-discipline hidden" onclick="sortH2h('seasonChase')">Chase%</th>
-            <th data-key="seasonWhiff" class="view-discipline hidden" onclick="sortH2h('seasonWhiff')">Whiff%</th>
-            <th data-key="seasonCsw" class="view-discipline hidden" onclick="sortH2h('seasonCsw')">CSW%</th>
+            <th data-key="pa" onclick="sortH2h('pa')">H2H PA</th>
+            <th data-key="avg" onclick="sortH2h('avg')">H2H AVG</th>
+            <th data-key="ops" onclick="sortH2h('ops')">H2H OPS</th>
+            <th data-key="seasonOps" onclick="sortH2h('seasonOps')">Season OPS</th>
+            <th data-key="credibility" onclick="sortH2h('credibility')">Credibility</th>
+            <th data-key="proxyXba" onclick="sortH2h('proxyXba')">Proxy xBA</th>
+            <th data-key="proxyXslg" onclick="sortH2h('proxyXslg')">Proxy xSLG</th>
+            <th data-key="blendedOps" onclick="sortH2h('blendedOps')">Blended OPS</th>
           </tr></thead>
           <tbody id="mx-lineup-body"></tbody>
         </table></div>
@@ -586,7 +577,7 @@ const State = {
     drawer:{playerId:null, calibrating:false, calibrationResult:null, view:'sandbox'},
     gameDrawer:{gameId:null, side:'away'},
     ptEntity:null, ptMarketKey:null, ptLine:null, ptDrag:null,
-    mxMatchup:null, mxSubTab:'pitchmix', mxTableView:'contact', h2hSort:{key:'blendedOps',dir:'desc'}, h2hFilter:'',
+    mxMatchup:null, mxSubTab:'pitchmix', h2hSort:{key:'blendedOps',dir:'desc'}, h2hFilter:'',
     sidebarTeamSearch:''
   }
 };
@@ -800,8 +791,7 @@ function renderSidebar(){
       const dotClass = streak.count>=2 ? (streak.dir==='O'?'hot':'cold') : 'neutral';
       const div = document.createElement('div');
       div.className='list-item'+(State.ui.ptEntity && State.ui.ptEntity.id===e.id ? ' active pitcher-line':'');
-      const avatarHtml = sec==='pitcherprops' ? `<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${e.id}/headshot/silo/current" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">` : '';
-      div.innerHTML = `<span class="trend-dot ${dotClass}"></span>${avatarHtml}<div><div class="entity-name">${escapeHTML(e.name)}</div><div class="entity-sub">${e.sub}</div></div>`;
+      div.innerHTML = `<span class="trend-dot ${dotClass}"></span><div><div class="entity-name">${escapeHTML(e.name)}</div><div class="entity-sub">${e.sub}</div></div>`;
       div.onclick = ()=>selectPtEntity(e.id, sec);
       container.appendChild(div);
     });
@@ -816,7 +806,6 @@ function renderSidebar(){
       const div = document.createElement('div');
       div.className='list-item'+(State.ui.mxMatchup && State.ui.mxMatchup.id===m.id ? ' active matchup-line':'');
       div.innerHTML = `<span class="trend-dot ${m.lineupEdgeTier==='elite'||m.lineupEdgeTier==='strong'?'hot':m.lineupEdgeTier==='soft'?'cold':'neutral'}"></span>
-        <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${m.pitcherId}/headshot/silo/current" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">
         <div><div class="entity-name">${escapeHTML(m.pitcherName)}</div><div class="entity-sub">${escapeHTML(m.team)} &middot; <span class="opp">${escapeHTML(m.matchup)}</span></div>
         <span class="entity-flag ${m.lineupConfirmed?'confirmed':'projected'}">${m.lineupConfirmed?'LINEUP CONFIRMED':'PROJECTED ROSTER'}</span></div>`;
       div.onclick = ()=>selectMatchup(m.id);
@@ -1201,10 +1190,7 @@ function renderPtMarketToggles(){
 }
 function renderPtView(){
   const market = State.ui.ptEntity.markets[State.ui.ptMarketKey];
-  const isPitcher = State.section === 'pitcherprops';
-  const avatarHtml = isPitcher ? `<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${State.ui.ptEntity.id}/headshot/silo/current" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">` : '';
-  
-  document.getElementById('pt-entity-name').innerHTML = `${avatarHtml}${escapeHTML(State.ui.ptEntity.name)}`;
+  document.getElementById('pt-entity-name').textContent = State.ui.ptEntity.name;
   document.getElementById('pt-entity-context').innerHTML = `${market.label} &middot; L${market.history.length} sample &middot; <span class="opp">${escapeHTML(State.ui.ptEntity.matchup)}</span>`;
   renderPtChart(market); renderPtHeaderStats(market, State.ui.ptLine); renderPtMetrics(market, State.ui.ptLine);
 }
@@ -1309,25 +1295,10 @@ function switchMxSubTab(tab){
   document.querySelectorAll('.mx-subnav-btn').forEach(btn=>{ const active=btn.dataset.tab===tab; btn.classList.toggle('active',active); if(active) positionMxIndicator(btn); });
   document.querySelectorAll('.mx-panel').forEach(panel=>panel.classList.toggle('active', panel.id==='mx-panel-'+tab));
 }
-function switchMxTableView(view){
-  State.ui.mxTableView = view;
-  document.querySelectorAll('#mx-table-view-toggle .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  document.querySelectorAll('.view-contact').forEach(el => el.classList.toggle('hidden', view !== 'contact'));
-  document.querySelectorAll('.view-discipline').forEach(el => el.classList.toggle('hidden', view !== 'discipline'));
-  
-  // Enforce sane default sorting when swapping views
-  if (view === 'discipline' && !['seasonPa','seasonKPct','seasonChase','seasonWhiff','seasonCsw'].includes(State.ui.h2hSort.key)) {
-    State.ui.h2hSort = {key: 'seasonKPct', dir: 'desc'};
-  } else if (view === 'contact' && !['pa','avg','proxyXba','proxyXslg','blendedOps'].includes(State.ui.h2hSort.key)) {
-    State.ui.h2hSort = {key: 'blendedOps', dir: 'desc'};
-  }
-  renderLineupTable();
-}
-
 function positionMxIndicator(btn){ const ind=document.getElementById('mx-subnav-indicator'); if(!ind||!btn) return; ind.style.width=btn.offsetWidth+'px'; ind.style.transform=`translateX(${btn.offsetLeft-5}px)`; }
 function renderMatchupView(){
   const m = State.ui.mxMatchup;
-  document.getElementById('mx-title').innerHTML = `<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${m.pitcherId}/headshot/silo/current" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;"> ${escapeHTML(m.pitcherName)} <span class="matchup-vs">${escapeHTML(m.matchup)}</span>`;
+  document.getElementById('mx-title').innerHTML = `${escapeHTML(m.pitcherName)} <span class="matchup-vs">${escapeHTML(m.matchup)}</span>`;
   document.getElementById('mx-context').innerHTML = `${escapeHTML(m.team)} &middot; ${escapeHTML(m.pitcherName)} vs the ${escapeHTML(m.opponent)} lineup &middot; ${m.totalH2hPa} total career H2H plate appearances on record`;
   const statusEl = document.getElementById('mx-lineup-status');
   statusEl.className = 'lineup-status '+(m.lineupConfirmed?'confirmed':'projected');
@@ -1394,16 +1365,11 @@ function h2hSortValue(b,key){
     case 'proxyXba': return b.proxyXba??0;
     case 'proxyXslg': return b.proxyXslg??0;
     case 'blendedOps': return b.blendedOps;
-    case 'seasonPa': return b.seasonPa??0;
-    case 'seasonKPct': return b.seasonKPct??0;
-    case 'seasonChase': return b.seasonChase??0;
-    case 'seasonWhiff': return b.seasonWhiff??0;
-    case 'seasonCsw': return b.seasonCsw??0;
     default: return 0;
   }
 }
 
-/* ---- H2H table: View Switcher explicitly controls columns rendered ---- */
+/* ---- H2H table: Proxy xBA / Proxy xSLG are now their own explicit columns ---- */
 function renderLineupTable(){
   const body = document.getElementById('mx-lineup-body');
   const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
@@ -1412,37 +1378,20 @@ function renderLineupTable(){
   let rows = batters.filter(b=>!State.ui.h2hFilter || b.name.toLowerCase().includes(State.ui.h2hFilter));
   rows = rows.slice().sort((a,b)=>{ const av=h2hSortValue(a,State.ui.h2hSort.key), bv=h2hSortValue(b,State.ui.h2hSort.key); return State.ui.h2hSort.dir==='desc'?bv-av:av-bv; });
   if(!rows.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
-  
   body.innerHTML = rows.map((b)=>{
     const h2h = b.h2h||{pa:0,avg:'.000',ops:0}; const small = h2h.pa<10;
     const proxyXba = b.proxyXba!==undefined ? b.proxyXba.toFixed(3) : '—';
     const proxyXslg = b.proxyXslg!==undefined ? b.proxyXslg.toFixed(3) : '—';
-    
-    let rowHtml = `<tr>
+    return `<tr>
       <td class="batter-cell"><span class="lineup-order">${b._order}</span></td>
       <td class="batter-cell">
         <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
-      </td>`;
-
-    if (State.ui.mxTableView === 'contact') {
-      rowHtml += `
-        <td>${h2h.pa}</td><td>${h2h.avg}</td>
-        <td data-tip="Career H2H AVG shrunk toward season AVG, weighted by real H2H PA — not launch-angle Statcast xBA">${proxyXba}</td>
-        <td data-tip="Same shrinkage method applied to SLG">${proxyXslg}</td>
-        <td class="blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</td>
-      `;
-    } else {
-      rowHtml += `
-        <td>${b.seasonPa??0}</td>
-        <td>${(b.seasonKPct??0).toFixed(1)}%</td>
-        <td>${(b.seasonChase??0).toFixed(1)}%</td>
-        <td>${(b.seasonWhiff??0).toFixed(1)}%</td>
-        <td>${(b.seasonCsw??0).toFixed(1)}%</td>
-      `;
-    }
-    
-    rowHtml += `</tr>`;
-    return rowHtml;
+      </td>
+      <td>${h2h.pa}</td><td>${h2h.avg}</td><td>${h2h.pa?h2h.ops.toFixed(3):'—'}</td><td>${b.seasonOps.toFixed(3)}</td>
+      <td><div class="credibility-cell" data-tip="Weight given to career H2H OPS vs. season OPS in the blend"><div class="credibility-track"><div class="credibility-fill" style="width:${(b.credibility*100).toFixed(0)}%"></div></div><span>${(b.credibility*100).toFixed(0)}%</span></div></td>
+      <td data-tip="Career H2H AVG shrunk toward season AVG, weighted by real H2H PA — not launch-angle Statcast xBA">${proxyXba}</td>
+      <td data-tip="Same shrinkage method applied to SLG">${proxyXslg}</td>
+      <td class="blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</td></tr>`;
   }).join('');
 }
 function initials(name){ return (name||'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }

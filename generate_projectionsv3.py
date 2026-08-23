@@ -722,11 +722,10 @@ def get_batter_vs_pitcher(batter_id: int, pitcher_id: int) -> dict:
 
 def get_batter_season_slash(batter_id: int) -> dict:
     """Real season AVG/SLG/OPS/PA — used both for the existing OPS blend
-    and for Proxy xBA/xSLG shrinkage. Mod: Also pulls PA & K% + proxies Whiff/Chase 
-    per user request to 'reverse engineer' for the Discipline table."""
+    and for Proxy xBA/xSLG shrinkage."""
     season = datetime.now(MLB_TZ).year
     url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=season&group=hitting&season={season}"
-    fallback = {"avg": LEAGUE_AVG_AVG_FALLBACK, "slg": LEAGUE_AVG_SLG_FALLBACK, "ops": LEAGUE_AVG_OPS_FALLBACK, "pa": 0.0, "kPct": 0.0, "whiff": 0.0, "chase": 0.0, "csw": 0.0}
+    fallback = {"avg": LEAGUE_AVG_AVG_FALLBACK, "slg": LEAGUE_AVG_SLG_FALLBACK, "ops": LEAGUE_AVG_OPS_FALLBACK}
     try:
         data = fetch_json(url)
         splits = data.get("stats", [{}])[0].get("splits", [])
@@ -736,25 +735,10 @@ def get_batter_season_slash(batter_id: int) -> dict:
         avg = safe_float(stat.get("avg"), fallback["avg"])
         slg = safe_float(stat.get("slg"), fallback["slg"])
         ops = safe_float(stat.get("ops"), fallback["ops"])
-        
-        pa = safe_float(stat.get("plateAppearances"), 0.0)
-        so = safe_float(stat.get("strikeOuts"), 0.0)
-        kPct = round((so / pa * 100), 1) if pa > 0 else 0.0
-        
-        # Proxy calculations based on K% to drive the new K / Discipline UI
-        whiff_proxy = round((kPct * 1.05) + 2.0, 1) if pa > 0 else 0.0
-        chase_proxy = round((kPct * 0.95) + 4.0, 1) if pa > 0 else 0.0
-        csw_proxy = round((kPct * 0.85) + 8.0, 1) if pa > 0 else 0.0
-        
         return {
             "avg": avg if avg > 0 else fallback["avg"],
             "slg": slg if slg > 0 else fallback["slg"],
             "ops": ops if ops > 0 else fallback["ops"],
-            "pa": pa,
-            "kPct": kPct,
-            "whiff": whiff_proxy,
-            "chase": chase_proxy,
-            "csw": csw_proxy,
         }
     except Exception:
         return fallback
@@ -788,11 +772,6 @@ def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
         **batter,
         "h2h": h2h,
         "seasonOps": round(season_slash["ops"], 3),
-        "seasonPa": season_slash["pa"],
-        "seasonKPct": season_slash["kPct"],
-        "seasonWhiff": season_slash["whiff"],
-        "seasonChase": season_slash["chase"],
-        "seasonCsw": season_slash["csw"],
         **shrink,
         **proxy,
     }

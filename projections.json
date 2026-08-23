@@ -649,18 +649,18 @@
             3,
             4,
             6,
-            0
+            4
           ],
           "max": 9,
           "model": {
-            "distribution": "negative_binomial",
-            "mu": 3.8,
-            "variance": 5.289,
-            "vmr": 1.392,
-            "overProb": 0.3362,
-            "fairOdds": "+197",
+            "distribution": "poisson",
+            "mu": 4.2,
+            "variance": 3.511,
+            "vmr": 0.836,
+            "overProb": 0.4102,
+            "fairOdds": "+144",
             "impliedProbMarket": 0.5238,
-            "edgePct": -18.76,
+            "edgePct": -11.36,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -680,19 +680,19 @@
             2,
             5,
             4,
-            0
+            4
           ],
           "max": 6,
           "model": {
-            "distribution": "negative_binomial",
-            "mu": 3.0,
-            "variance": 3.778,
-            "vmr": 1.259,
-            "overProb": 0.7652,
-            "fairOdds": "-326",
+            "distribution": "poisson",
+            "mu": 3.4,
+            "variance": 2.711,
+            "vmr": 0.797,
+            "overProb": 0.8532,
+            "fairOdds": "-581",
             "impliedProbMarket": 0.5238,
-            "edgePct": 24.14,
-            "kellyPct": 50.69,
+            "edgePct": 32.93,
+            "kellyPct": 69.16,
             "confidence": "high",
             "sampleSize": 10,
             "fallback": false
@@ -711,18 +711,18 @@
             2,
             2,
             3,
-            1
+            2
           ],
           "max": 6,
           "model": {
             "distribution": "poisson",
-            "mu": 2.1,
-            "variance": 1.433,
-            "vmr": 0.683,
-            "overProb": 0.3504,
-            "fairOdds": "+185",
+            "mu": 2.2,
+            "variance": 1.289,
+            "vmr": 0.586,
+            "overProb": 0.3773,
+            "fairOdds": "+165",
             "impliedProbMarket": 0.5238,
-            "edgePct": -17.34,
+            "edgePct": -14.65,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -781,7 +781,7 @@
         },
         {
           "score": "L",
-          "text": "IP: 0.1 | ER: 0 | BB: 1 | K: 0"
+          "text": "IP: 5.0 | ER: 4 | BB: 2 | K: 4"
         }
       ]
     },
@@ -806,19 +806,19 @@
             9,
             7,
             5,
-            0
+            4
           ],
           "max": 11,
           "model": {
-            "distribution": "negative_binomial",
-            "mu": 6.0,
-            "variance": 8.889,
-            "vmr": 1.481,
-            "overProb": 0.6625,
-            "fairOdds": "-196",
+            "distribution": "poisson",
+            "mu": 6.4,
+            "variance": 5.156,
+            "vmr": 0.806,
+            "overProb": 0.7649,
+            "fairOdds": "-325",
             "impliedProbMarket": 0.5238,
-            "edgePct": 13.87,
-            "kellyPct": 29.13,
+            "edgePct": 24.11,
+            "kellyPct": 50.64,
             "confidence": "high",
             "sampleSize": 10,
             "fallback": false
@@ -837,18 +837,18 @@
             4,
             0,
             0,
-            0
+            1
           ],
           "max": 5,
           "model": {
             "distribution": "negative_binomial",
-            "mu": 1.1,
-            "variance": 2.1,
-            "vmr": 1.909,
-            "overProb": 0.2792,
-            "fairOdds": "+258",
+            "mu": 1.2,
+            "variance": 1.956,
+            "vmr": 1.63,
+            "overProb": 0.3154,
+            "fairOdds": "+217",
             "impliedProbMarket": 0.5238,
-            "edgePct": -24.46,
+            "edgePct": -20.84,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -868,18 +868,18 @@
             2,
             2,
             5,
-            1
+            3
           ],
           "max": 6,
           "model": {
             "distribution": "poisson",
-            "mu": 2.2,
-            "variance": 2.178,
-            "vmr": 0.99,
-            "overProb": 0.3773,
-            "fairOdds": "+165",
+            "mu": 2.4,
+            "variance": 2.044,
+            "vmr": 0.852,
+            "overProb": 0.4303,
+            "fairOdds": "+132",
             "impliedProbMarket": 0.5238,
-            "edgePct": -14.65,
+            "edgePct": -9.35,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -937,8 +937,8 @@
           "text": "IP: 6.0 | ER: 0 | BB: 5 | K: 5"
         },
         {
-          "score": "L",
-          "text": "IP: 1.0 | ER: 0 | BB: 1 | K: 0"
+          "score": "W",
+          "text": "IP: 5.0 | ER: 1 | BB: 3 | K: 4"
         }
       ]
     },
@@ -4519,7 +4519,9 @@
           "score": "W",
           "text": "F5 Runs: 3 | Full Game Runs: 4"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T17:35:00Z",
+      "venue": "Yankee Stadium"
     },
     {
       "id": "t_147",
@@ -4645,7 +4647,9 @@
           "score": "L",
           "text": "F5 Runs: 0 | Full Game Runs: 3"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T17:35:00Z",
+      "venue": "Yankee Stadium"
     },
     {
       "id": "t_144",
@@ -4771,7 +4775,9 @@
           "score": "L",
           "text": "F5 Runs: 1 | Full Game Runs: 1"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T18:10:00Z",
+      "venue": "American Family Field"
     },
     {
       "id": "t_158",
@@ -4897,7 +4903,9 @@
           "score": "W",
           "text": "F5 Runs: 4 | Full Game Runs: 4"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T18:10:00Z",
+      "venue": "American Family Field"
     },
     {
       "id": "t_120",
@@ -4920,18 +4928,18 @@
             2,
             0,
             0,
-            0
+            2
           ],
           "max": 7,
           "model": {
             "distribution": "negative_binomial",
-            "mu": 1.6,
-            "variance": 4.044,
-            "vmr": 2.528,
-            "overProb": 0.3817,
-            "fairOdds": "+162",
+            "mu": 1.8,
+            "variance": 3.733,
+            "vmr": 2.074,
+            "overProb": 0.45,
+            "fairOdds": "+122",
             "impliedProbMarket": 0.5238,
-            "edgePct": -14.21,
+            "edgePct": -7.38,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -4951,18 +4959,18 @@
             6,
             0,
             2,
-            0
+            2
           ],
           "max": 9,
           "model": {
             "distribution": "negative_binomial",
-            "mu": 2.9,
-            "variance": 7.433,
-            "vmr": 2.563,
-            "overProb": 0.222,
-            "fairOdds": "+350",
+            "mu": 3.1,
+            "variance": 6.544,
+            "vmr": 2.111,
+            "overProb": 0.2414,
+            "fairOdds": "+314",
             "impliedProbMarket": 0.5238,
-            "edgePct": -30.18,
+            "edgePct": -28.25,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -5021,9 +5029,11 @@
         },
         {
           "score": "L",
-          "text": "F5 Runs: 0 | Full Game Runs: 0"
+          "text": "F5 Runs: 2 | Full Game Runs: 2"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T20:10:00Z",
+      "venue": "loanDepot park"
     },
     {
       "id": "t_146",
@@ -5046,18 +5056,18 @@
             2,
             0,
             0,
-            2
+            4
           ],
           "max": 7,
           "model": {
             "distribution": "negative_binomial",
-            "mu": 1.3,
-            "variance": 4.011,
-            "vmr": 3.085,
-            "overProb": 0.2958,
-            "fairOdds": "+238",
+            "mu": 1.5,
+            "variance": 4.722,
+            "vmr": 3.148,
+            "overProb": 0.3371,
+            "fairOdds": "+197",
             "impliedProbMarket": 0.5238,
-            "edgePct": -22.8,
+            "edgePct": -18.67,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -5077,18 +5087,18 @@
             4,
             1,
             3,
-            2
+            4
           ],
           "max": 10,
           "model": {
             "distribution": "negative_binomial",
-            "mu": 3.9,
-            "variance": 8.989,
-            "vmr": 2.305,
-            "overProb": 0.3466,
-            "fairOdds": "+188",
+            "mu": 4.1,
+            "variance": 8.544,
+            "vmr": 2.084,
+            "overProb": 0.376,
+            "fairOdds": "+166",
             "impliedProbMarket": 0.5238,
-            "edgePct": -17.72,
+            "edgePct": -14.78,
             "kellyPct": 0.0,
             "confidence": "high",
             "sampleSize": 10,
@@ -5147,9 +5157,11 @@
         },
         {
           "score": "W",
-          "text": "F5 Runs: 2 | Full Game Runs: 2"
+          "text": "F5 Runs: 4 | Full Game Runs: 4"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T20:10:00Z",
+      "venue": "loanDepot park"
     },
     {
       "id": "t_138",
@@ -5275,7 +5287,9 @@
           "score": "L",
           "text": "F5 Runs: 2 | Full Game Runs: 6"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T22:05:00Z",
+      "venue": "Citizens Bank Park"
     },
     {
       "id": "t_143",
@@ -5401,7 +5415,9 @@
           "score": "W",
           "text": "F5 Runs: 3 | Full Game Runs: 7"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T22:05:00Z",
+      "venue": "Citizens Bank Park"
     },
     {
       "id": "t_139",
@@ -5527,7 +5543,9 @@
           "score": "L",
           "text": "F5 Runs: 3 | Full Game Runs: 3"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:05:00Z",
+      "venue": "Oriole Park at Camden Yards"
     },
     {
       "id": "t_110",
@@ -5653,7 +5671,9 @@
           "score": "W",
           "text": "F5 Runs: 5 | Full Game Runs: 5"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:05:00Z",
+      "venue": "Oriole Park at Camden Yards"
     },
     {
       "id": "t_108",
@@ -5779,7 +5799,9 @@
           "score": "L",
           "text": "F5 Runs: 0 | Full Game Runs: 1"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:05:00Z",
+      "venue": "Globe Life Field"
     },
     {
       "id": "t_140",
@@ -5905,7 +5927,9 @@
           "score": "W",
           "text": "F5 Runs: 0 | Full Game Runs: 2"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:05:00Z",
+      "venue": "Globe Life Field"
     },
     {
       "id": "t_133",
@@ -6031,7 +6055,9 @@
           "score": "L",
           "text": "F5 Runs: 0 | Full Game Runs: 0"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:10:00Z",
+      "venue": "Daikin Park"
     },
     {
       "id": "t_117",
@@ -6157,7 +6183,9 @@
           "score": "W",
           "text": "F5 Runs: 3 | Full Game Runs: 4"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:10:00Z",
+      "venue": "Daikin Park"
     },
     {
       "id": "t_121",
@@ -6283,7 +6311,9 @@
           "score": "L",
           "text": "F5 Runs: 4 | Full Game Runs: 4"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:10:00Z",
+      "venue": "Rate Field"
     },
     {
       "id": "t_145",
@@ -6409,7 +6439,9 @@
           "score": "W",
           "text": "F5 Runs: 0 | Full Game Runs: 6"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:10:00Z",
+      "venue": "Rate Field"
     },
     {
       "id": "t_116",
@@ -6535,7 +6567,9 @@
           "score": "L",
           "text": "F5 Runs: 0 | Full Game Runs: 2"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "Kauffman Stadium"
     },
     {
       "id": "t_118",
@@ -6661,7 +6695,9 @@
           "score": "W",
           "text": "F5 Runs: 2 | Full Game Runs: 5"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "Kauffman Stadium"
     },
     {
       "id": "t_134",
@@ -6787,7 +6823,9 @@
           "score": "L",
           "text": "F5 Runs: 2 | Full Game Runs: 4"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "UNIQLO Field at Dodger Stadium"
     },
     {
       "id": "t_119",
@@ -6913,7 +6951,9 @@
           "score": "W",
           "text": "F5 Runs: 4 | Full Game Runs: 5"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "UNIQLO Field at Dodger Stadium"
     },
     {
       "id": "t_112",
@@ -7039,7 +7079,9 @@
           "score": "L",
           "text": "F5 Runs: 3 | Full Game Runs: 5"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "T-Mobile Park"
     },
     {
       "id": "t_136",
@@ -7165,7 +7207,9 @@
           "score": "W",
           "text": "F5 Runs: 5 | Full Game Runs: 6"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "T-Mobile Park"
     },
     {
       "id": "t_137",
@@ -7291,7 +7335,9 @@
           "score": "L",
           "text": "F5 Runs: 4 | Full Game Runs: 4"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "Fenway Park"
     },
     {
       "id": "t_111",
@@ -7417,7 +7463,9 @@
           "score": "W",
           "text": "F5 Runs: 5 | Full Game Runs: 6"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-22T23:15:00Z",
+      "venue": "Fenway Park"
     },
     {
       "id": "t_113",
@@ -7543,7 +7591,9 @@
           "score": "L",
           "text": "F5 Runs: 0 | Full Game Runs: 0"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-23T00:10:00Z",
+      "venue": "Chase Field"
     },
     {
       "id": "t_109",
@@ -7669,7 +7719,9 @@
           "score": "W",
           "text": "F5 Runs: 6 | Full Game Runs: 9"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-23T00:10:00Z",
+      "venue": "Chase Field"
     },
     {
       "id": "t_114",
@@ -7795,7 +7847,9 @@
           "score": "W",
           "text": "F5 Runs: 4 | Full Game Runs: 9"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-23T00:10:00Z",
+      "venue": "Coors Field"
     },
     {
       "id": "t_115",
@@ -7921,7 +7975,9 @@
           "score": "L",
           "text": "F5 Runs: 1 | Full Game Runs: 1"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-23T00:10:00Z",
+      "venue": "Coors Field"
     },
     {
       "id": "t_142",
@@ -8047,7 +8103,9 @@
           "score": "L",
           "text": "F5 Runs: 2 | Full Game Runs: 2"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-23T00:40:00Z",
+      "venue": "Petco Park"
     },
     {
       "id": "t_135",
@@ -8173,7 +8231,9 @@
           "score": "W",
           "text": "F5 Runs: 6 | Full Game Runs: 6"
         }
-      ]
+      ],
+      "startTimeUTC": "2026-08-23T00:40:00Z",
+      "venue": "Petco Park"
     }
   ],
   "matchups": [
@@ -8190,172 +8250,111 @@
       "pitchMix": [
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 25.3,
           "avgVelo": 85.7,
           "whiffPct": 29.7,
           "chasePct": 36.1,
-          "putAwayPct": 0.0,
+          "putAwayPct": 20.5,
           "hardHitPct": 37.5,
           "lethalitySample": 130
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 22.2,
           "avgVelo": 95.8,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 21.4,
+          "chasePct": 26.7,
+          "putAwayPct": 20.0,
+          "hardHitPct": 25.0,
+          "lethalitySample": 43
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 20.8,
           "avgVelo": 94.1,
           "whiffPct": 7.9,
           "chasePct": 24.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 3.4,
           "hardHitPct": 41.4,
           "lethalitySample": 148
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 20.0,
           "avgVelo": 81.2,
           "whiffPct": 21.4,
           "chasePct": 15.8,
-          "putAwayPct": 0.0,
+          "putAwayPct": 13.0,
           "hardHitPct": 22.2,
           "lethalitySample": 94
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 11.7,
           "avgVelo": 86.8,
           "whiffPct": 23.8,
           "chasePct": 20.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 22.2,
           "hardHitPct": 22.2,
           "lethalitySample": 50
         }
       ],
       "batters": [
         {
-          "id": 672386,
-          "name": "Alejandro Kirk",
-          "h2h": {
-            "pa": 5,
-            "ab": 5,
-            "h": 3,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".600",
-            "obp": ".600",
-            "slg": ".800",
-            "ops": 1.4
-          },
-          "seasonOps": 0.794,
-          "credibility": 0.048,
-          "blendedOps": 0.823,
-          "proxyXba": 0.298,
-          "proxyXslg": 0.446,
-          "edgeTier": "elite"
-        },
-        {
-          "id": 672960,
-          "name": "Kazuma Okamoto",
-          "h2h": {
-            "pa": 10,
-            "ab": 10,
-            "h": 4,
-            "hr": 1,
-            "bb": 0,
-            "so": 4,
-            "avg": ".400",
-            "obp": ".400",
-            "slg": ".900",
-            "ops": 1.3
-          },
-          "seasonOps": 0.74,
-          "credibility": 0.091,
-          "blendedOps": 0.791,
-          "proxyXba": 0.245,
-          "proxyXslg": 0.481,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 543807,
-          "name": "George Springer",
-          "h2h": {
-            "pa": 11,
-            "ab": 10,
-            "h": 4,
-            "hr": 2,
-            "bb": 1,
-            "so": 1,
-            "avg": ".400",
-            "obp": ".455",
-            "slg": "1.000",
-            "ops": 1.455
-          },
-          "seasonOps": 0.71,
-          "credibility": 0.099,
-          "blendedOps": 0.784,
-          "proxyXba": 0.256,
-          "proxyXslg": 0.451,
-          "edgeTier": "strong"
-        },
-        {
           "id": 703520,
           "name": "Brett Bateman",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
+            "pa": 1,
+            "ab": 1,
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 1,
+            "so": 0,
             "avg": ".000",
             "obp": ".000",
             "slg": ".000",
             "ops": 0.0
           },
           "seasonOps": 0.778,
-          "credibility": 0.029,
-          "blendedOps": 0.755,
-          "proxyXba": 0.312,
-          "proxyXslg": 0.399,
+          "credibility": 0.01,
+          "blendedOps": 0.77,
+          "proxyXba": 0.318,
+          "proxyXslg": 0.407,
           "edgeTier": "strong"
         },
         {
-          "id": 807727,
-          "name": "Charles McAdoo",
+          "id": 672386,
+          "name": "Alejandro Kirk",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
+            "pa": 9,
+            "ab": 9,
             "h": 2,
             "hr": 0,
             "bb": 0,
-            "so": 0,
-            "avg": ".667",
-            "obp": ".667",
-            "slg": ".667",
-            "ops": 1.334
+            "so": 3,
+            "avg": ".222",
+            "obp": ".222",
+            "slg": ".222",
+            "ops": 0.444
           },
-          "seasonOps": 0.685,
-          "credibility": 0.029,
-          "blendedOps": 0.704,
-          "proxyXba": 0.274,
-          "proxyXslg": 0.401,
-          "edgeTier": "average"
+          "seasonOps": 0.794,
+          "credibility": 0.083,
+          "blendedOps": 0.765,
+          "proxyXba": 0.278,
+          "proxyXslg": 0.411,
+          "edgeTier": "strong"
         },
         {
-          "id": 676391,
-          "name": "Ernie Clement",
+          "id": 672960,
+          "name": "Kazuma Okamoto",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
+            "pa": 1,
+            "ab": 1,
             "h": 0,
             "hr": 0,
             "bb": 0,
@@ -8365,33 +8364,33 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.712,
-          "credibility": 0.029,
-          "blendedOps": 0.691,
-          "proxyXba": 0.277,
-          "proxyXslg": 0.39,
+          "seasonOps": 0.738,
+          "credibility": 0.01,
+          "blendedOps": 0.731,
+          "proxyXba": 0.228,
+          "proxyXslg": 0.434,
           "edgeTier": "average"
         },
         {
-          "id": 664770,
-          "name": "Nathan Lukes",
+          "id": 543807,
+          "name": "George Springer",
           "h2h": {
-            "pa": 2,
-            "ab": 2,
+            "pa": 1,
+            "ab": 1,
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 1,
+            "so": 0,
             "avg": ".000",
             "obp": ".000",
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.687,
-          "credibility": 0.02,
-          "blendedOps": 0.674,
-          "proxyXba": 0.256,
-          "proxyXslg": 0.367,
+          "seasonOps": 0.708,
+          "credibility": 0.01,
+          "blendedOps": 0.701,
+          "proxyXba": 0.238,
+          "proxyXslg": 0.386,
           "edgeTier": "average"
         },
         {
@@ -8399,21 +8398,87 @@
           "name": "Vladimir Guerrero Jr.",
           "h2h": {
             "pa": 8,
-            "ab": 7,
-            "h": 1,
+            "ab": 6,
+            "h": 2,
             "hr": 0,
             "bb": 1,
             "so": 1,
-            "avg": ".143",
-            "obp": ".250",
-            "slg": ".143",
-            "ops": 0.393
+            "avg": ".333",
+            "obp": ".429",
+            "slg": ".333",
+            "ops": 0.762
           },
           "seasonOps": 0.694,
           "credibility": 0.074,
-          "blendedOps": 0.672,
-          "proxyXba": 0.255,
-          "proxyXslg": 0.34,
+          "blendedOps": 0.699,
+          "proxyXba": 0.269,
+          "proxyXslg": 0.354,
+          "edgeTier": "average"
+        },
+        {
+          "id": 676391,
+          "name": "Ernie Clement",
+          "h2h": {
+            "pa": 9,
+            "ab": 9,
+            "h": 2,
+            "hr": 0,
+            "bb": 0,
+            "so": 3,
+            "avg": ".222",
+            "obp": ".222",
+            "slg": ".222",
+            "ops": 0.444
+          },
+          "seasonOps": 0.716,
+          "credibility": 0.083,
+          "blendedOps": 0.694,
+          "proxyXba": 0.281,
+          "proxyXslg": 0.39,
+          "edgeTier": "average"
+        },
+        {
+          "id": 664770,
+          "name": "Nathan Lukes",
+          "h2h": {
+            "pa": 1,
+            "ab": 1,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.685,
+          "credibility": 0.01,
+          "blendedOps": 0.678,
+          "proxyXba": 0.257,
+          "proxyXslg": 0.369,
+          "edgeTier": "average"
+        },
+        {
+          "id": 807727,
+          "name": "Charles McAdoo",
+          "h2h": {
+            "pa": 1,
+            "ab": 1,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.685,
+          "credibility": 0.01,
+          "blendedOps": 0.678,
+          "proxyXba": 0.259,
+          "proxyXslg": 0.389,
           "edgeTier": "average"
         },
         {
@@ -8422,26 +8487,26 @@
           "h2h": {
             "pa": 1,
             "ab": 1,
-            "h": 1,
+            "h": 0,
             "hr": 0,
             "bb": 0,
             "so": 0,
-            "avg": "1.000",
-            "obp": "1.000",
-            "slg": "1.000",
-            "ops": 2.0
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
           "seasonOps": 0.592,
           "credibility": 0.01,
-          "blendedOps": 0.606,
-          "proxyXba": 0.221,
-          "proxyXslg": 0.329,
+          "blendedOps": 0.586,
+          "proxyXba": 0.211,
+          "proxyXslg": 0.319,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.722,
+      "lineupEdgeOps": 0.7,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 46
+      "totalH2hPa": 32
     },
     {
       "id": "m_656302",
@@ -8455,37 +8520,41 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 36.8,
           "avgVelo": 97.2,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 20.4,
+          "chasePct": 26.1,
+          "putAwayPct": 23.4,
+          "hardHitPct": 31.8,
+          "lethalitySample": 205
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 29.7,
           "avgVelo": 88.9,
           "whiffPct": 41.2,
           "chasePct": 40.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 27.0,
           "hardHitPct": 28.0,
           "lethalitySample": 159
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 11.6,
           "avgVelo": 82.1,
           "whiffPct": 45.0,
           "chasePct": 14.6,
-          "putAwayPct": 0.0,
+          "putAwayPct": 33.3,
           "hardHitPct": 42.9,
           "lethalitySample": 59
         },
         {
           "type": "Knuckle Curve",
+          "code": "KC",
           "usagePct": 9.6,
           "avgVelo": 82.1,
           "whiffPct": 30.0,
@@ -8496,21 +8565,23 @@
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 8.3,
           "avgVelo": 96.0,
           "whiffPct": 12.5,
           "chasePct": 43.8,
-          "putAwayPct": 0.0,
+          "putAwayPct": 25.0,
           "hardHitPct": 28.6,
           "lethalitySample": 30
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 3.9,
           "avgVelo": 83.5,
           "whiffPct": 25.0,
           "chasePct": 18.2,
-          "putAwayPct": 0.0,
+          "putAwayPct": 25.0,
           "hardHitPct": null,
           "lethalitySample": 16
         }
@@ -8520,154 +8591,132 @@
           "id": 700250,
           "name": "Ben Rice",
           "h2h": {
-            "pa": 12,
-            "ab": 12,
-            "h": 1,
-            "hr": 1,
+            "pa": 2,
+            "ab": 2,
+            "h": 0,
+            "hr": 0,
             "bb": 0,
-            "so": 3,
-            "avg": ".083",
-            "obp": ".083",
-            "slg": ".333",
-            "ops": 0.416
+            "so": 1,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
           "seasonOps": 0.871,
-          "credibility": 0.107,
-          "blendedOps": 0.822,
-          "proxyXba": 0.23,
-          "proxyXslg": 0.505,
+          "credibility": 0.02,
+          "blendedOps": 0.854,
+          "proxyXba": 0.243,
+          "proxyXslg": 0.516,
           "edgeTier": "elite"
         },
         {
           "id": 671277,
           "name": "Luis Garc\u00eda Jr.",
           "h2h": {
-            "pa": 6,
-            "ab": 6,
-            "h": 0,
+            "pa": 31,
+            "ab": 28,
+            "h": 6,
             "hr": 0,
-            "bb": 0,
-            "so": 2,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
+            "bb": 3,
+            "so": 4,
+            "avg": ".214",
+            "obp": ".290",
+            "slg": ".250",
+            "ops": 0.54
           },
           "seasonOps": 0.857,
-          "credibility": 0.057,
-          "blendedOps": 0.808,
-          "proxyXba": 0.263,
-          "proxyXslg": 0.515,
+          "credibility": 0.237,
+          "blendedOps": 0.782,
+          "proxyXba": 0.264,
+          "proxyXslg": 0.476,
           "edgeTier": "strong"
         },
         {
           "id": 806146,
           "name": "George Lombard Jr.",
           "h2h": {
-            "pa": 6,
-            "ab": 4,
-            "h": 1,
+            "pa": 2,
+            "ab": 2,
+            "h": 0,
             "hr": 0,
-            "bb": 2,
-            "so": 0,
-            "avg": ".250",
-            "obp": ".500",
-            "slg": ".500",
-            "ops": 1.0
+            "bb": 0,
+            "so": 1,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
-          "seasonOps": 0.751,
-          "credibility": 0.057,
-          "blendedOps": 0.765,
-          "proxyXba": 0.276,
-          "proxyXslg": 0.412,
-          "edgeTier": "strong"
+          "seasonOps": 0.739,
+          "credibility": 0.02,
+          "blendedOps": 0.725,
+          "proxyXba": 0.268,
+          "proxyXslg": 0.392,
+          "edgeTier": "average"
         },
         {
           "id": 663757,
           "name": "Trent Grisham",
           "h2h": {
-            "pa": 2,
-            "ab": 1,
-            "h": 0,
+            "pa": 31,
+            "ab": 28,
+            "h": 6,
             "hr": 0,
-            "bb": 1,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".500",
-            "slg": ".000",
-            "ops": 0.5
+            "bb": 3,
+            "so": 4,
+            "avg": ".214",
+            "obp": ".290",
+            "slg": ".250",
+            "ops": 0.54
           },
-          "seasonOps": 0.734,
-          "credibility": 0.02,
-          "blendedOps": 0.729,
-          "proxyXba": 0.218,
-          "proxyXslg": 0.409,
+          "seasonOps": 0.732,
+          "credibility": 0.237,
+          "blendedOps": 0.687,
+          "proxyXba": 0.219,
+          "proxyXslg": 0.377,
           "edgeTier": "average"
         },
         {
           "id": 682987,
           "name": "Spencer Jones",
           "h2h": {
-            "pa": 5,
-            "ab": 5,
-            "h": 0,
+            "pa": 31,
+            "ab": 28,
+            "h": 6,
             "hr": 0,
-            "bb": 0,
+            "bb": 3,
             "so": 4,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
+            "avg": ".214",
+            "obp": ".290",
+            "slg": ".250",
+            "ops": 0.54
           },
-          "seasonOps": 0.725,
-          "credibility": 0.048,
-          "blendedOps": 0.69,
-          "proxyXba": 0.215,
-          "proxyXslg": 0.399,
+          "seasonOps": 0.722,
+          "credibility": 0.237,
+          "blendedOps": 0.679,
+          "proxyXba": 0.222,
+          "proxyXslg": 0.377,
           "edgeTier": "average"
         },
         {
           "id": 671218,
           "name": "Heliot Ramos",
           "h2h": {
-            "pa": 6,
-            "ab": 6,
-            "h": 2,
-            "hr": 0,
-            "bb": 0,
-            "so": 2,
-            "avg": ".333",
-            "obp": ".333",
-            "slg": ".333",
-            "ops": 0.666
-          },
-          "seasonOps": 0.679,
-          "credibility": 0.057,
-          "blendedOps": 0.678,
-          "proxyXba": 0.245,
-          "proxyXslg": 0.384,
-          "edgeTier": "average"
-        },
-        {
-          "id": 665862,
-          "name": "Jazz Chisholm Jr.",
-          "h2h": {
             "pa": 2,
-            "ab": 1,
+            "ab": 2,
             "h": 0,
             "hr": 0,
-            "bb": 1,
+            "bb": 0,
             "so": 1,
             "avg": ".000",
-            "obp": ".500",
+            "obp": ".000",
             "slg": ".000",
-            "ops": 0.5
+            "ops": 0.0
           },
           "seasonOps": 0.679,
           "credibility": 0.02,
-          "blendedOps": 0.675,
-          "proxyXba": 0.211,
-          "proxyXslg": 0.377,
+          "blendedOps": 0.666,
+          "proxyXba": 0.235,
+          "proxyXslg": 0.379,
           "edgeTier": "average"
         },
         {
@@ -8679,45 +8728,67 @@
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 0,
+            "so": 1,
             "avg": ".000",
             "obp": ".000",
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.674,
+          "seasonOps": 0.673,
           "credibility": 0.02,
-          "blendedOps": 0.661,
-          "proxyXba": 0.231,
-          "proxyXslg": 0.372,
+          "blendedOps": 0.66,
+          "proxyXba": 0.23,
+          "proxyXslg": 0.371,
           "edgeTier": "average"
+        },
+        {
+          "id": 665862,
+          "name": "Jazz Chisholm Jr.",
+          "h2h": {
+            "pa": 31,
+            "ab": 28,
+            "h": 6,
+            "hr": 0,
+            "bb": 3,
+            "so": 4,
+            "avg": ".214",
+            "obp": ".290",
+            "slg": ".250",
+            "ops": 0.54
+          },
+          "seasonOps": 0.685,
+          "credibility": 0.237,
+          "blendedOps": 0.651,
+          "proxyXba": 0.216,
+          "proxyXslg": 0.356,
+          "edgeTier": "soft"
         },
         {
           "id": 669224,
           "name": "Austin Wells",
           "h2h": {
-            "pa": 13,
-            "ab": 12,
-            "h": 1,
+            "pa": 31,
+            "ab": 28,
+            "h": 6,
             "hr": 0,
-            "bb": 1,
-            "so": 5,
-            "avg": ".083",
-            "obp": ".154",
-            "slg": ".083",
-            "ops": 0.237
+            "bb": 3,
+            "so": 4,
+            "avg": ".214",
+            "obp": ".290",
+            "slg": ".250",
+            "ops": 0.54
           },
-          "seasonOps": 0.565,
-          "credibility": 0.115,
-          "blendedOps": 0.527,
-          "proxyXba": 0.167,
-          "proxyXslg": 0.269,
+          "seasonOps": 0.563,
+          "credibility": 0.237,
+          "blendedOps": 0.558,
+          "proxyXba": 0.186,
+          "proxyXslg": 0.282,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.706,
+      "lineupEdgeOps": 0.696,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 54
+      "totalH2hPa": 163
     },
     {
       "id": "m_527048",
@@ -8732,53 +8803,58 @@
       "pitchMix": [
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 35.1,
           "avgVelo": 89.3,
           "whiffPct": 6.6,
           "chasePct": 23.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 17.2,
           "hardHitPct": 44.4,
           "lethalitySample": 157
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 30.3,
           "avgVelo": 81.8,
           "whiffPct": 41.8,
           "chasePct": 44.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 22.5,
           "hardHitPct": 16.7,
           "lethalitySample": 120
         },
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 21.9,
           "avgVelo": 85.2,
           "whiffPct": 4.0,
           "chasePct": 16.7,
-          "putAwayPct": 0.0,
+          "putAwayPct": 15.4,
           "hardHitPct": 22.2,
           "lethalitySample": 57
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 7.8,
           "avgVelo": 76.8,
           "whiffPct": 0.0,
           "chasePct": 10.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": null,
           "hardHitPct": null,
           "lethalitySample": 27
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 4.8,
           "avgVelo": 89.9,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 0.0,
+          "chasePct": 57.1,
+          "putAwayPct": 0.0,
+          "hardHitPct": 60.0,
+          "lethalitySample": 13
         }
       ],
       "batters": [
@@ -8786,22 +8862,22 @@
           "id": 641343,
           "name": "Jake Bauers",
           "h2h": {
-            "pa": 6,
-            "ab": 5,
-            "h": 1,
+            "pa": 1,
+            "ab": 1,
+            "h": 0,
             "hr": 0,
-            "bb": 1,
+            "bb": 0,
             "so": 1,
-            "avg": ".200",
-            "obp": ".333",
-            "slg": ".200",
-            "ops": 0.533
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
           "seasonOps": 0.89,
-          "credibility": 0.057,
-          "blendedOps": 0.87,
-          "proxyXba": 0.269,
-          "proxyXslg": 0.489,
+          "credibility": 0.01,
+          "blendedOps": 0.881,
+          "proxyXba": 0.27,
+          "proxyXslg": 0.501,
           "edgeTier": "elite"
         },
         {
@@ -8849,47 +8925,47 @@
           "edgeTier": "strong"
         },
         {
-          "id": 668930,
-          "name": "Brice Turang",
-          "h2h": {
-            "pa": 2,
-            "ab": 2,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.787,
-          "credibility": 0.02,
-          "blendedOps": 0.772,
-          "proxyXba": 0.255,
-          "proxyXslg": 0.425,
-          "edgeTier": "strong"
-        },
-        {
           "id": 687401,
           "name": "Joey Ortiz",
           "h2h": {
-            "pa": 5,
-            "ab": 4,
-            "h": 3,
+            "pa": 3,
+            "ab": 2,
+            "h": 2,
             "hr": 1,
             "bb": 1,
             "so": 0,
-            "avg": ".750",
-            "obp": ".800",
-            "slg": "1.500",
-            "ops": 2.3
+            "avg": "1.000",
+            "obp": "1.000",
+            "slg": "2.500",
+            "ops": 3.5
           },
-          "seasonOps": 0.694,
-          "credibility": 0.048,
-          "blendedOps": 0.77,
-          "proxyXba": 0.274,
-          "proxyXslg": 0.433,
+          "seasonOps": 0.692,
+          "credibility": 0.029,
+          "blendedOps": 0.774,
+          "proxyXba": 0.271,
+          "proxyXslg": 0.441,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 668930,
+          "name": "Brice Turang",
+          "h2h": {
+            "pa": 7,
+            "ab": 7,
+            "h": 2,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
+            "avg": ".286",
+            "obp": ".286",
+            "slg": ".286",
+            "ops": 0.572
+          },
+          "seasonOps": 0.787,
+          "credibility": 0.065,
+          "blendedOps": 0.773,
+          "proxyXba": 0.262,
+          "proxyXslg": 0.424,
           "edgeTier": "strong"
         },
         {
@@ -8929,11 +9005,33 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.693,
+          "seasonOps": 0.686,
           "credibility": 0.0,
-          "blendedOps": 0.693,
-          "proxyXba": 0.257,
-          "proxyXslg": 0.362,
+          "blendedOps": 0.686,
+          "proxyXba": 0.255,
+          "proxyXslg": 0.358,
+          "edgeTier": "average"
+        },
+        {
+          "id": 592885,
+          "name": "Christian Yelich",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".333",
+            "obp": ".333",
+            "slg": ".333",
+            "ops": 0.666
+          },
+          "seasonOps": 0.678,
+          "credibility": 0.029,
+          "blendedOps": 0.678,
+          "proxyXba": 0.231,
+          "proxyXslg": 0.368,
           "edgeTier": "average"
         },
         {
@@ -8951,39 +9049,17 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.68,
+          "seasonOps": 0.676,
           "credibility": 0.02,
-          "blendedOps": 0.667,
-          "proxyXba": 0.252,
-          "proxyXslg": 0.34,
+          "blendedOps": 0.663,
+          "proxyXba": 0.25,
+          "proxyXslg": 0.338,
           "edgeTier": "average"
-        },
-        {
-          "id": 592885,
-          "name": "Christian Yelich",
-          "h2h": {
-            "pa": 16,
-            "ab": 16,
-            "h": 4,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".250",
-            "obp": ".250",
-            "slg": ".250",
-            "ops": 0.5
-          },
-          "seasonOps": 0.678,
-          "credibility": 0.138,
-          "blendedOps": 0.653,
-          "proxyXba": 0.231,
-          "proxyXslg": 0.353,
-          "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.753,
+      "lineupEdgeOps": 0.756,
       "lineupEdgeTier": "strong",
-      "totalH2hPa": 42
+      "totalH2hPa": 27
     },
     {
       "id": "m_701656",
@@ -8997,27 +9073,30 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 45.6,
           "avgVelo": 93.0,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 13.6,
+          "chasePct": 42.7,
+          "putAwayPct": 22.7,
+          "hardHitPct": 43.9,
+          "lethalitySample": 231
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 32.9,
           "avgVelo": 82.6,
           "whiffPct": 38.9,
           "chasePct": 37.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 20.0,
           "hardHitPct": 31.6,
           "lethalitySample": 151
         },
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 18.2,
           "avgVelo": 87.6,
           "whiffPct": 24.3,
@@ -9028,11 +9107,12 @@
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 3.3,
           "avgVelo": 81.1,
           "whiffPct": 20.0,
           "chasePct": 30.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 10.0,
           "hardHitPct": null,
           "lethalitySample": 12
         }
@@ -9042,66 +9122,66 @@
           "id": 621566,
           "name": "Matt Olson",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 1,
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
             "hr": 0,
             "bb": 0,
             "so": 0,
-            "avg": ".333",
-            "obp": ".333",
-            "slg": ".333",
-            "ops": 0.666
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
           "seasonOps": 0.873,
-          "credibility": 0.029,
-          "blendedOps": 0.867,
-          "proxyXba": 0.262,
-          "proxyXslg": 0.531,
+          "credibility": 0.0,
+          "blendedOps": 0.873,
+          "proxyXba": 0.26,
+          "proxyXslg": 0.537,
           "edgeTier": "elite"
         },
         {
           "id": 671739,
           "name": "Michael Harris II",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 2,
+            "pa": 2,
+            "ab": 2,
+            "h": 1,
             "hr": 0,
             "bb": 0,
             "so": 0,
-            "avg": ".667",
-            "obp": ".667",
+            "avg": ".500",
+            "obp": ".500",
             "slg": "1.000",
-            "ops": 1.667
+            "ops": 1.5
           },
-          "seasonOps": 0.812,
-          "credibility": 0.029,
-          "blendedOps": 0.837,
-          "proxyXba": 0.306,
-          "proxyXslg": 0.505,
+          "seasonOps": 0.81,
+          "credibility": 0.02,
+          "blendedOps": 0.824,
+          "proxyXba": 0.298,
+          "proxyXslg": 0.499,
           "edgeTier": "elite"
         },
         {
           "id": 686948,
           "name": "Drake Baldwin",
           "h2h": {
-            "pa": 3,
-            "ab": 1,
+            "pa": 0,
+            "ab": 0,
             "h": 0,
             "hr": 0,
-            "bb": 2,
+            "bb": 0,
             "so": 0,
             "avg": ".000",
-            "obp": ".667",
+            "obp": ".000",
             "slg": ".000",
-            "ops": 0.667
+            "ops": 0.0
           },
           "seasonOps": 0.795,
-          "credibility": 0.029,
-          "blendedOps": 0.791,
-          "proxyXba": 0.26,
-          "proxyXslg": 0.43,
+          "credibility": 0.0,
+          "blendedOps": 0.795,
+          "proxyXba": 0.268,
+          "proxyXslg": 0.443,
           "edgeTier": "strong"
         },
         {
@@ -9130,71 +9210,27 @@
           "id": 645277,
           "name": "Ozzie Albies",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 1,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".333",
-            "obp": ".333",
-            "slg": ".333",
-            "ops": 0.666
-          },
-          "seasonOps": 0.723,
-          "credibility": 0.029,
-          "blendedOps": 0.721,
-          "proxyXba": 0.252,
-          "proxyXslg": 0.415,
-          "edgeTier": "average"
-        },
-        {
-          "id": 643289,
-          "name": "Mauricio Dub\u00f3n",
-          "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 1,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".333",
-            "obp": ".333",
-            "slg": ".333",
-            "ops": 0.666
-          },
-          "seasonOps": 0.703,
-          "credibility": 0.029,
-          "blendedOps": 0.702,
-          "proxyXba": 0.268,
-          "proxyXslg": 0.389,
-          "edgeTier": "average"
-        },
-        {
-          "id": 573262,
-          "name": "Mike Yastrzemski",
-          "h2h": {
-            "pa": 2,
-            "ab": 2,
+            "pa": 0,
+            "ab": 0,
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 1,
+            "so": 0,
             "avg": ".000",
             "obp": ".000",
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.705,
-          "credibility": 0.02,
-          "blendedOps": 0.691,
-          "proxyXba": 0.225,
-          "proxyXslg": 0.379,
+          "seasonOps": 0.726,
+          "credibility": 0.0,
+          "blendedOps": 0.726,
+          "proxyXba": 0.252,
+          "proxyXslg": 0.419,
           "edgeTier": "average"
         },
         {
-          "id": 663586,
-          "name": "Austin Riley",
+          "id": 657041,
+          "name": "Lane Thomas",
           "h2h": {
             "pa": 0,
             "ab": 0,
@@ -9207,11 +9243,55 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.658,
+          "seasonOps": 0.717,
           "credibility": 0.0,
-          "blendedOps": 0.658,
-          "proxyXba": 0.22,
-          "proxyXslg": 0.365,
+          "blendedOps": 0.717,
+          "proxyXba": 0.228,
+          "proxyXslg": 0.394,
+          "edgeTier": "average"
+        },
+        {
+          "id": 643289,
+          "name": "Mauricio Dub\u00f3n",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.705,
+          "credibility": 0.0,
+          "blendedOps": 0.705,
+          "proxyXba": 0.268,
+          "proxyXslg": 0.392,
+          "edgeTier": "average"
+        },
+        {
+          "id": 663586,
+          "name": "Austin Riley",
+          "h2h": {
+            "pa": 2,
+            "ab": 2,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.657,
+          "credibility": 0.02,
+          "blendedOps": 0.644,
+          "proxyXba": 0.216,
+          "proxyXslg": 0.357,
           "edgeTier": "soft"
         },
         {
@@ -9237,9 +9317,9 @@
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.73,
+      "lineupEdgeOps": 0.732,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 17
+      "totalH2hPa": 4
     },
     {
       "id": "m_663623",
@@ -9253,64 +9333,70 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
-          "usagePct": 28.6,
+          "type": "Four-Seam Fastball",
+          "code": "FF",
+          "usagePct": 28.3,
           "avgVelo": 93.1,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 15.9,
+          "chasePct": 24.3,
+          "putAwayPct": 9.8,
+          "hardHitPct": 65.2,
+          "lethalitySample": 127
         },
         {
           "type": "Curveball",
-          "usagePct": 23.7,
-          "avgVelo": 77.6,
-          "whiffPct": 20.6,
-          "chasePct": 40.5,
-          "putAwayPct": 0.0,
+          "code": "CU",
+          "usagePct": 23.5,
+          "avgVelo": 77.7,
+          "whiffPct": 20.9,
+          "chasePct": 43.5,
+          "putAwayPct": 25.8,
           "hardHitPct": 33.3,
-          "lethalitySample": 64
+          "lethalitySample": 78
         },
         {
           "type": "Sinker",
-          "usagePct": 20.8,
-          "avgVelo": 92.0,
-          "whiffPct": 16.0,
+          "code": "SI",
+          "usagePct": 19.9,
+          "avgVelo": 92.1,
+          "whiffPct": 14.8,
           "chasePct": 37.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 11.1,
           "hardHitPct": 40.0,
-          "lethalitySample": 42
+          "lethalitySample": 44
         },
         {
           "type": "Cutter",
-          "usagePct": 10.8,
-          "avgVelo": 89.0,
-          "whiffPct": 0.0,
-          "chasePct": 21.4,
+          "code": "FC",
+          "usagePct": 11.3,
+          "avgVelo": 89.2,
+          "whiffPct": 5.3,
+          "chasePct": 23.1,
           "putAwayPct": 0.0,
-          "hardHitPct": 16.7,
-          "lethalitySample": 39
+          "hardHitPct": 25.0,
+          "lethalitySample": 55
         },
         {
           "type": "Sweeper",
-          "usagePct": 9.2,
+          "code": "ST",
+          "usagePct": 9.1,
           "avgVelo": 82.1,
-          "whiffPct": 16.7,
-          "chasePct": 26.7,
-          "putAwayPct": 0.0,
+          "whiffPct": 14.3,
+          "chasePct": 29.4,
+          "putAwayPct": 4.8,
           "hardHitPct": 20.0,
-          "lethalitySample": 47
+          "lethalitySample": 52
         },
         {
           "type": "Changeup",
-          "usagePct": 6.9,
+          "code": "CH",
+          "usagePct": 7.9,
           "avgVelo": 85.6,
-          "whiffPct": 28.6,
-          "chasePct": 28.6,
-          "putAwayPct": 0.0,
-          "hardHitPct": 37.5,
-          "lethalitySample": 48
+          "whiffPct": 29.0,
+          "chasePct": 27.5,
+          "putAwayPct": 15.8,
+          "hardHitPct": 50.0,
+          "lethalitySample": 67
         }
       ],
       "batters": [
@@ -9329,34 +9415,34 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.905,
+          "seasonOps": 0.895,
           "credibility": 0.0,
-          "blendedOps": 0.905,
-          "proxyXba": 0.267,
-          "proxyXslg": 0.54,
+          "blendedOps": 0.895,
+          "proxyXba": 0.264,
+          "proxyXslg": 0.534,
           "edgeTier": "elite"
         },
         {
           "id": 665923,
           "name": "Esteury Ruiz",
           "h2h": {
-            "pa": 0,
-            "ab": 0,
+            "pa": 2,
+            "ab": 1,
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 0,
+            "so": 1,
             "avg": ".000",
-            "obp": ".000",
+            "obp": ".500",
             "slg": ".000",
-            "ops": 0.0
+            "ops": 0.5
           },
-          "seasonOps": 0.822,
-          "credibility": 0.0,
-          "blendedOps": 0.822,
-          "proxyXba": 0.253,
-          "proxyXslg": 0.453,
-          "edgeTier": "elite"
+          "seasonOps": 0.82,
+          "credibility": 0.02,
+          "blendedOps": 0.814,
+          "proxyXba": 0.247,
+          "proxyXslg": 0.441,
+          "edgeTier": "strong"
         },
         {
           "id": 672640,
@@ -9373,11 +9459,11 @@
             "slg": ".333",
             "ops": 0.666
           },
-          "seasonOps": 0.792,
+          "seasonOps": 0.789,
           "credibility": 0.029,
-          "blendedOps": 0.788,
-          "proxyXba": 0.31,
-          "proxyXslg": 0.445,
+          "blendedOps": 0.785,
+          "proxyXba": 0.309,
+          "proxyXslg": 0.443,
           "edgeTier": "strong"
         },
         {
@@ -9395,33 +9481,11 @@
             "slg": "1.000",
             "ops": 1.5
           },
-          "seasonOps": 0.747,
+          "seasonOps": 0.763,
           "credibility": 0.02,
-          "blendedOps": 0.762,
-          "proxyXba": 0.231,
-          "proxyXslg": 0.454,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 691594,
-          "name": "Javier Sanoja",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.747,
-          "credibility": 0.0,
-          "blendedOps": 0.747,
-          "proxyXba": 0.282,
-          "proxyXslg": 0.427,
+          "blendedOps": 0.777,
+          "proxyXba": 0.234,
+          "proxyXslg": 0.466,
           "edgeTier": "strong"
         },
         {
@@ -9439,11 +9503,33 @@
             "slg": ".333",
             "ops": 0.666
           },
-          "seasonOps": 0.748,
+          "seasonOps": 0.745,
           "credibility": 0.029,
-          "blendedOps": 0.746,
-          "proxyXba": 0.286,
-          "proxyXslg": 0.382,
+          "blendedOps": 0.743,
+          "proxyXba": 0.285,
+          "proxyXslg": 0.38,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 691594,
+          "name": "Javier Sanoja",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.743,
+          "credibility": 0.0,
+          "blendedOps": 0.743,
+          "proxyXba": 0.28,
+          "proxyXslg": 0.425,
           "edgeTier": "strong"
         },
         {
@@ -9461,11 +9547,11 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.721,
+          "seasonOps": 0.715,
           "credibility": 0.0,
-          "blendedOps": 0.721,
-          "proxyXba": 0.227,
-          "proxyXslg": 0.431,
+          "blendedOps": 0.715,
+          "proxyXba": 0.225,
+          "proxyXslg": 0.427,
           "edgeTier": "average"
         },
         {
@@ -9483,11 +9569,11 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.706,
+          "seasonOps": 0.709,
           "credibility": 0.0,
-          "blendedOps": 0.706,
-          "proxyXba": 0.231,
-          "proxyXslg": 0.419,
+          "blendedOps": 0.709,
+          "proxyXba": 0.234,
+          "proxyXslg": 0.42,
           "edgeTier": "average"
         },
         {
@@ -9505,17 +9591,17 @@
             "slg": ".667",
             "ops": 1.334
           },
-          "seasonOps": 0.639,
+          "seasonOps": 0.65,
           "credibility": 0.029,
-          "blendedOps": 0.659,
-          "proxyXba": 0.219,
-          "proxyXslg": 0.325,
-          "edgeTier": "soft"
+          "blendedOps": 0.67,
+          "proxyXba": 0.221,
+          "proxyXslg": 0.334,
+          "edgeTier": "average"
         }
       ],
-      "lineupEdgeOps": 0.762,
+      "lineupEdgeOps": 0.761,
       "lineupEdgeTier": "strong",
-      "totalH2hPa": 11
+      "totalH2hPa": 13
     },
     {
       "id": "m_691587",
@@ -9529,64 +9615,70 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
-          "usagePct": 39.0,
+          "type": "Four-Seam Fastball",
+          "code": "FF",
+          "usagePct": 38.6,
           "avgVelo": 98.3,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 20.3,
+          "chasePct": 30.1,
+          "putAwayPct": 23.1,
+          "hardHitPct": 31.6,
+          "lethalitySample": 128
         },
         {
           "type": "Sinker",
-          "usagePct": 16.7,
+          "code": "SI",
+          "usagePct": 16.9,
           "avgVelo": 97.8,
-          "whiffPct": 18.2,
-          "chasePct": 38.0,
-          "putAwayPct": 0.0,
-          "hardHitPct": 65.2,
-          "lethalitySample": 122
+          "whiffPct": 17.1,
+          "chasePct": 38.3,
+          "putAwayPct": 8.3,
+          "hardHitPct": 57.7,
+          "lethalitySample": 138
         },
         {
           "type": "Slider",
-          "usagePct": 15.9,
-          "avgVelo": 88.3,
-          "whiffPct": 35.4,
-          "chasePct": 44.2,
-          "putAwayPct": 0.0,
-          "hardHitPct": 40.0,
-          "lethalitySample": 77
+          "code": "SL",
+          "usagePct": 16.1,
+          "avgVelo": 88.4,
+          "whiffPct": 38.2,
+          "chasePct": 41.1,
+          "putAwayPct": 21.9,
+          "hardHitPct": 33.3,
+          "lethalitySample": 95
         },
         {
           "type": "Sweeper",
-          "usagePct": 13.7,
-          "avgVelo": 83.7,
-          "whiffPct": 46.2,
-          "chasePct": 44.1,
-          "putAwayPct": 0.0,
+          "code": "ST",
+          "usagePct": 13.8,
+          "avgVelo": 83.8,
+          "whiffPct": 48.4,
+          "chasePct": 39.5,
+          "putAwayPct": 17.4,
           "hardHitPct": 12.5,
-          "lethalitySample": 49
+          "lethalitySample": 63
         },
         {
           "type": "Changeup",
-          "usagePct": 9.0,
-          "avgVelo": 90.1,
-          "whiffPct": 61.5,
-          "chasePct": 33.3,
-          "putAwayPct": 0.0,
-          "hardHitPct": null,
-          "lethalitySample": 28
+          "code": "CH",
+          "usagePct": 8.9,
+          "avgVelo": 90.0,
+          "whiffPct": 56.2,
+          "chasePct": 40.0,
+          "putAwayPct": 26.7,
+          "hardHitPct": 33.3,
+          "lethalitySample": 33
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 5.8,
           "avgVelo": 81.0,
-          "whiffPct": 37.5,
-          "chasePct": 12.5,
-          "putAwayPct": 0.0,
+          "whiffPct": 30.0,
+          "chasePct": 19.0,
+          "putAwayPct": 12.5,
           "hardHitPct": 0.0,
-          "lethalitySample": 26
+          "lethalitySample": 31
         }
       ],
       "batters": [
@@ -9605,11 +9697,11 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.928,
+          "seasonOps": 0.933,
           "credibility": 0.0,
-          "blendedOps": 0.928,
-          "proxyXba": 0.231,
-          "proxyXslg": 0.615,
+          "blendedOps": 0.933,
+          "proxyXba": 0.267,
+          "proxyXslg": 0.6,
           "edgeTier": "elite"
         },
         {
@@ -9627,33 +9719,11 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.808,
+          "seasonOps": 0.807,
           "credibility": 0.0,
-          "blendedOps": 0.808,
-          "proxyXba": 0.236,
-          "proxyXslg": 0.545,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 695670,
-          "name": "Harry Ford",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.751,
-          "credibility": 0.0,
-          "blendedOps": 0.751,
-          "proxyXba": 0.212,
-          "proxyXslg": 0.423,
+          "blendedOps": 0.807,
+          "proxyXba": 0.232,
+          "proxyXslg": 0.536,
           "edgeTier": "strong"
         },
         {
@@ -9671,12 +9741,12 @@
             "slg": "1.500",
             "ops": 2.0
           },
-          "seasonOps": 0.696,
+          "seasonOps": 0.689,
           "credibility": 0.038,
-          "blendedOps": 0.746,
-          "proxyXba": 0.248,
-          "proxyXslg": 0.438,
-          "edgeTier": "strong"
+          "blendedOps": 0.739,
+          "proxyXba": 0.246,
+          "proxyXslg": 0.435,
+          "edgeTier": "average"
         },
         {
           "id": 696285,
@@ -9693,11 +9763,11 @@
             "slg": "1.000",
             "ops": 2.0
           },
-          "seasonOps": 0.713,
+          "seasonOps": 0.71,
           "credibility": 0.02,
-          "blendedOps": 0.738,
-          "proxyXba": 0.264,
-          "proxyXslg": 0.411,
+          "blendedOps": 0.735,
+          "proxyXba": 0.262,
+          "proxyXslg": 0.409,
           "edgeTier": "average"
         },
         {
@@ -9715,11 +9785,11 @@
             "slg": ".833",
             "ops": 1.333
           },
-          "seasonOps": 0.694,
+          "seasonOps": 0.692,
           "credibility": 0.057,
-          "blendedOps": 0.73,
+          "blendedOps": 0.728,
           "proxyXba": 0.258,
-          "proxyXslg": 0.426,
+          "proxyXslg": 0.425,
           "edgeTier": "average"
         },
         {
@@ -9737,11 +9807,33 @@
             "slg": ".500",
             "ops": 1.0
           },
-          "seasonOps": 0.713,
+          "seasonOps": 0.721,
           "credibility": 0.02,
-          "blendedOps": 0.719,
-          "proxyXba": 0.242,
-          "proxyXslg": 0.399,
+          "blendedOps": 0.726,
+          "proxyXba": 0.245,
+          "proxyXslg": 0.402,
+          "edgeTier": "average"
+        },
+        {
+          "id": 695670,
+          "name": "Harry Ford",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.724,
+          "credibility": 0.0,
+          "blendedOps": 0.724,
+          "proxyXba": 0.204,
+          "proxyXslg": 0.407,
           "edgeTier": "average"
         },
         {
@@ -9759,11 +9851,11 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.631,
+          "seasonOps": 0.637,
           "credibility": 0.038,
-          "blendedOps": 0.607,
-          "proxyXba": 0.201,
-          "proxyXslg": 0.338,
+          "blendedOps": 0.613,
+          "proxyXba": 0.203,
+          "proxyXslg": 0.342,
           "edgeTier": "soft"
         },
         {
@@ -9781,15 +9873,15 @@
             "slg": "2.000",
             "ops": 2.5
           },
-          "seasonOps": 0.568,
+          "seasonOps": 0.565,
           "credibility": 0.02,
-          "blendedOps": 0.606,
-          "proxyXba": 0.23,
-          "proxyXslg": 0.294,
+          "blendedOps": 0.603,
+          "proxyXba": 0.229,
+          "proxyXslg": 0.293,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.737,
+      "lineupEdgeOps": 0.734,
       "lineupEdgeTier": "average",
       "totalH2hPa": 20
     },
@@ -9805,47 +9897,52 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 44.3,
           "avgVelo": 94.0,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 26.5,
+          "chasePct": 31.5,
+          "putAwayPct": 13.8,
+          "hardHitPct": 28.6,
+          "lethalitySample": 85
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 20.3,
           "avgVelo": 83.3,
           "whiffPct": 33.3,
           "chasePct": 32.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 13.3,
           "hardHitPct": 10.0,
           "lethalitySample": 39
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 19.8,
           "avgVelo": 86.1,
           "whiffPct": 25.0,
           "chasePct": 38.1,
-          "putAwayPct": 0.0,
+          "putAwayPct": 14.3,
           "hardHitPct": 40.0,
           "lethalitySample": 38
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 13.5,
           "avgVelo": 76.5,
           "whiffPct": 0.0,
           "chasePct": 8.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 11.1,
           "hardHitPct": 33.3,
           "lethalitySample": 26
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 2.1,
           "avgVelo": 94.5,
           "whiffPct": null,
@@ -10071,47 +10168,52 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 32.9,
           "avgVelo": 96.5,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 17.2,
+          "chasePct": 35.5,
+          "putAwayPct": 21.4,
+          "hardHitPct": 45.5,
+          "lethalitySample": 119
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 19.8,
           "avgVelo": 87.9,
           "whiffPct": 33.3,
           "chasePct": 22.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 21.1,
           "hardHitPct": 37.5,
           "lethalitySample": 62
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 14.7,
           "avgVelo": 82.7,
           "whiffPct": 21.1,
           "chasePct": 26.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 15.0,
           "hardHitPct": 30.8,
           "lethalitySample": 92
         },
         {
           "type": "Splitter",
+          "code": "FS",
           "usagePct": 11.1,
           "avgVelo": 87.4,
           "whiffPct": 62.5,
           "chasePct": 50.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 25.0,
           "hardHitPct": null,
           "lethalitySample": 13
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 9.4,
           "avgVelo": 95.1,
           "whiffPct": 0.0,
@@ -10122,6 +10224,7 @@
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 7.3,
           "avgVelo": 81.2,
           "whiffPct": 25.0,
@@ -10132,11 +10235,12 @@
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 4.8,
           "avgVelo": 90.2,
           "whiffPct": 31.0,
           "chasePct": 44.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 26.9,
           "hardHitPct": 25.0,
           "lethalitySample": 71
         }
@@ -10357,42 +10461,46 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 37.8,
           "avgVelo": 95.6,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 8.5,
+          "chasePct": 31.7,
+          "putAwayPct": 2.9,
+          "hardHitPct": 50.0,
+          "lethalitySample": 143
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 29.1,
           "avgVelo": 86.9,
           "whiffPct": 49.1,
           "chasePct": 46.2,
-          "putAwayPct": 0.0,
+          "putAwayPct": 28.3,
           "hardHitPct": 27.8,
           "lethalitySample": 104
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 18.9,
           "avgVelo": 88.2,
           "whiffPct": 23.8,
           "chasePct": 22.6,
-          "putAwayPct": 0.0,
+          "putAwayPct": 16.7,
           "hardHitPct": 36.4,
           "lethalitySample": 52
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 14.3,
           "avgVelo": 82.0,
           "whiffPct": 22.2,
           "chasePct": 32.1,
-          "putAwayPct": 0.0,
+          "putAwayPct": 20.0,
           "hardHitPct": 33.3,
           "lethalitySample": 50
         }
@@ -10402,22 +10510,22 @@
           "id": 624413,
           "name": "Pete Alonso",
           "h2h": {
-            "pa": 10,
-            "ab": 10,
-            "h": 3,
+            "pa": 3,
+            "ab": 3,
+            "h": 1,
             "hr": 1,
             "bb": 0,
-            "so": 3,
-            "avg": ".300",
-            "obp": ".300",
-            "slg": ".700",
-            "ops": 1.0
+            "so": 1,
+            "avg": ".333",
+            "obp": ".333",
+            "slg": "1.333",
+            "ops": 1.666
           },
           "seasonOps": 0.865,
-          "credibility": 0.091,
-          "blendedOps": 0.877,
-          "proxyXba": 0.274,
-          "proxyXslg": 0.522,
+          "credibility": 0.029,
+          "blendedOps": 0.888,
+          "proxyXba": 0.273,
+          "proxyXslg": 0.528,
           "edgeTier": "elite"
         },
         {
@@ -10465,6 +10573,28 @@
           "edgeTier": "strong"
         },
         {
+          "id": 683002,
+          "name": "Gunnar Henderson",
+          "h2h": {
+            "pa": 2,
+            "ab": 2,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".500",
+            "obp": ".500",
+            "slg": ".500",
+            "ops": 1.0
+          },
+          "seasonOps": 0.705,
+          "credibility": 0.02,
+          "blendedOps": 0.711,
+          "proxyXba": 0.227,
+          "proxyXslg": 0.401,
+          "edgeTier": "average"
+        },
+        {
           "id": 702616,
           "name": "Jackson Holliday",
           "h2h": {
@@ -10487,25 +10617,25 @@
           "edgeTier": "average"
         },
         {
-          "id": 683002,
-          "name": "Gunnar Henderson",
+          "id": 641933,
+          "name": "Tyler O'Neill",
           "h2h": {
-            "pa": 10,
-            "ab": 9,
-            "h": 1,
+            "pa": 3,
+            "ab": 3,
+            "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 2,
-            "avg": ".111",
-            "obp": ".200",
-            "slg": ".111",
-            "ops": 0.311
+            "so": 1,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
-          "seasonOps": 0.705,
-          "credibility": 0.091,
-          "blendedOps": 0.669,
-          "proxyXba": 0.212,
-          "proxyXslg": 0.373,
+          "seasonOps": 0.688,
+          "credibility": 0.029,
+          "blendedOps": 0.668,
+          "proxyXba": 0.21,
+          "proxyXslg": 0.372,
           "edgeTier": "average"
         },
         {
@@ -10528,28 +10658,6 @@
           "blendedOps": 0.651,
           "proxyXba": 0.222,
           "proxyXslg": 0.349,
-          "edgeTier": "soft"
-        },
-        {
-          "id": 641933,
-          "name": "Tyler O'Neill",
-          "h2h": {
-            "pa": 10,
-            "ab": 10,
-            "h": 1,
-            "hr": 0,
-            "bb": 0,
-            "so": 3,
-            "avg": ".100",
-            "obp": ".100",
-            "slg": ".100",
-            "ops": 0.2
-          },
-          "seasonOps": 0.688,
-          "credibility": 0.091,
-          "blendedOps": 0.644,
-          "proxyXba": 0.205,
-          "proxyXslg": 0.357,
           "edgeTier": "soft"
         },
         {
@@ -10597,9 +10705,9 @@
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.686,
+      "lineupEdgeOps": 0.694,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 45
+      "totalH2hPa": 23
     },
     {
       "id": "m_687064",
@@ -10613,37 +10721,41 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 40.2,
           "avgVelo": 94.3,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 18.5,
+          "chasePct": 45.0,
+          "putAwayPct": 13.2,
+          "hardHitPct": 37.5,
+          "lethalitySample": 183
         },
         {
           "type": "Splitter",
+          "code": "FS",
           "usagePct": 19.2,
           "avgVelo": 84.5,
           "whiffPct": 29.3,
           "chasePct": 34.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 13.9,
           "hardHitPct": 37.5,
           "lethalitySample": 82
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 15.2,
           "avgVelo": 84.2,
           "whiffPct": 37.8,
           "chasePct": 27.7,
-          "putAwayPct": 0.0,
+          "putAwayPct": 14.7,
           "hardHitPct": 40.0,
           "lethalitySample": 82
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 13.4,
           "avgVelo": 93.7,
           "whiffPct": 8.8,
@@ -10654,11 +10766,12 @@
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 12.0,
           "avgVelo": 75.1,
           "whiffPct": 26.1,
           "chasePct": 27.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 20.0,
           "hardHitPct": 28.6,
           "lethalitySample": 67
         }
@@ -10868,6 +10981,266 @@
       "totalH2hPa": 16
     },
     {
+      "id": "m_674003",
+      "pitcherId": "674003",
+      "pitcherName": "Cody Bradford",
+      "team": "Texas Rangers",
+      "opponent": "Los Angeles Angels",
+      "isHome": true,
+      "matchup": "vs Los Angeles Angels",
+      "sub": "Texas Rangers &middot; vs Los Angeles Angels",
+      "lineupConfirmed": true,
+      "pitchMix": [
+        {
+          "type": "Four-Seam Fastball",
+          "code": "FF",
+          "usagePct": 49.6,
+          "avgVelo": 88.5,
+          "whiffPct": 14.9,
+          "chasePct": 45.8,
+          "putAwayPct": 16.7,
+          "hardHitPct": 50.0,
+          "lethalitySample": 112
+        },
+        {
+          "type": "Changeup",
+          "code": "CH",
+          "usagePct": 36.7,
+          "avgVelo": 80.8,
+          "whiffPct": 16.2,
+          "chasePct": 33.3,
+          "putAwayPct": 16.7,
+          "hardHitPct": 21.4,
+          "lethalitySample": 83
+        },
+        {
+          "type": "Slider",
+          "code": "SL",
+          "usagePct": 7.5,
+          "avgVelo": 80.9,
+          "whiffPct": 0.0,
+          "chasePct": 18.2,
+          "putAwayPct": null,
+          "hardHitPct": 60.0,
+          "lethalitySample": 17
+        },
+        {
+          "type": "Curveball",
+          "code": "CU",
+          "usagePct": 6.2,
+          "avgVelo": 75.0,
+          "whiffPct": null,
+          "chasePct": 0.0,
+          "putAwayPct": null,
+          "hardHitPct": null,
+          "lethalitySample": 14
+        }
+      ],
+      "batters": [
+        {
+          "id": 642350,
+          "name": "Jose Siri",
+          "h2h": {
+            "pa": 1,
+            "ab": 1,
+            "h": 1,
+            "hr": 1,
+            "bb": 0,
+            "so": 0,
+            "avg": "1.000",
+            "obp": "1.000",
+            "slg": "4.000",
+            "ops": 5.0
+          },
+          "seasonOps": 0.765,
+          "credibility": 0.01,
+          "blendedOps": 0.807,
+          "proxyXba": 0.262,
+          "proxyXslg": 0.49,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 545361,
+          "name": "Mike Trout",
+          "h2h": {
+            "pa": 3,
+            "ab": 2,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".333",
+            "slg": ".000",
+            "ops": 0.333
+          },
+          "seasonOps": 0.809,
+          "credibility": 0.029,
+          "blendedOps": 0.795,
+          "proxyXba": 0.229,
+          "proxyXslg": 0.417,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 687263,
+          "name": "Zach Neto",
+          "h2h": {
+            "pa": 9,
+            "ab": 9,
+            "h": 5,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".556",
+            "obp": ".556",
+            "slg": ".667",
+            "ops": 1.223
+          },
+          "seasonOps": 0.735,
+          "credibility": 0.083,
+          "blendedOps": 0.775,
+          "proxyXba": 0.258,
+          "proxyXslg": 0.441,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 672569,
+          "name": "Gustavo Campero",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.71,
+          "credibility": 0.0,
+          "blendedOps": 0.71,
+          "proxyXba": 0.245,
+          "proxyXslg": 0.4,
+          "edgeTier": "average"
+        },
+        {
+          "id": 687093,
+          "name": "Vaughn Grissom",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".333",
+            "obp": ".333",
+            "slg": ".667",
+            "ops": 1.0
+          },
+          "seasonOps": 0.685,
+          "credibility": 0.029,
+          "blendedOps": 0.694,
+          "proxyXba": 0.25,
+          "proxyXslg": 0.384,
+          "edgeTier": "average"
+        },
+        {
+          "id": 694203,
+          "name": "Denzer Guzman",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.65,
+          "credibility": 0.0,
+          "blendedOps": 0.65,
+          "proxyXba": 0.237,
+          "proxyXslg": 0.371,
+          "edgeTier": "soft"
+        },
+        {
+          "id": 694208,
+          "name": "Mois\u00e9s Ballesteros",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.594,
+          "credibility": 0.029,
+          "blendedOps": 0.577,
+          "proxyXba": 0.198,
+          "proxyXslg": 0.31,
+          "edgeTier": "soft"
+        },
+        {
+          "id": 518595,
+          "name": "Travis d'Arnaud",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.553,
+          "credibility": 0.0,
+          "blendedOps": 0.553,
+          "proxyXba": 0.18,
+          "proxyXslg": 0.26,
+          "edgeTier": "soft"
+        },
+        {
+          "id": 695681,
+          "name": "Christian Moore",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.427,
+          "credibility": 0.0,
+          "blendedOps": 0.427,
+          "proxyXba": 0.2,
+          "proxyXslg": 0.2,
+          "edgeTier": "soft"
+        }
+      ],
+      "lineupEdgeOps": 0.665,
+      "lineupEdgeTier": "average",
+      "totalH2hPa": 19
+    },
+    {
       "id": "m_696270",
       "pitcherId": "696270",
       "pitcherName": "Ryan Johnson",
@@ -10880,26 +11253,29 @@
       "pitchMix": [
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 33.5,
           "avgVelo": 89.4,
           "whiffPct": 12.5,
           "chasePct": 30.2,
-          "putAwayPct": 0.0,
+          "putAwayPct": 20.8,
           "hardHitPct": 51.7,
           "lethalitySample": 165
         },
         {
           "type": "Splitter",
+          "code": "FS",
           "usagePct": 23.7,
           "avgVelo": 84.7,
           "whiffPct": 27.8,
           "chasePct": 16.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 21.1,
           "hardHitPct": 22.2,
           "lethalitySample": 71
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 23.5,
           "avgVelo": 92.2,
           "whiffPct": 0.0,
@@ -10910,16 +11286,18 @@
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 19.0,
           "avgVelo": 80.3,
           "whiffPct": 22.6,
           "chasePct": 36.8,
-          "putAwayPct": 0.0,
+          "putAwayPct": 11.1,
           "hardHitPct": 31.8,
           "lethalitySample": 107
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 0.4,
           "avgVelo": 84.3,
           "whiffPct": null,
@@ -11134,262 +11512,6 @@
       "totalH2hPa": 12
     },
     {
-      "id": "m_674003",
-      "pitcherId": "674003",
-      "pitcherName": "Cody Bradford",
-      "team": "Texas Rangers",
-      "opponent": "Los Angeles Angels",
-      "isHome": true,
-      "matchup": "vs Los Angeles Angels",
-      "sub": "Texas Rangers &middot; vs Los Angeles Angels",
-      "lineupConfirmed": false,
-      "pitchMix": [
-        {
-          "type": "Four-seam FB",
-          "usagePct": 49.6,
-          "avgVelo": 88.5,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
-        },
-        {
-          "type": "Changeup",
-          "usagePct": 36.7,
-          "avgVelo": 80.8,
-          "whiffPct": 16.2,
-          "chasePct": 33.3,
-          "putAwayPct": 0.0,
-          "hardHitPct": 21.4,
-          "lethalitySample": 83
-        },
-        {
-          "type": "Slider",
-          "usagePct": 7.5,
-          "avgVelo": 80.9,
-          "whiffPct": 0.0,
-          "chasePct": 18.2,
-          "putAwayPct": null,
-          "hardHitPct": 60.0,
-          "lethalitySample": 17
-        },
-        {
-          "type": "Curveball",
-          "usagePct": 6.2,
-          "avgVelo": 75.0,
-          "whiffPct": null,
-          "chasePct": 0.0,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 14
-        }
-      ],
-      "batters": [
-        {
-          "id": 545361,
-          "name": "Mike Trout",
-          "h2h": {
-            "pa": 3,
-            "ab": 2,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".333",
-            "slg": ".000",
-            "ops": 0.333
-          },
-          "seasonOps": 0.809,
-          "credibility": 0.029,
-          "blendedOps": 0.795,
-          "proxyXba": 0.229,
-          "proxyXslg": 0.417,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 642350,
-          "name": "Jose Siri",
-          "h2h": {
-            "pa": 4,
-            "ab": 4,
-            "h": 1,
-            "hr": 1,
-            "bb": 0,
-            "so": 1,
-            "avg": ".250",
-            "obp": ".250",
-            "slg": "1.000",
-            "ops": 1.25
-          },
-          "seasonOps": 0.765,
-          "credibility": 0.038,
-          "blendedOps": 0.784,
-          "proxyXba": 0.255,
-          "proxyXslg": 0.476,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 694384,
-          "name": "Nolan Schanuel",
-          "h2h": {
-            "pa": 6,
-            "ab": 4,
-            "h": 1,
-            "hr": 0,
-            "bb": 1,
-            "so": 1,
-            "avg": ".250",
-            "obp": ".333",
-            "slg": ".250",
-            "ops": 0.583
-          },
-          "seasonOps": 0.736,
-          "credibility": 0.057,
-          "blendedOps": 0.727,
-          "proxyXba": 0.275,
-          "proxyXslg": 0.377,
-          "edgeTier": "average"
-        },
-        {
-          "id": 624428,
-          "name": "Adam Frazier",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.669,
-          "credibility": 0.0,
-          "blendedOps": 0.669,
-          "proxyXba": 0.243,
-          "proxyXslg": 0.359,
-          "edgeTier": "average"
-        },
-        {
-          "id": 694203,
-          "name": "Denzer Guzman",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.65,
-          "credibility": 0.0,
-          "blendedOps": 0.65,
-          "proxyXba": 0.237,
-          "proxyXslg": 0.371,
-          "edgeTier": "soft"
-        },
-        {
-          "id": 666139,
-          "name": "Josh Lowe",
-          "h2h": {
-            "pa": 1,
-            "ab": 1,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.626,
-          "credibility": 0.01,
-          "blendedOps": 0.62,
-          "proxyXba": 0.207,
-          "proxyXslg": 0.356,
-          "edgeTier": "soft"
-        },
-        {
-          "id": 672724,
-          "name": "Oswald Peraza",
-          "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.627,
-          "credibility": 0.029,
-          "blendedOps": 0.609,
-          "proxyXba": 0.219,
-          "proxyXslg": 0.339,
-          "edgeTier": "soft"
-        },
-        {
-          "id": 694208,
-          "name": "Mois\u00e9s Ballesteros",
-          "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.594,
-          "credibility": 0.029,
-          "blendedOps": 0.577,
-          "proxyXba": 0.198,
-          "proxyXslg": 0.31,
-          "edgeTier": "soft"
-        },
-        {
-          "id": 518595,
-          "name": "Travis d'Arnaud",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.553,
-          "credibility": 0.0,
-          "blendedOps": 0.553,
-          "proxyXba": 0.18,
-          "proxyXslg": 0.26,
-          "edgeTier": "soft"
-        }
-      ],
-      "lineupEdgeOps": 0.665,
-      "lineupEdgeTier": "average",
-      "totalH2hPa": 20
-    },
-    {
       "id": "m_682052",
       "pitcherId": "682052",
       "pitcherName": "Jacob Lopez",
@@ -11401,37 +11523,41 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 34.1,
           "avgVelo": 90.5,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 23.2,
+          "chasePct": 35.1,
+          "putAwayPct": 19.7,
+          "hardHitPct": 27.8,
+          "lethalitySample": 144
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 33.0,
           "avgVelo": 76.6,
           "whiffPct": 32.3,
           "chasePct": 42.9,
-          "putAwayPct": 0.0,
+          "putAwayPct": 21.3,
           "hardHitPct": 14.3,
           "lethalitySample": 164
         },
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 20.5,
           "avgVelo": 86.4,
           "whiffPct": 26.4,
           "chasePct": 20.9,
-          "putAwayPct": 0.0,
+          "putAwayPct": 25.0,
           "hardHitPct": 25.0,
           "lethalitySample": 120
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 8.6,
           "avgVelo": 83.1,
           "whiffPct": 33.3,
@@ -11442,6 +11568,7 @@
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 3.9,
           "avgVelo": 89.7,
           "whiffPct": null,
@@ -11522,44 +11649,44 @@
           "id": 572233,
           "name": "Christian Walker",
           "h2h": {
-            "pa": 7,
-            "ab": 6,
+            "pa": 5,
+            "ab": 4,
             "h": 1,
             "hr": 0,
             "bb": 1,
-            "so": 3,
-            "avg": ".167",
-            "obp": ".286",
-            "slg": ".167",
-            "ops": 0.453
+            "so": 2,
+            "avg": ".250",
+            "obp": ".400",
+            "slg": ".250",
+            "ops": 0.65
           },
           "seasonOps": 0.751,
-          "credibility": 0.065,
-          "blendedOps": 0.732,
-          "proxyXba": 0.229,
-          "proxyXslg": 0.424,
-          "edgeTier": "average"
+          "credibility": 0.048,
+          "blendedOps": 0.746,
+          "proxyXba": 0.234,
+          "proxyXslg": 0.433,
+          "edgeTier": "strong"
         },
         {
           "id": 514888,
           "name": "Jose Altuve",
           "h2h": {
-            "pa": 5,
-            "ab": 3,
-            "h": 1,
+            "pa": 8,
+            "ab": 5,
+            "h": 2,
             "hr": 0,
-            "bb": 2,
-            "so": 0,
-            "avg": ".333",
-            "obp": ".600",
-            "slg": ".333",
-            "ops": 0.933
+            "bb": 3,
+            "so": 1,
+            "avg": ".400",
+            "obp": ".625",
+            "slg": ".400",
+            "ops": 1.025
           },
           "seasonOps": 0.706,
-          "credibility": 0.048,
-          "blendedOps": 0.717,
-          "proxyXba": 0.251,
-          "proxyXslg": 0.393,
+          "credibility": 0.074,
+          "blendedOps": 0.73,
+          "proxyXba": 0.258,
+          "proxyXslg": 0.396,
           "edgeTier": "average"
         },
         {
@@ -11632,28 +11759,28 @@
           "id": 701358,
           "name": "Cam Smith",
           "h2h": {
-            "pa": 6,
-            "ab": 5,
+            "pa": 8,
+            "ab": 6,
             "h": 0,
             "hr": 0,
-            "bb": 1,
+            "bb": 2,
             "so": 2,
             "avg": ".000",
-            "obp": ".167",
+            "obp": ".250",
             "slg": ".000",
-            "ops": 0.167
+            "ops": 0.25
           },
           "seasonOps": 0.678,
-          "credibility": 0.057,
-          "blendedOps": 0.649,
-          "proxyXba": 0.206,
-          "proxyXslg": 0.371,
+          "credibility": 0.074,
+          "blendedOps": 0.646,
+          "proxyXba": 0.202,
+          "proxyXslg": 0.364,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.749,
+      "lineupEdgeOps": 0.751,
       "lineupEdgeTier": "strong",
-      "totalH2hPa": 37
+      "totalH2hPa": 40
     },
     {
       "id": "m_686613",
@@ -11667,37 +11794,41 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 33.3,
           "avgVelo": 96.2,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 15.4,
+          "chasePct": 31.1,
+          "putAwayPct": 16.7,
+          "hardHitPct": 41.2,
+          "lethalitySample": 155
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 29.0,
           "avgVelo": 95.9,
           "whiffPct": 25.4,
           "chasePct": 31.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 30.6,
           "hardHitPct": 24.0,
           "lethalitySample": 142
         },
         {
           "type": "Knuckle Curve",
+          "code": "KC",
           "usagePct": 19.7,
           "avgVelo": 83.4,
           "whiffPct": 40.5,
           "chasePct": 29.1,
-          "putAwayPct": 0.0,
+          "putAwayPct": 19.0,
           "hardHitPct": 58.3,
           "lethalitySample": 84
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 9.8,
           "avgVelo": 87.6,
           "whiffPct": 12.5,
@@ -11708,11 +11839,12 @@
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 8.3,
           "avgVelo": 90.5,
           "whiffPct": 22.7,
           "chasePct": 42.9,
-          "putAwayPct": 0.0,
+          "putAwayPct": 16.7,
           "hardHitPct": 25.0,
           "lethalitySample": 37
         }
@@ -11741,28 +11873,6 @@
           "edgeTier": "strong"
         },
         {
-          "id": 680869,
-          "name": "Zack Gelof",
-          "h2h": {
-            "pa": 5,
-            "ab": 5,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 3,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.799,
-          "credibility": 0.048,
-          "blendedOps": 0.761,
-          "proxyXba": 0.252,
-          "proxyXslg": 0.451,
-          "edgeTier": "strong"
-        },
-        {
           "id": 666126,
           "name": "Carlos Cortes",
           "h2h": {
@@ -11783,6 +11893,28 @@
           "proxyXba": 0.266,
           "proxyXslg": 0.408,
           "edgeTier": "strong"
+        },
+        {
+          "id": 680869,
+          "name": "Zack Gelof",
+          "h2h": {
+            "pa": 11,
+            "ab": 11,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 6,
+            "avg": ".091",
+            "obp": ".091",
+            "slg": ".091",
+            "ops": 0.182
+          },
+          "seasonOps": 0.799,
+          "credibility": 0.099,
+          "blendedOps": 0.738,
+          "proxyXba": 0.248,
+          "proxyXslg": 0.436,
+          "edgeTier": "average"
         },
         {
           "id": 703607,
@@ -11876,22 +12008,22 @@
           "id": 641680,
           "name": "Jonah Heim",
           "h2h": {
-            "pa": 16,
-            "ab": 14,
-            "h": 2,
+            "pa": 2,
+            "ab": 2,
+            "h": 0,
             "hr": 0,
-            "bb": 2,
-            "so": 3,
-            "avg": ".143",
-            "obp": ".250",
-            "slg": ".286",
-            "ops": 0.536
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
           "seasonOps": 0.657,
-          "credibility": 0.138,
-          "blendedOps": 0.64,
-          "proxyXba": 0.198,
-          "proxyXslg": 0.371,
+          "credibility": 0.02,
+          "blendedOps": 0.644,
+          "proxyXba": 0.203,
+          "proxyXslg": 0.377,
           "edgeTier": "soft"
         },
         {
@@ -11917,9 +12049,9 @@
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.698,
+      "lineupEdgeOps": 0.696,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 42
+      "totalH2hPa": 34
     },
     {
       "id": "m_681035",
@@ -11933,47 +12065,52 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 48.3,
           "avgVelo": 95.5,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 27.7,
+          "chasePct": 41.3,
+          "putAwayPct": 23.9,
+          "hardHitPct": 55.6,
+          "lethalitySample": 213
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 23.2,
           "avgVelo": 81.4,
           "whiffPct": 22.2,
           "chasePct": 39.1,
-          "putAwayPct": 0.0,
+          "putAwayPct": 25.0,
           "hardHitPct": 6.2,
           "lethalitySample": 107
         },
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 17.7,
           "avgVelo": 89.5,
           "whiffPct": 31.6,
           "chasePct": 34.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 37.5,
           "hardHitPct": 41.7,
           "lethalitySample": 81
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 5.5,
           "avgVelo": 82.1,
           "whiffPct": 10.0,
           "chasePct": 31.2,
-          "putAwayPct": 0.0,
+          "putAwayPct": 7.7,
           "hardHitPct": 33.3,
           "lethalitySample": 35
         },
         {
           "type": "Splitter",
+          "code": "FS",
           "usagePct": 3.3,
           "avgVelo": 84.6,
           "whiffPct": 0.0,
@@ -11984,6 +12121,7 @@
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 1.8,
           "avgVelo": 92.1,
           "whiffPct": 25.0,
@@ -11994,6 +12132,7 @@
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 0.1,
           "avgVelo": 90.7,
           "whiffPct": null,
@@ -12004,6 +12143,7 @@
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 0.1,
           "avgVelo": 82.4,
           "whiffPct": null,
@@ -12226,50 +12366,55 @@
       "isHome": true,
       "matchup": "vs New York Mets",
       "sub": "Chicago White Sox &middot; vs New York Mets",
-      "lineupConfirmed": false,
+      "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 42.7,
           "avgVelo": 95.3,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 28.6,
+          "chasePct": 42.5,
+          "putAwayPct": 14.3,
+          "hardHitPct": 41.2,
+          "lethalitySample": 172
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 25.6,
           "avgVelo": 85.6,
           "whiffPct": 38.9,
           "chasePct": 28.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 4.2,
           "hardHitPct": 54.5,
           "lethalitySample": 86
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 17.9,
           "avgVelo": 95.5,
           "whiffPct": 16.7,
           "chasePct": 19.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 21.9,
           "hardHitPct": 41.7,
           "lethalitySample": 120
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 13.8,
           "avgVelo": 87.6,
           "whiffPct": 33.3,
           "chasePct": 37.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 18.5,
           "hardHitPct": 10.5,
           "lethalitySample": 87
         },
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 0.0,
           "avgVelo": 92.3,
           "whiffPct": null,
@@ -12300,6 +12445,28 @@
           "blendedOps": 0.783,
           "proxyXba": 0.249,
           "proxyXslg": 0.447,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 676724,
+          "name": "Jared Young",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.779,
+          "credibility": 0.0,
+          "blendedOps": 0.779,
+          "proxyXba": 0.27,
+          "proxyXslg": 0.443,
           "edgeTier": "strong"
         },
         {
@@ -12350,44 +12517,22 @@
           "id": 666182,
           "name": "Bo Bichette",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 1,
+            "pa": 18,
+            "ab": 17,
+            "h": 6,
             "hr": 0,
-            "bb": 0,
-            "so": 1,
-            "avg": ".333",
-            "obp": ".333",
-            "slg": ".667",
-            "ops": 1.0
+            "bb": 1,
+            "so": 3,
+            "avg": ".353",
+            "obp": ".389",
+            "slg": ".471",
+            "ops": 0.86
           },
           "seasonOps": 0.706,
-          "credibility": 0.029,
-          "blendedOps": 0.715,
-          "proxyXba": 0.268,
-          "proxyXslg": 0.401,
-          "edgeTier": "average"
-        },
-        {
-          "id": 665506,
-          "name": "Cristian Pache",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.71,
-          "credibility": 0.0,
-          "blendedOps": 0.71,
-          "proxyXba": 0.245,
-          "proxyXslg": 0.4,
+          "credibility": 0.153,
+          "blendedOps": 0.729,
+          "proxyXba": 0.279,
+          "proxyXslg": 0.405,
           "edgeTier": "average"
         },
         {
@@ -12413,6 +12558,50 @@
           "edgeTier": "average"
         },
         {
+          "id": 543760,
+          "name": "Marcus Semien",
+          "h2h": {
+            "pa": 8,
+            "ab": 7,
+            "h": 2,
+            "hr": 1,
+            "bb": 1,
+            "so": 2,
+            "avg": ".286",
+            "obp": ".375",
+            "slg": ".714",
+            "ops": 1.089
+          },
+          "seasonOps": 0.624,
+          "credibility": 0.074,
+          "blendedOps": 0.658,
+          "proxyXba": 0.217,
+          "proxyXslg": 0.379,
+          "edgeTier": "soft"
+        },
+        {
+          "id": 673357,
+          "name": "Luis Robert Jr.",
+          "h2h": {
+            "pa": 6,
+            "ab": 6,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.661,
+          "credibility": 0.057,
+          "blendedOps": 0.624,
+          "proxyXba": 0.205,
+          "proxyXslg": 0.346,
+          "edgeTier": "soft"
+        },
+        {
           "id": 683146,
           "name": "Brett Baty",
           "h2h": {
@@ -12433,331 +12622,11 @@
           "proxyXba": 0.215,
           "proxyXslg": 0.331,
           "edgeTier": "soft"
-        },
-        {
-          "id": 676572,
-          "name": "Eric Wagaman",
-          "h2h": {
-            "pa": 2,
-            "ab": 2,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 1,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.61,
-          "credibility": 0.02,
-          "blendedOps": 0.598,
-          "proxyXba": 0.186,
-          "proxyXslg": 0.326,
-          "edgeTier": "soft"
-        },
-        {
-          "id": 666624,
-          "name": "Christopher Morel",
-          "h2h": {
-            "pa": 6,
-            "ab": 5,
-            "h": 1,
-            "hr": 0,
-            "bb": 1,
-            "so": 3,
-            "avg": ".200",
-            "obp": ".333",
-            "slg": ".400",
-            "ops": 0.733
-          },
-          "seasonOps": 0.445,
-          "credibility": 0.057,
-          "blendedOps": 0.461,
-          "proxyXba": 0.171,
-          "proxyXslg": 0.222,
-          "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.673,
+      "lineupEdgeOps": 0.707,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 16
-    },
-    {
-      "id": "m_608379",
-      "pitcherId": "608379",
-      "pitcherName": "Michael Wacha",
-      "team": "Kansas City Royals",
-      "opponent": "Detroit Tigers",
-      "isHome": true,
-      "matchup": "vs Detroit Tigers",
-      "sub": "Kansas City Royals &middot; vs Detroit Tigers",
-      "lineupConfirmed": true,
-      "pitchMix": [
-        {
-          "type": "Four-seam FB",
-          "usagePct": 26.9,
-          "avgVelo": 93.1,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
-        },
-        {
-          "type": "Changeup",
-          "usagePct": 24.7,
-          "avgVelo": 80.6,
-          "whiffPct": 23.9,
-          "chasePct": 50.0,
-          "putAwayPct": 0.0,
-          "hardHitPct": 27.3,
-          "lethalitySample": 136
-        },
-        {
-          "type": "Cutter",
-          "usagePct": 14.9,
-          "avgVelo": 89.3,
-          "whiffPct": 12.5,
-          "chasePct": 35.1,
-          "putAwayPct": 0.0,
-          "hardHitPct": 38.5,
-          "lethalitySample": 61
-        },
-        {
-          "type": "Sinker",
-          "usagePct": 14.8,
-          "avgVelo": 93.2,
-          "whiffPct": 7.4,
-          "chasePct": 17.9,
-          "putAwayPct": 0.0,
-          "hardHitPct": 52.9,
-          "lethalitySample": 57
-        },
-        {
-          "type": "Curveball",
-          "usagePct": 10.1,
-          "avgVelo": 76.0,
-          "whiffPct": 18.2,
-          "chasePct": 20.0,
-          "putAwayPct": 0.0,
-          "hardHitPct": 60.0,
-          "lethalitySample": 43
-        },
-        {
-          "type": "Slider",
-          "usagePct": 8.6,
-          "avgVelo": 84.8,
-          "whiffPct": 40.0,
-          "chasePct": 12.0,
-          "putAwayPct": 0.0,
-          "hardHitPct": 40.0,
-          "lethalitySample": 36
-        }
-      ],
-      "batters": [
-        {
-          "id": 814430,
-          "name": "Brett Callahan",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 1.0,
-          "credibility": 0.0,
-          "blendedOps": 1.0,
-          "proxyXba": 0.308,
-          "proxyXslg": 0.692,
-          "edgeTier": "elite"
-        },
-        {
-          "id": 701678,
-          "name": "Hao-Yu Lee",
-          "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 2,
-            "hr": 1,
-            "bb": 0,
-            "so": 0,
-            "avg": ".667",
-            "obp": ".667",
-            "slg": "2.000",
-            "ops": 2.667
-          },
-          "seasonOps": 0.742,
-          "credibility": 0.029,
-          "blendedOps": 0.798,
-          "proxyXba": 0.288,
-          "proxyXslg": 0.469,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 805808,
-          "name": "Kevin McGonigle",
-          "h2h": {
-            "pa": 6,
-            "ab": 5,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 1,
-            "avg": ".000",
-            "obp": ".167",
-            "slg": ".000",
-            "ops": 0.167
-          },
-          "seasonOps": 0.81,
-          "credibility": 0.057,
-          "blendedOps": 0.774,
-          "proxyXba": 0.268,
-          "proxyXslg": 0.4,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 690993,
-          "name": "Colt Keith",
-          "h2h": {
-            "pa": 9,
-            "ab": 9,
-            "h": 4,
-            "hr": 0,
-            "bb": 0,
-            "so": 1,
-            "avg": ".444",
-            "obp": ".444",
-            "slg": ".556",
-            "ops": 1.0
-          },
-          "seasonOps": 0.754,
-          "credibility": 0.083,
-          "blendedOps": 0.774,
-          "proxyXba": 0.286,
-          "proxyXslg": 0.436,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 650402,
-          "name": "Gleyber Torres",
-          "h2h": {
-            "pa": 10,
-            "ab": 7,
-            "h": 1,
-            "hr": 0,
-            "bb": 3,
-            "so": 2,
-            "avg": ".143",
-            "obp": ".400",
-            "slg": ".143",
-            "ops": 0.543
-          },
-          "seasonOps": 0.768,
-          "credibility": 0.091,
-          "blendedOps": 0.748,
-          "proxyXba": 0.255,
-          "proxyXslg": 0.37,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 693307,
-          "name": "Dillon Dingler",
-          "h2h": {
-            "pa": 14,
-            "ab": 13,
-            "h": 1,
-            "hr": 0,
-            "bb": 1,
-            "so": 3,
-            "avg": ".077",
-            "obp": ".143",
-            "slg": ".077",
-            "ops": 0.22
-          },
-          "seasonOps": 0.801,
-          "credibility": 0.123,
-          "blendedOps": 0.73,
-          "proxyXba": 0.231,
-          "proxyXslg": 0.435,
-          "edgeTier": "average"
-        },
-        {
-          "id": 703601,
-          "name": "Max Clark",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.713,
-          "credibility": 0.0,
-          "blendedOps": 0.713,
-          "proxyXba": 0.26,
-          "proxyXslg": 0.397,
-          "edgeTier": "average"
-        },
-        {
-          "id": 679529,
-          "name": "Spencer Torkelson",
-          "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.727,
-          "credibility": 0.029,
-          "blendedOps": 0.706,
-          "proxyXba": 0.217,
-          "proxyXslg": 0.398,
-          "edgeTier": "average"
-        },
-        {
-          "id": 656716,
-          "name": "Zach McKinstry",
-          "h2h": {
-            "pa": 6,
-            "ab": 6,
-            "h": 2,
-            "hr": 0,
-            "bb": 0,
-            "so": 1,
-            "avg": ".333",
-            "obp": ".333",
-            "slg": ".667",
-            "ops": 1.0
-          },
-          "seasonOps": 0.638,
-          "credibility": 0.057,
-          "blendedOps": 0.658,
-          "proxyXba": 0.23,
-          "proxyXslg": 0.35,
-          "edgeTier": "soft"
-        }
-      ],
-      "lineupEdgeOps": 0.767,
-      "lineupEdgeTier": "strong",
-      "totalH2hPa": 51
+      "totalH2hPa": 37
     },
     {
       "id": "m_623454",
@@ -12771,37 +12640,41 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 39.7,
           "avgVelo": 95.7,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 15.4,
+          "chasePct": 41.2,
+          "putAwayPct": 17.2,
+          "hardHitPct": 22.7,
+          "lethalitySample": 92
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 30.7,
           "avgVelo": 90.3,
           "whiffPct": 34.5,
           "chasePct": 37.7,
-          "putAwayPct": 0.0,
+          "putAwayPct": 14.3,
           "hardHitPct": 50.0,
           "lethalitySample": 68
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 22.6,
           "avgVelo": 80.4,
           "whiffPct": 31.6,
           "chasePct": 21.9,
-          "putAwayPct": 0.0,
+          "putAwayPct": 21.4,
           "hardHitPct": 57.1,
           "lethalitySample": 56
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 5.4,
           "avgVelo": 87.9,
           "whiffPct": 25.0,
@@ -12812,6 +12685,7 @@
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 1.6,
           "avgVelo": 95.1,
           "whiffPct": 0.0,
@@ -13026,215 +12900,219 @@
       "totalH2hPa": 11
     },
     {
-      "id": "m_683003",
-      "pitcherId": "683003",
-      "pitcherName": "Jared Jones",
-      "team": "Pittsburgh Pirates",
-      "opponent": "Los Angeles Dodgers",
-      "isHome": false,
-      "matchup": "@ Los Angeles Dodgers",
-      "sub": "Pittsburgh Pirates &middot; @ Los Angeles Dodgers",
+      "id": "m_608379",
+      "pitcherId": "608379",
+      "pitcherName": "Michael Wacha",
+      "team": "Kansas City Royals",
+      "opponent": "Detroit Tigers",
+      "isHome": true,
+      "matchup": "vs Detroit Tigers",
+      "sub": "Kansas City Royals &middot; vs Detroit Tigers",
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
-          "usagePct": 45.8,
-          "avgVelo": 98.2,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
-        },
-        {
-          "type": "Slider",
-          "usagePct": 34.9,
-          "avgVelo": 89.6,
-          "whiffPct": 38.2,
-          "chasePct": 32.0,
-          "putAwayPct": 0.0,
-          "hardHitPct": 41.7,
-          "lethalitySample": 165
+          "type": "Four-Seam Fastball",
+          "code": "FF",
+          "usagePct": 26.9,
+          "avgVelo": 93.1,
+          "whiffPct": 10.8,
+          "chasePct": 34.7,
+          "putAwayPct": 11.1,
+          "hardHitPct": 48.0,
+          "lethalitySample": 131
         },
         {
           "type": "Changeup",
-          "usagePct": 12.2,
-          "avgVelo": 93.0,
-          "whiffPct": 46.7,
-          "chasePct": 32.0,
+          "code": "CH",
+          "usagePct": 24.7,
+          "avgVelo": 80.6,
+          "whiffPct": 23.9,
+          "chasePct": 50.0,
+          "putAwayPct": 21.8,
+          "hardHitPct": 27.3,
+          "lethalitySample": 136
+        },
+        {
+          "type": "Cutter",
+          "code": "FC",
+          "usagePct": 14.9,
+          "avgVelo": 89.3,
+          "whiffPct": 12.5,
+          "chasePct": 35.1,
           "putAwayPct": 0.0,
-          "hardHitPct": 50.0,
-          "lethalitySample": 32
+          "hardHitPct": 38.5,
+          "lethalitySample": 61
+        },
+        {
+          "type": "Sinker",
+          "code": "SI",
+          "usagePct": 14.8,
+          "avgVelo": 93.2,
+          "whiffPct": 7.4,
+          "chasePct": 17.9,
+          "putAwayPct": 4.8,
+          "hardHitPct": 52.9,
+          "lethalitySample": 57
         },
         {
           "type": "Curveball",
-          "usagePct": 7.1,
-          "avgVelo": 85.6,
-          "whiffPct": 20.0,
+          "code": "CU",
+          "usagePct": 10.1,
+          "avgVelo": 76.0,
+          "whiffPct": 18.2,
           "chasePct": 20.0,
-          "putAwayPct": null,
-          "hardHitPct": 25.0,
-          "lethalitySample": 13
+          "putAwayPct": 0.0,
+          "hardHitPct": 60.0,
+          "lethalitySample": 43
+        },
+        {
+          "type": "Slider",
+          "code": "SL",
+          "usagePct": 8.6,
+          "avgVelo": 84.8,
+          "whiffPct": 40.0,
+          "chasePct": 12.0,
+          "putAwayPct": 12.5,
+          "hardHitPct": 40.0,
+          "lethalitySample": 36
         }
       ],
       "batters": [
         {
-          "id": 660271,
-          "name": "Shohei Ohtani",
+          "id": 814430,
+          "name": "Brett Callahan",
           "h2h": {
-            "pa": 5,
-            "ab": 5,
+            "pa": 0,
+            "ab": 0,
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 3,
+            "so": 0,
             "avg": ".000",
             "obp": ".000",
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.942,
-          "credibility": 0.048,
-          "blendedOps": 0.897,
-          "proxyXba": 0.277,
-          "proxyXslg": 0.526,
+          "seasonOps": 1.0,
+          "credibility": 0.0,
+          "blendedOps": 1.0,
+          "proxyXba": 0.308,
+          "proxyXslg": 0.692,
           "edgeTier": "elite"
         },
         {
-          "id": 571970,
-          "name": "Max Muncy",
+          "id": 693307,
+          "name": "Dillon Dingler",
           "h2h": {
-            "pa": 2,
+            "pa": 3,
             "ab": 2,
             "h": 1,
             "hr": 0,
-            "bb": 0,
+            "bb": 1,
             "so": 0,
             "avg": ".500",
-            "obp": ".500",
-            "slg": "1.000",
-            "ops": 1.5
+            "obp": ".667",
+            "slg": ".500",
+            "ops": 1.167
           },
-          "seasonOps": 0.848,
-          "credibility": 0.02,
-          "blendedOps": 0.861,
-          "proxyXba": 0.257,
-          "proxyXslg": 0.514,
-          "edgeTier": "elite"
+          "seasonOps": 0.801,
+          "credibility": 0.029,
+          "blendedOps": 0.812,
+          "proxyXba": 0.259,
+          "proxyXslg": 0.485,
+          "edgeTier": "strong"
         },
         {
-          "id": 518692,
-          "name": "Freddie Freeman",
+          "id": 701678,
+          "name": "Hao-Yu Lee",
           "h2h": {
             "pa": 3,
             "ab": 3,
             "h": 2,
-            "hr": 0,
-            "bb": 0,
-            "so": 1,
-            "avg": ".667",
-            "obp": ".667",
-            "slg": "1.000",
-            "ops": 1.667
-          },
-          "seasonOps": 0.835,
-          "credibility": 0.029,
-          "blendedOps": 0.859,
-          "proxyXba": 0.311,
-          "proxyXslg": 0.479,
-          "edgeTier": "elite"
-        },
-        {
-          "id": 669242,
-          "name": "Tommy Edman",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
+            "hr": 1,
             "bb": 0,
             "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
+            "avg": ".667",
+            "obp": ".667",
+            "slg": "2.000",
+            "ops": 2.667
           },
-          "seasonOps": 0.753,
-          "credibility": 0.0,
-          "blendedOps": 0.753,
-          "proxyXba": 0.274,
-          "proxyXslg": 0.411,
+          "seasonOps": 0.742,
+          "credibility": 0.029,
+          "blendedOps": 0.798,
+          "proxyXba": 0.288,
+          "proxyXslg": 0.469,
           "edgeTier": "strong"
         },
         {
-          "id": 663656,
-          "name": "Kyle Tucker",
+          "id": 805808,
+          "name": "Kevin McGonigle",
           "h2h": {
-            "pa": 2,
-            "ab": 2,
-            "h": 1,
+            "pa": 6,
+            "ab": 5,
+            "h": 0,
             "hr": 0,
             "bb": 0,
             "so": 1,
-            "avg": ".500",
-            "obp": ".500",
-            "slg": ".500",
+            "avg": ".000",
+            "obp": ".167",
+            "slg": ".000",
+            "ops": 0.167
+          },
+          "seasonOps": 0.81,
+          "credibility": 0.057,
+          "blendedOps": 0.774,
+          "proxyXba": 0.268,
+          "proxyXslg": 0.4,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 690993,
+          "name": "Colt Keith",
+          "h2h": {
+            "pa": 9,
+            "ab": 9,
+            "h": 4,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
+            "avg": ".444",
+            "obp": ".444",
+            "slg": ".556",
             "ops": 1.0
           },
-          "seasonOps": 0.689,
-          "credibility": 0.02,
-          "blendedOps": 0.695,
-          "proxyXba": 0.235,
-          "proxyXslg": 0.367,
-          "edgeTier": "average"
+          "seasonOps": 0.754,
+          "credibility": 0.083,
+          "blendedOps": 0.774,
+          "proxyXba": 0.286,
+          "proxyXslg": 0.436,
+          "edgeTier": "strong"
         },
         {
-          "id": 606192,
-          "name": "Teoscar Hern\u00e1ndez",
+          "id": 650402,
+          "name": "Gleyber Torres",
           "h2h": {
-            "pa": 3,
-            "ab": 3,
-            "h": 0,
+            "pa": 10,
+            "ab": 7,
+            "h": 1,
             "hr": 0,
-            "bb": 0,
-            "so": 1,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
+            "bb": 3,
+            "so": 2,
+            "avg": ".143",
+            "obp": ".400",
+            "slg": ".143",
+            "ops": 0.543
           },
-          "seasonOps": 0.705,
-          "credibility": 0.029,
-          "blendedOps": 0.684,
-          "proxyXba": 0.24,
-          "proxyXslg": 0.384,
-          "edgeTier": "average"
+          "seasonOps": 0.768,
+          "credibility": 0.091,
+          "blendedOps": 0.748,
+          "proxyXba": 0.255,
+          "proxyXslg": 0.37,
+          "edgeTier": "strong"
         },
         {
-          "id": 605141,
-          "name": "Mookie Betts",
-          "h2h": {
-            "pa": 5,
-            "ab": 4,
-            "h": 0,
-            "hr": 0,
-            "bb": 1,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".200",
-            "slg": ".000",
-            "ops": 0.2
-          },
-          "seasonOps": 0.707,
-          "credibility": 0.048,
-          "blendedOps": 0.683,
-          "proxyXba": 0.227,
-          "proxyXslg": 0.392,
-          "edgeTier": "average"
-        },
-        {
-          "id": 677950,
-          "name": "Alek Thomas",
+          "id": 703601,
+          "name": "Max Clark",
           "h2h": {
             "pa": 0,
             "ab": 0,
@@ -13247,39 +13125,61 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.562,
+          "seasonOps": 0.713,
           "credibility": 0.0,
-          "blendedOps": 0.562,
-          "proxyXba": 0.181,
-          "proxyXslg": 0.34,
-          "edgeTier": "soft"
+          "blendedOps": 0.713,
+          "proxyXba": 0.26,
+          "proxyXslg": 0.397,
+          "edgeTier": "average"
         },
         {
-          "id": 666163,
-          "name": "Ben Rortvedt",
+          "id": 679529,
+          "name": "Spencer Torkelson",
           "h2h": {
             "pa": 3,
             "ab": 3,
-            "h": 1,
+            "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 2,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.727,
+          "credibility": 0.029,
+          "blendedOps": 0.706,
+          "proxyXba": 0.217,
+          "proxyXslg": 0.398,
+          "edgeTier": "average"
+        },
+        {
+          "id": 656716,
+          "name": "Zach McKinstry",
+          "h2h": {
+            "pa": 6,
+            "ab": 6,
+            "h": 2,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
             "avg": ".333",
             "obp": ".333",
-            "slg": ".333",
-            "ops": 0.666
+            "slg": ".667",
+            "ops": 1.0
           },
-          "seasonOps": 0.376,
-          "credibility": 0.029,
-          "blendedOps": 0.384,
-          "proxyXba": 0.192,
-          "proxyXslg": 0.192,
+          "seasonOps": 0.638,
+          "credibility": 0.057,
+          "blendedOps": 0.658,
+          "proxyXba": 0.23,
+          "proxyXslg": 0.35,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.709,
-      "lineupEdgeTier": "average",
-      "totalH2hPa": 23
+      "lineupEdgeOps": 0.776,
+      "lineupEdgeTier": "strong",
+      "totalH2hPa": 40
     },
     {
       "id": "m_807739",
@@ -13497,6 +13397,266 @@
       "totalH2hPa": 0
     },
     {
+      "id": "m_683003",
+      "pitcherId": "683003",
+      "pitcherName": "Jared Jones",
+      "team": "Pittsburgh Pirates",
+      "opponent": "Los Angeles Dodgers",
+      "isHome": false,
+      "matchup": "@ Los Angeles Dodgers",
+      "sub": "Pittsburgh Pirates &middot; @ Los Angeles Dodgers",
+      "lineupConfirmed": true,
+      "pitchMix": [
+        {
+          "type": "Four-Seam Fastball",
+          "code": "FF",
+          "usagePct": 45.8,
+          "avgVelo": 98.2,
+          "whiffPct": 12.5,
+          "chasePct": 31.7,
+          "putAwayPct": 14.0,
+          "hardHitPct": 38.5,
+          "lethalitySample": 187
+        },
+        {
+          "type": "Slider",
+          "code": "SL",
+          "usagePct": 34.9,
+          "avgVelo": 89.6,
+          "whiffPct": 38.2,
+          "chasePct": 32.0,
+          "putAwayPct": 28.3,
+          "hardHitPct": 41.7,
+          "lethalitySample": 165
+        },
+        {
+          "type": "Changeup",
+          "code": "CH",
+          "usagePct": 12.2,
+          "avgVelo": 93.0,
+          "whiffPct": 46.7,
+          "chasePct": 32.0,
+          "putAwayPct": 16.7,
+          "hardHitPct": 50.0,
+          "lethalitySample": 32
+        },
+        {
+          "type": "Curveball",
+          "code": "CU",
+          "usagePct": 7.1,
+          "avgVelo": 85.6,
+          "whiffPct": 20.0,
+          "chasePct": 20.0,
+          "putAwayPct": null,
+          "hardHitPct": 25.0,
+          "lethalitySample": 13
+        }
+      ],
+      "batters": [
+        {
+          "id": 660271,
+          "name": "Shohei Ohtani",
+          "h2h": {
+            "pa": 5,
+            "ab": 5,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 3,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.942,
+          "credibility": 0.048,
+          "blendedOps": 0.897,
+          "proxyXba": 0.277,
+          "proxyXslg": 0.526,
+          "edgeTier": "elite"
+        },
+        {
+          "id": 571970,
+          "name": "Max Muncy",
+          "h2h": {
+            "pa": 2,
+            "ab": 2,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".500",
+            "obp": ".500",
+            "slg": "1.000",
+            "ops": 1.5
+          },
+          "seasonOps": 0.848,
+          "credibility": 0.02,
+          "blendedOps": 0.861,
+          "proxyXba": 0.257,
+          "proxyXslg": 0.514,
+          "edgeTier": "elite"
+        },
+        {
+          "id": 518692,
+          "name": "Freddie Freeman",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 2,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
+            "avg": ".667",
+            "obp": ".667",
+            "slg": "1.000",
+            "ops": 1.667
+          },
+          "seasonOps": 0.835,
+          "credibility": 0.029,
+          "blendedOps": 0.859,
+          "proxyXba": 0.311,
+          "proxyXslg": 0.479,
+          "edgeTier": "elite"
+        },
+        {
+          "id": 669242,
+          "name": "Tommy Edman",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.753,
+          "credibility": 0.0,
+          "blendedOps": 0.753,
+          "proxyXba": 0.274,
+          "proxyXslg": 0.411,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 663656,
+          "name": "Kyle Tucker",
+          "h2h": {
+            "pa": 2,
+            "ab": 2,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
+            "avg": ".500",
+            "obp": ".500",
+            "slg": ".500",
+            "ops": 1.0
+          },
+          "seasonOps": 0.689,
+          "credibility": 0.02,
+          "blendedOps": 0.695,
+          "proxyXba": 0.235,
+          "proxyXslg": 0.367,
+          "edgeTier": "average"
+        },
+        {
+          "id": 606192,
+          "name": "Teoscar Hern\u00e1ndez",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.705,
+          "credibility": 0.029,
+          "blendedOps": 0.684,
+          "proxyXba": 0.24,
+          "proxyXslg": 0.384,
+          "edgeTier": "average"
+        },
+        {
+          "id": 605141,
+          "name": "Mookie Betts",
+          "h2h": {
+            "pa": 5,
+            "ab": 4,
+            "h": 0,
+            "hr": 0,
+            "bb": 1,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".200",
+            "slg": ".000",
+            "ops": 0.2
+          },
+          "seasonOps": 0.707,
+          "credibility": 0.048,
+          "blendedOps": 0.683,
+          "proxyXba": 0.227,
+          "proxyXslg": 0.392,
+          "edgeTier": "average"
+        },
+        {
+          "id": 677950,
+          "name": "Alek Thomas",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.562,
+          "credibility": 0.0,
+          "blendedOps": 0.562,
+          "proxyXba": 0.181,
+          "proxyXslg": 0.34,
+          "edgeTier": "soft"
+        },
+        {
+          "id": 666163,
+          "name": "Ben Rortvedt",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 2,
+            "avg": ".333",
+            "obp": ".333",
+            "slg": ".333",
+            "ops": 0.666
+          },
+          "seasonOps": 0.376,
+          "credibility": 0.029,
+          "blendedOps": 0.384,
+          "proxyXba": 0.192,
+          "proxyXslg": 0.192,
+          "edgeTier": "soft"
+        }
+      ],
+      "lineupEdgeOps": 0.709,
+      "lineupEdgeTier": "average",
+      "totalH2hPa": 23
+    },
+    {
       "id": "m_669373",
       "pitcherId": "669373",
       "pitcherName": "Tarik Skubal",
@@ -13508,37 +13668,41 @@
       "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 35.1,
           "avgVelo": 96.7,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 20.9,
+          "chasePct": 49.4,
+          "putAwayPct": 26.1,
+          "hardHitPct": 52.0,
+          "lethalitySample": 141
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 26.3,
           "avgVelo": 87.4,
           "whiffPct": 46.2,
           "chasePct": 46.8,
-          "putAwayPct": 0.0,
+          "putAwayPct": 30.0,
           "hardHitPct": 42.9,
           "lethalitySample": 134
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 20.5,
           "avgVelo": 96.7,
           "whiffPct": 21.6,
           "chasePct": 27.9,
-          "putAwayPct": 0.0,
+          "putAwayPct": 19.0,
           "hardHitPct": 40.0,
           "lethalitySample": 112
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 13.7,
           "avgVelo": 89.5,
           "whiffPct": 19.2,
@@ -13549,11 +13713,12 @@
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 4.4,
           "avgVelo": 80.4,
           "whiffPct": 50.0,
           "chasePct": 44.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 46.2,
           "hardHitPct": 25.0,
           "lethalitySample": 27
         }
@@ -13629,22 +13794,22 @@
           "id": 693304,
           "name": "Nick Gonzales",
           "h2h": {
-            "pa": 6,
-            "ab": 6,
-            "h": 2,
+            "pa": 3,
+            "ab": 3,
+            "h": 1,
             "hr": 0,
             "bb": 0,
-            "so": 3,
+            "so": 2,
             "avg": ".333",
             "obp": ".333",
-            "slg": ".500",
-            "ops": 0.833
+            "slg": ".333",
+            "ops": 0.666
           },
           "seasonOps": 0.773,
-          "credibility": 0.057,
-          "blendedOps": 0.776,
+          "credibility": 0.029,
+          "blendedOps": 0.77,
           "proxyXba": 0.312,
-          "proxyXslg": 0.409,
+          "proxyXslg": 0.402,
           "edgeTier": "strong"
         },
         {
@@ -13758,9 +13923,9 @@
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.759,
+      "lineupEdgeOps": 0.758,
       "lineupEdgeTier": "strong",
-      "totalH2hPa": 19
+      "totalH2hPa": 16
     },
     {
       "id": "m_656849",
@@ -13775,51 +13940,56 @@
       "pitchMix": [
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 30.1,
           "avgVelo": 92.0,
           "whiffPct": 15.9,
           "chasePct": 32.9,
-          "putAwayPct": 0.0,
+          "putAwayPct": 10.3,
           "hardHitPct": 46.4,
           "lethalitySample": 131
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 24.4,
           "avgVelo": 92.4,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 14.3,
+          "chasePct": 31.9,
+          "putAwayPct": 15.6,
+          "hardHitPct": 17.6,
+          "lethalitySample": 99
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 22.6,
           "avgVelo": 86.2,
           "whiffPct": 24.4,
           "chasePct": 48.9,
-          "putAwayPct": 2.3,
+          "putAwayPct": 20.5,
           "hardHitPct": 21.4,
           "lethalitySample": 74
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 12.7,
           "avgVelo": 85.6,
           "whiffPct": 21.7,
           "chasePct": 29.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 23.5,
           "hardHitPct": 25.0,
           "lethalitySample": 56
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 10.3,
           "avgVelo": 80.6,
           "whiffPct": 16.7,
           "chasePct": 7.7,
-          "putAwayPct": 0.0,
+          "putAwayPct": 20.0,
           "hardHitPct": 50.0,
           "lethalitySample": 24
         }
@@ -13914,28 +14084,6 @@
           "edgeTier": "strong"
         },
         {
-          "id": 621493,
-          "name": "Taylor Ward",
-          "h2h": {
-            "pa": 6,
-            "ab": 5,
-            "h": 2,
-            "hr": 0,
-            "bb": 1,
-            "so": 0,
-            "avg": ".400",
-            "obp": ".500",
-            "slg": ".400",
-            "ops": 0.9
-          },
-          "seasonOps": 0.704,
-          "credibility": 0.057,
-          "blendedOps": 0.715,
-          "proxyXba": 0.247,
-          "proxyXslg": 0.337,
-          "edgeTier": "average"
-        },
-        {
           "id": 702284,
           "name": "Cole Young",
           "h2h": {
@@ -13955,6 +14103,28 @@
           "blendedOps": 0.71,
           "proxyXba": 0.255,
           "proxyXslg": 0.395,
+          "edgeTier": "average"
+        },
+        {
+          "id": 621493,
+          "name": "Taylor Ward",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 1,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".333",
+            "obp": ".333",
+            "slg": ".333",
+            "ops": 0.666
+          },
+          "seasonOps": 0.704,
+          "credibility": 0.029,
+          "blendedOps": 0.703,
+          "proxyXba": 0.241,
+          "proxyXslg": 0.333,
           "edgeTier": "average"
         },
         {
@@ -14024,9 +14194,9 @@
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.699,
+      "lineupEdgeOps": 0.698,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 19
+      "totalH2hPa": 16
     },
     {
       "id": "m_694918",
@@ -14041,46 +14211,51 @@
       "pitchMix": [
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 37.4,
           "avgVelo": 82.6,
           "whiffPct": 37.5,
           "chasePct": 40.8,
-          "putAwayPct": 0.0,
+          "putAwayPct": 21.4,
           "hardHitPct": 26.3,
           "lethalitySample": 121
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 32.4,
           "avgVelo": 95.6,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 8.6,
+          "chasePct": 25.4,
+          "putAwayPct": 6.7,
+          "hardHitPct": 60.0,
+          "lethalitySample": 95
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 12.7,
           "avgVelo": 93.8,
           "whiffPct": 13.6,
           "chasePct": 18.2,
-          "putAwayPct": 0.0,
+          "putAwayPct": 12.5,
           "hardHitPct": 55.6,
           "lethalitySample": 48
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 10.4,
           "avgVelo": 87.7,
           "whiffPct": 21.1,
           "chasePct": 22.2,
-          "putAwayPct": 0.0,
+          "putAwayPct": 11.8,
           "hardHitPct": 40.0,
           "lethalitySample": 38
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 5.7,
           "avgVelo": 83.0,
           "whiffPct": 0.0,
@@ -14091,6 +14266,7 @@
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 1.4,
           "avgVelo": 82.9,
           "whiffPct": 0.0,
@@ -14317,61 +14493,67 @@
       "pitchMix": [
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 27.6,
           "avgVelo": 86.8,
           "whiffPct": 25.5,
           "chasePct": 23.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 16.1,
           "hardHitPct": 25.0,
           "lethalitySample": 110
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 25.2,
           "avgVelo": 83.9,
           "whiffPct": 37.3,
           "chasePct": 32.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 33.3,
           "hardHitPct": 20.0,
           "lethalitySample": 114
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 21.4,
           "avgVelo": 93.6,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 14.8,
+          "chasePct": 35.6,
+          "putAwayPct": 25.0,
+          "hardHitPct": 45.0,
+          "lethalitySample": 93
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 19.3,
           "avgVelo": 94.0,
           "whiffPct": 13.3,
           "chasePct": 25.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 14.8,
           "hardHitPct": 33.3,
           "lethalitySample": 94
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 4.5,
           "avgVelo": 75.5,
           "whiffPct": 0.0,
           "chasePct": 9.1,
-          "putAwayPct": 0.0,
+          "putAwayPct": null,
           "hardHitPct": null,
           "lethalitySample": 18
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 1.9,
           "avgVelo": 80.2,
           "whiffPct": 0.0,
           "chasePct": 0.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 16.7,
           "hardHitPct": null,
           "lethalitySample": 9
         }
@@ -14513,22 +14695,22 @@
           "id": 642715,
           "name": "Willy Adames",
           "h2h": {
-            "pa": 2,
-            "ab": 2,
+            "pa": 1,
+            "ab": 1,
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 2,
+            "so": 1,
             "avg": ".000",
             "obp": ".000",
             "slg": ".000",
             "ops": 0.0
           },
           "seasonOps": 0.703,
-          "credibility": 0.02,
-          "blendedOps": 0.689,
-          "proxyXba": 0.223,
-          "proxyXslg": 0.409,
+          "credibility": 0.01,
+          "blendedOps": 0.696,
+          "proxyXba": 0.225,
+          "proxyXslg": 0.413,
           "edgeTier": "average"
         },
         {
@@ -14557,8 +14739,8 @@
           "id": 668800,
           "name": "Andrew Knizner",
           "h2h": {
-            "pa": 4,
-            "ab": 4,
+            "pa": 2,
+            "ab": 2,
             "h": 0,
             "hr": 0,
             "bb": 0,
@@ -14569,16 +14751,16 @@
             "ops": 0.0
           },
           "seasonOps": 0.222,
-          "credibility": 0.038,
-          "blendedOps": 0.213,
-          "proxyXba": 0.236,
-          "proxyXslg": 0.385,
+          "credibility": 0.02,
+          "blendedOps": 0.218,
+          "proxyXba": 0.24,
+          "proxyXslg": 0.392,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.652,
+      "lineupEdgeOps": 0.653,
       "lineupEdgeTier": "soft",
-      "totalH2hPa": 14
+      "totalH2hPa": 11
     },
     {
       "id": "m_695076",
@@ -14593,56 +14775,62 @@
       "pitchMix": [
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 29.1,
           "avgVelo": 92.8,
           "whiffPct": 3.4,
           "chasePct": 31.7,
-          "putAwayPct": 0.0,
+          "putAwayPct": 6.5,
           "hardHitPct": 44.8,
           "lethalitySample": 122
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 27.6,
           "avgVelo": 85.0,
           "whiffPct": 31.7,
           "chasePct": 37.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 17.9,
           "hardHitPct": 30.4,
           "lethalitySample": 127
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 20.5,
           "avgVelo": 86.3,
           "whiffPct": 18.9,
           "chasePct": 27.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 12.5,
           "hardHitPct": 6.7,
           "lethalitySample": 92
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 20.4,
           "avgVelo": 93.4,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 9.1,
+          "chasePct": 40.5,
+          "putAwayPct": 14.8,
+          "hardHitPct": 41.2,
+          "lethalitySample": 75
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 2.2,
           "avgVelo": 80.1,
           "whiffPct": 7.1,
           "chasePct": 32.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 12.5,
           "hardHitPct": 25.0,
           "lethalitySample": 37
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 0.1,
           "avgVelo": 83.2,
           "whiffPct": null,
@@ -14701,22 +14889,22 @@
           "id": 571448,
           "name": "Nolan Arenado",
           "h2h": {
-            "pa": 5,
-            "ab": 4,
+            "pa": 2,
+            "ab": 2,
             "h": 1,
             "hr": 0,
-            "bb": 1,
-            "so": 2,
-            "avg": ".250",
-            "obp": ".400",
-            "slg": ".250",
-            "ops": 0.65
+            "bb": 0,
+            "so": 1,
+            "avg": ".500",
+            "obp": ".500",
+            "slg": ".500",
+            "ops": 1.0
           },
           "seasonOps": 0.761,
-          "credibility": 0.048,
-          "blendedOps": 0.756,
-          "proxyXba": 0.243,
-          "proxyXslg": 0.431,
+          "credibility": 0.02,
+          "blendedOps": 0.766,
+          "proxyXba": 0.248,
+          "proxyXslg": 0.441,
           "edgeTier": "strong"
         },
         {
@@ -14833,28 +15021,28 @@
           "id": 663457,
           "name": "Lars Nootbaar",
           "h2h": {
-            "pa": 6,
-            "ab": 5,
+            "pa": 2,
+            "ab": 2,
             "h": 0,
             "hr": 0,
-            "bb": 1,
-            "so": 1,
+            "bb": 0,
+            "so": 0,
             "avg": ".000",
-            "obp": ".167",
+            "obp": ".000",
             "slg": ".000",
-            "ops": 0.167
+            "ops": 0.0
           },
           "seasonOps": 0.667,
-          "credibility": 0.057,
-          "blendedOps": 0.639,
-          "proxyXba": 0.208,
-          "proxyXslg": 0.319,
+          "credibility": 0.02,
+          "blendedOps": 0.654,
+          "proxyXba": 0.217,
+          "proxyXslg": 0.331,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.739,
-      "lineupEdgeTier": "average",
-      "totalH2hPa": 22
+      "lineupEdgeOps": 0.742,
+      "lineupEdgeTier": "strong",
+      "totalH2hPa": 15
     },
     {
       "id": "m_647336",
@@ -14865,30 +15053,33 @@
       "isHome": true,
       "matchup": "vs Cincinnati Reds",
       "sub": "Arizona Diamondbacks &middot; vs Cincinnati Reds",
-      "lineupConfirmed": false,
+      "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 32.6,
           "avgVelo": 93.6,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 15.0,
+          "chasePct": 34.4,
+          "putAwayPct": 8.8,
+          "hardHitPct": 36.4,
+          "lethalitySample": 114
         },
         {
           "type": "Slurve",
+          "code": "SV",
           "usagePct": 32.0,
           "avgVelo": 80.6,
           "whiffPct": 31.9,
           "chasePct": 23.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 30.8,
           "hardHitPct": 27.3,
           "lethalitySample": 113
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 12.6,
           "avgVelo": 85.8,
           "whiffPct": 3.7,
@@ -14899,26 +15090,29 @@
         },
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 11.7,
           "avgVelo": 89.0,
           "whiffPct": 12.5,
           "chasePct": 30.8,
-          "putAwayPct": 0.0,
+          "putAwayPct": null,
           "hardHitPct": 42.9,
           "lethalitySample": 36
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 10.3,
           "avgVelo": 93.3,
           "whiffPct": 8.7,
           "chasePct": 54.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 40.0,
           "hardHitPct": 44.4,
           "lethalitySample": 36
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 0.7,
           "avgVelo": 83.0,
           "whiffPct": null,
@@ -14930,8 +15124,8 @@
       ],
       "batters": [
         {
-          "id": 682829,
-          "name": "Elly De La Cruz",
+          "id": 701398,
+          "name": "Sal Stewart",
           "h2h": {
             "pa": 3,
             "ab": 3,
@@ -14944,11 +15138,33 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.803,
+          "seasonOps": 0.807,
           "credibility": 0.029,
-          "blendedOps": 0.78,
-          "proxyXba": 0.25,
-          "proxyXslg": 0.45,
+          "blendedOps": 0.783,
+          "proxyXba": 0.251,
+          "proxyXslg": 0.459,
+          "edgeTier": "strong"
+        },
+        {
+          "id": 682829,
+          "name": "Elly De La Cruz",
+          "h2h": {
+            "pa": 7,
+            "ab": 6,
+            "h": 0,
+            "hr": 0,
+            "bb": 1,
+            "so": 3,
+            "avg": ".000",
+            "obp": ".143",
+            "slg": ".000",
+            "ops": 0.143
+          },
+          "seasonOps": 0.803,
+          "credibility": 0.065,
+          "blendedOps": 0.76,
+          "proxyXba": 0.24,
+          "proxyXslg": 0.433,
           "edgeTier": "strong"
         },
         {
@@ -14996,6 +15212,28 @@
           "edgeTier": "average"
         },
         {
+          "id": 663886,
+          "name": "Tyler Stephenson",
+          "h2h": {
+            "pa": 2,
+            "ab": 2,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.727,
+          "credibility": 0.02,
+          "blendedOps": 0.713,
+          "proxyXba": 0.234,
+          "proxyXslg": 0.396,
+          "edgeTier": "average"
+        },
+        {
           "id": 553993,
           "name": "Eugenio Su\u00e1rez",
           "h2h": {
@@ -15040,28 +15278,6 @@
           "edgeTier": "soft"
         },
         {
-          "id": 624431,
-          "name": "Jose Trevino",
-          "h2h": {
-            "pa": 4,
-            "ab": 4,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.626,
-          "credibility": 0.038,
-          "blendedOps": 0.602,
-          "proxyXba": 0.229,
-          "proxyXslg": 0.366,
-          "edgeTier": "soft"
-        },
-        {
           "id": 663647,
           "name": "Ke'Bryan Hayes",
           "h2h": {
@@ -15081,28 +15297,6 @@
           "blendedOps": 0.463,
           "proxyXba": 0.155,
           "proxyXslg": 0.257,
-          "edgeTier": "soft"
-        },
-        {
-          "id": 669911,
-          "name": "Michael Toglia",
-          "h2h": {
-            "pa": 5,
-            "ab": 4,
-            "h": 2,
-            "hr": 1,
-            "bb": 0,
-            "so": 1,
-            "avg": ".500",
-            "obp": ".400",
-            "slg": "1.250",
-            "ops": 1.65
-          },
-          "seasonOps": 0.371,
-          "credibility": 0.048,
-          "blendedOps": 0.432,
-          "proxyXba": 0.133,
-          "proxyXslg": 0.242,
           "edgeTier": "soft"
         },
         {
@@ -15128,7 +15322,7 @@
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.603,
+      "lineupEdgeOps": 0.652,
       "lineupEdgeTier": "soft",
       "totalH2hPa": 31
     },
@@ -15145,61 +15339,67 @@
       "pitchMix": [
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 24.5,
           "avgVelo": 85.9,
           "whiffPct": 20.0,
           "chasePct": 38.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 18.4,
           "hardHitPct": 37.5,
           "lethalitySample": 125
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 22.8,
           "avgVelo": 93.3,
           "whiffPct": 11.1,
           "chasePct": 24.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 11.1,
           "hardHitPct": 50.0,
           "lethalitySample": 95
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 22.6,
           "avgVelo": 94.0,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 17.3,
+          "chasePct": 35.0,
+          "putAwayPct": 13.5,
+          "hardHitPct": 34.6,
+          "lethalitySample": 123
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 14.6,
           "avgVelo": 81.0,
           "whiffPct": 40.0,
           "chasePct": 50.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 31.8,
           "hardHitPct": 23.1,
           "lethalitySample": 59
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 10.7,
           "avgVelo": 77.9,
           "whiffPct": 14.3,
           "chasePct": 22.5,
-          "putAwayPct": 0.0,
+          "putAwayPct": 7.7,
           "hardHitPct": 27.3,
           "lethalitySample": 56
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 5.0,
           "avgVelo": 82.5,
           "whiffPct": 19.2,
           "chasePct": 55.6,
-          "putAwayPct": 0.0,
+          "putAwayPct": 10.5,
           "hardHitPct": 28.6,
           "lethalitySample": 39
         }
@@ -15417,50 +15617,55 @@
       "isHome": true,
       "matchup": "vs Cleveland Guardians",
       "sub": "Colorado Rockies &middot; vs Cleveland Guardians",
-      "lineupConfirmed": false,
+      "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 55.2,
           "avgVelo": 92.3,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 11.1,
+          "chasePct": 32.2,
+          "putAwayPct": 13.6,
+          "hardHitPct": 28.3,
+          "lethalitySample": 227
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 10.8,
           "avgVelo": 86.4,
           "whiffPct": 26.7,
           "chasePct": 15.8,
-          "putAwayPct": 0.0,
+          "putAwayPct": 11.1,
           "hardHitPct": 20.0,
           "lethalitySample": 33
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 10.0,
           "avgVelo": 78.6,
           "whiffPct": 36.4,
           "chasePct": 33.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 40.0,
           "hardHitPct": 40.0,
           "lethalitySample": 50
         },
         {
           "type": "Changeup",
+          "code": "CH",
           "usagePct": 9.7,
           "avgVelo": 87.3,
           "whiffPct": 15.8,
           "chasePct": 17.9,
-          "putAwayPct": 0.0,
+          "putAwayPct": 9.1,
           "hardHitPct": 33.3,
           "lethalitySample": 45
         },
         {
           "type": "Sweeper",
+          "code": "ST",
           "usagePct": 7.7,
           "avgVelo": 85.4,
           "whiffPct": 12.5,
@@ -15471,11 +15676,12 @@
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 6.6,
           "avgVelo": 92.4,
           "whiffPct": 16.7,
           "chasePct": 30.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 16.7,
           "hardHitPct": 0.0,
           "lethalitySample": 32
         }
@@ -15548,28 +15754,6 @@
           "edgeTier": "strong"
         },
         {
-          "id": 595978,
-          "name": "Austin Hedges",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.717,
-          "credibility": 0.0,
-          "blendedOps": 0.717,
-          "proxyXba": 0.265,
-          "proxyXslg": 0.38,
-          "edgeTier": "average"
-        },
-        {
           "id": 608070,
           "name": "Jos\u00e9 Ram\u00edrez",
           "h2h": {
@@ -15592,8 +15776,8 @@
           "edgeTier": "average"
         },
         {
-          "id": 682657,
-          "name": "Angel Mart\u00ednez",
+          "id": 683953,
+          "name": "Travis Bazzana",
           "h2h": {
             "pa": 0,
             "ab": 0,
@@ -15606,11 +15790,33 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.697,
+          "seasonOps": 0.708,
           "credibility": 0.0,
-          "blendedOps": 0.697,
+          "blendedOps": 0.708,
           "proxyXba": 0.241,
-          "proxyXslg": 0.425,
+          "proxyXslg": 0.375,
+          "edgeTier": "average"
+        },
+        {
+          "id": 680757,
+          "name": "Steven Kwan",
+          "h2h": {
+            "pa": 0,
+            "ab": 0,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 0,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.7,
+          "credibility": 0.0,
+          "blendedOps": 0.7,
+          "proxyXba": 0.265,
+          "proxyXslg": 0.326,
           "edgeTier": "average"
         },
         {
@@ -15636,8 +15842,8 @@
           "edgeTier": "average"
         },
         {
-          "id": 677587,
-          "name": "Brayan Rocchio",
+          "id": 690984,
+          "name": "Petey Halpin",
           "h2h": {
             "pa": 0,
             "ab": 0,
@@ -15650,16 +15856,16 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.685,
+          "seasonOps": 0.576,
           "credibility": 0.0,
-          "blendedOps": 0.685,
-          "proxyXba": 0.251,
-          "proxyXslg": 0.371,
-          "edgeTier": "average"
+          "blendedOps": 0.576,
+          "proxyXba": 0.216,
+          "proxyXslg": 0.328,
+          "edgeTier": "soft"
         },
         {
-          "id": 681807,
-          "name": "David Fry",
+          "id": 672275,
+          "name": "Patrick Bailey",
           "h2h": {
             "pa": 0,
             "ab": 0,
@@ -15672,15 +15878,15 @@
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.64,
+          "seasonOps": 0.563,
           "credibility": 0.0,
-          "blendedOps": 0.64,
-          "proxyXba": 0.182,
-          "proxyXslg": 0.336,
+          "blendedOps": 0.563,
+          "proxyXba": 0.193,
+          "proxyXslg": 0.313,
           "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.731,
+      "lineupEdgeOps": 0.71,
       "lineupEdgeTier": "average",
       "totalH2hPa": 0
     },
@@ -15693,50 +15899,55 @@
       "isHome": false,
       "matchup": "@ San Diego Padres",
       "sub": "Minnesota Twins &middot; @ San Diego Padres",
-      "lineupConfirmed": false,
+      "lineupConfirmed": true,
       "pitchMix": [
         {
           "type": "Splitter",
+          "code": "FS",
           "usagePct": 28.4,
           "avgVelo": 82.6,
           "whiffPct": 29.5,
           "chasePct": 45.2,
-          "putAwayPct": 0.0,
+          "putAwayPct": 24.0,
           "hardHitPct": 20.0,
           "lethalitySample": 107
         },
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 25.1,
           "avgVelo": 93.0,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 7.8,
+          "chasePct": 30.0,
+          "putAwayPct": 11.1,
+          "hardHitPct": 40.0,
+          "lethalitySample": 120
         },
         {
           "type": "Cutter",
+          "code": "FC",
           "usagePct": 15.6,
           "avgVelo": 87.2,
           "whiffPct": 40.4,
           "chasePct": 46.3,
-          "putAwayPct": 0.0,
+          "putAwayPct": 30.4,
           "hardHitPct": 26.7,
           "lethalitySample": 86
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 15.2,
           "avgVelo": 92.1,
           "whiffPct": 4.3,
           "chasePct": 24.1,
-          "putAwayPct": 0.0,
+          "putAwayPct": 33.3,
           "hardHitPct": 61.5,
           "lethalitySample": 58
         },
         {
           "type": "Curveball",
+          "code": "CU",
           "usagePct": 13.8,
           "avgVelo": 76.8,
           "whiffPct": 25.0,
@@ -15747,6 +15958,7 @@
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 1.7,
           "avgVelo": 83.5,
           "whiffPct": null,
@@ -15758,24 +15970,24 @@
       ],
       "batters": [
         {
-          "id": 669134,
-          "name": "Luis Campusano",
+          "id": 664034,
+          "name": "Ty France",
           "h2h": {
-            "pa": 0,
-            "ab": 0,
+            "pa": 5,
+            "ab": 4,
             "h": 0,
             "hr": 0,
-            "bb": 0,
+            "bb": 1,
             "so": 0,
             "avg": ".000",
-            "obp": ".000",
+            "obp": ".200",
             "slg": ".000",
-            "ops": 0.0
+            "ops": 0.2
           },
-          "seasonOps": 0.904,
-          "credibility": 0.0,
-          "blendedOps": 0.904,
-          "proxyXba": 0.301,
+          "seasonOps": 0.874,
+          "credibility": 0.048,
+          "blendedOps": 0.842,
+          "proxyXba": 0.279,
           "proxyXslg": 0.496,
           "edgeTier": "elite"
         },
@@ -15824,6 +16036,28 @@
           "edgeTier": "strong"
         },
         {
+          "id": 592518,
+          "name": "Manny Machado",
+          "h2h": {
+            "pa": 3,
+            "ab": 3,
+            "h": 0,
+            "hr": 0,
+            "bb": 0,
+            "so": 1,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
+          },
+          "seasonOps": 0.715,
+          "credibility": 0.029,
+          "blendedOps": 0.694,
+          "proxyXba": 0.211,
+          "proxyXslg": 0.402,
+          "edgeTier": "average"
+        },
+        {
           "id": 701538,
           "name": "Jackson Merrill",
           "h2h": {
@@ -15843,6 +16077,28 @@
           "blendedOps": 0.692,
           "proxyXba": 0.241,
           "proxyXslg": 0.403,
+          "edgeTier": "average"
+        },
+        {
+          "id": 593428,
+          "name": "Xander Bogaerts",
+          "h2h": {
+            "pa": 2,
+            "ab": 1,
+            "h": 1,
+            "hr": 0,
+            "bb": 1,
+            "so": 0,
+            "avg": "1.000",
+            "obp": "1.000",
+            "slg": "1.000",
+            "ops": 2.0
+          },
+          "seasonOps": 0.644,
+          "credibility": 0.02,
+          "blendedOps": 0.671,
+          "proxyXba": 0.233,
+          "proxyXslg": 0.339,
           "edgeTier": "average"
         },
         {
@@ -15890,28 +16146,6 @@
           "edgeTier": "soft"
         },
         {
-          "id": 669720,
-          "name": "Austin Hays",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.599,
-          "credibility": 0.0,
-          "blendedOps": 0.599,
-          "proxyXba": 0.238,
-          "proxyXslg": 0.349,
-          "edgeTier": "soft"
-        },
-        {
           "id": 666023,
           "name": "Freddy Fermin",
           "h2h": {
@@ -15932,33 +16166,11 @@
           "proxyXba": 0.197,
           "proxyXslg": 0.308,
           "edgeTier": "soft"
-        },
-        {
-          "id": 687749,
-          "name": "Jase Bowen",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.483,
-          "credibility": 0.0,
-          "blendedOps": 0.483,
-          "proxyXba": 0.169,
-          "proxyXslg": 0.273,
-          "edgeTier": "soft"
         }
       ],
-      "lineupEdgeOps": 0.675,
+      "lineupEdgeOps": 0.7,
       "lineupEdgeTier": "average",
-      "totalH2hPa": 16
+      "totalH2hPa": 26
     },
     {
       "id": "m_663554",
@@ -15969,81 +16181,108 @@
       "isHome": true,
       "matchup": "vs Minnesota Twins",
       "sub": "San Diego Padres &middot; vs Minnesota Twins",
-      "lineupConfirmed": false,
+      "lineupConfirmed": true,
       "pitchMix": [
         {
-          "type": "Four-seam FB",
+          "type": "Four-Seam Fastball",
+          "code": "FF",
           "usagePct": 34.3,
           "avgVelo": 93.5,
-          "whiffPct": null,
-          "chasePct": null,
-          "putAwayPct": null,
-          "hardHitPct": null,
-          "lethalitySample": 0
+          "whiffPct": 8.8,
+          "chasePct": 35.1,
+          "putAwayPct": 14.9,
+          "hardHitPct": 42.3,
+          "lethalitySample": 133
         },
         {
           "type": "Slider",
+          "code": "SL",
           "usagePct": 27.0,
           "avgVelo": 87.7,
           "whiffPct": 20.0,
           "chasePct": 24.4,
-          "putAwayPct": 0.0,
+          "putAwayPct": 12.9,
           "hardHitPct": 40.0,
           "lethalitySample": 133
         },
         {
           "type": "Splitter",
+          "code": "FS",
           "usagePct": 23.7,
           "avgVelo": 87.9,
           "whiffPct": 17.0,
           "chasePct": 39.7,
-          "putAwayPct": 0.0,
+          "putAwayPct": 12.5,
           "hardHitPct": 30.0,
           "lethalitySample": 91
         },
         {
           "type": "Sinker",
+          "code": "SI",
           "usagePct": 10.5,
           "avgVelo": 93.6,
           "whiffPct": 5.3,
           "chasePct": 25.0,
-          "putAwayPct": 0.0,
+          "putAwayPct": 25.0,
           "hardHitPct": 55.6,
           "lethalitySample": 35
         },
         {
           "type": "Slurve",
+          "code": "SV",
           "usagePct": 4.5,
           "avgVelo": 81.4,
           "whiffPct": 14.3,
           "chasePct": 55.6,
-          "putAwayPct": 0.0,
+          "putAwayPct": 16.7,
           "hardHitPct": 25.0,
           "lethalitySample": 13
         }
       ],
       "batters": [
         {
+          "id": 680777,
+          "name": "Ryan Jeffers",
+          "h2h": {
+            "pa": 19,
+            "ab": 18,
+            "h": 3,
+            "hr": 1,
+            "bb": 1,
+            "so": 2,
+            "avg": ".167",
+            "obp": ".211",
+            "slg": ".333",
+            "ops": 0.544
+          },
+          "seasonOps": 0.871,
+          "credibility": 0.16,
+          "blendedOps": 0.819,
+          "proxyXba": 0.261,
+          "proxyXslg": 0.462,
+          "edgeTier": "strong"
+        },
+        {
           "id": 621439,
           "name": "Byron Buxton",
           "h2h": {
-            "pa": 23,
-            "ab": 23,
-            "h": 8,
-            "hr": 2,
+            "pa": 3,
+            "ab": 3,
+            "h": 0,
+            "hr": 0,
             "bb": 0,
-            "so": 5,
-            "avg": ".348",
-            "obp": ".348",
-            "slg": ".739",
-            "ops": 1.087
+            "so": 2,
+            "avg": ".000",
+            "obp": ".000",
+            "slg": ".000",
+            "ops": 0.0
           },
           "seasonOps": 0.835,
-          "credibility": 0.187,
-          "blendedOps": 0.882,
-          "proxyXba": 0.272,
-          "proxyXslg": 0.559,
-          "edgeTier": "elite"
+          "credibility": 0.029,
+          "blendedOps": 0.811,
+          "proxyXba": 0.247,
+          "proxyXslg": 0.503,
+          "edgeTier": "strong"
         },
         {
           "id": 807712,
@@ -16068,6 +16307,28 @@
           "edgeTier": "strong"
         },
         {
+          "id": 663616,
+          "name": "Trevor Larnach",
+          "h2h": {
+            "pa": 3,
+            "ab": 2,
+            "h": 0,
+            "hr": 0,
+            "bb": 1,
+            "so": 1,
+            "avg": ".000",
+            "obp": ".333",
+            "slg": ".000",
+            "ops": 0.333
+          },
+          "seasonOps": 0.769,
+          "credibility": 0.029,
+          "blendedOps": 0.756,
+          "proxyXba": 0.258,
+          "proxyXslg": 0.406,
+          "edgeTier": "strong"
+        },
+        {
           "id": 701785,
           "name": "Kaelen Culpepper",
           "h2h": {
@@ -16087,28 +16348,6 @@
           "blendedOps": 0.744,
           "proxyXba": 0.289,
           "proxyXslg": 0.395,
-          "edgeTier": "strong"
-        },
-        {
-          "id": 656577,
-          "name": "Alex Jackson",
-          "h2h": {
-            "pa": 0,
-            "ab": 0,
-            "h": 0,
-            "hr": 0,
-            "bb": 0,
-            "so": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": 0.0
-          },
-          "seasonOps": 0.742,
-          "credibility": 0.0,
-          "blendedOps": 0.742,
-          "proxyXba": 0.303,
-          "proxyXslg": 0.409,
           "edgeTier": "strong"
         },
         {
@@ -16156,75 +16395,53 @@
           "edgeTier": "average"
         },
         {
-          "id": 668904,
-          "name": "Royce Lewis",
-          "h2h": {
-            "pa": 6,
-            "ab": 4,
-            "h": 1,
-            "hr": 0,
-            "bb": 1,
-            "so": 2,
-            "avg": ".250",
-            "obp": ".333",
-            "slg": ".250",
-            "ops": 0.583
-          },
-          "seasonOps": 0.726,
-          "credibility": 0.057,
-          "blendedOps": 0.718,
-          "proxyXba": 0.239,
-          "proxyXslg": 0.407,
-          "edgeTier": "average"
-        },
-        {
           "id": 686797,
           "name": "Brooks Lee",
           "h2h": {
-            "pa": 11,
-            "ab": 11,
+            "pa": 9,
+            "ab": 9,
             "h": 2,
             "hr": 0,
             "bb": 0,
             "so": 0,
-            "avg": ".182",
-            "obp": ".182",
-            "slg": ".364",
-            "ops": 0.546
+            "avg": ".222",
+            "obp": ".222",
+            "slg": ".444",
+            "ops": 0.666
           },
           "seasonOps": 0.713,
-          "credibility": 0.099,
-          "blendedOps": 0.696,
-          "proxyXba": 0.236,
-          "proxyXslg": 0.411,
+          "credibility": 0.083,
+          "blendedOps": 0.709,
+          "proxyXba": 0.24,
+          "proxyXslg": 0.418,
           "edgeTier": "average"
         },
         {
-          "id": 702176,
-          "name": "Alan Roden",
+          "id": 668904,
+          "name": "Royce Lewis",
           "h2h": {
-            "pa": 2,
-            "ab": 2,
+            "pa": 4,
+            "ab": 3,
             "h": 0,
             "hr": 0,
             "bb": 0,
-            "so": 1,
+            "so": 2,
             "avg": ".000",
             "obp": ".000",
             "slg": ".000",
             "ops": 0.0
           },
-          "seasonOps": 0.589,
-          "credibility": 0.02,
-          "blendedOps": 0.577,
-          "proxyXba": 0.225,
-          "proxyXslg": 0.274,
-          "edgeTier": "soft"
+          "seasonOps": 0.726,
+          "credibility": 0.038,
+          "blendedOps": 0.698,
+          "proxyXba": 0.229,
+          "proxyXslg": 0.4,
+          "edgeTier": "average"
         }
       ],
-      "lineupEdgeOps": 0.735,
-      "lineupEdgeTier": "average",
-      "totalH2hPa": 56
+      "lineupEdgeOps": 0.755,
+      "lineupEdgeTier": "strong",
+      "totalH2hPa": 52
     }
   ]
 }
