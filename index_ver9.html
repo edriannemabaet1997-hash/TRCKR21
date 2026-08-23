@@ -368,26 +368,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .tier-legend-dot.elite{ background:var(--green); } .tier-legend-dot.strong{ background:var(--batter); }
 .tier-legend-dot.average{ background:var(--amber); } .tier-legend-dot.soft{ background:var(--text-lo); }
 .tier-legend-count{ color:var(--text-hi); font-weight:700; }
-
-/* ---- Batter-vs-Pitch-Type Heat Strip + hover cross-highlight (v2.5) ---- */
-.heat-strip{ display:flex; gap:4px; justify-content:flex-end; align-items:center; }
-.heat-dot{ width:11px; height:11px; border-radius:50%; flex-shrink:0; cursor:help; position:relative;
-  border:1.5px solid rgba(255,255,255,.15); transition:transform .12s var(--ease), box-shadow .12s var(--ease); }
-.heat-dot.dim{ opacity:.28; border-style:dashed; }
-.heat-dot.pitch-hover-match{ transform:scale(1.35); box-shadow:0 0 0 2px var(--bg-card),0 0 8px rgba(255,255,255,.35); }
-.heat-dot.no-data{ background:transparent !important; border:1.5px dashed var(--border-soft); }
-.lineup-table tbody tr.pitch-hover-match td{ background:rgba(255,255,255,.045); }
-.lineup-table tbody tr.pitch-hover-dim{ opacity:.35; }
-.pitch-card{ transition:box-shadow .15s var(--ease), transform .15s var(--ease), opacity .15s var(--ease); cursor:pointer; }
-.pitch-card.pitch-hover-active{ box-shadow:0 0 0 1.5px var(--pc), 0 0 18px rgba(255,255,255,.08); transform:translateY(-2px); }
-.pitch-card.pitch-hover-inactive{ opacity:.45; }
-.pitchmix-bar{ display:flex; height:8px; border-radius:5px; overflow:hidden; margin-top:10px; background:var(--bg-raised); }
-.pitchmix-bar-seg{ height:100%; cursor:pointer; transition:filter .12s var(--ease); }
-.pitchmix-bar-seg:hover, .pitchmix-bar-seg.pitch-hover-active{ filter:brightness(1.35); }
-.dual-tone-dot{ background:conic-gradient(var(--dot-whiff, #9a9ca6) 0% var(--whiff-share,50%), var(--dot-hardhit, #33c17a) var(--whiff-share,50%) 100%); }
-.heat-strip-legend{ display:flex; align-items:center; gap:12px; font-family:var(--font-mono); font-size:.62em; color:var(--text-lo); margin-top:6px; }
-.heat-strip-legend .lg-item{ display:flex; align-items:center; gap:5px; }
-.heat-strip-legend .lg-swatch{ width:9px; height:9px; border-radius:50%; }
 .intel-stats-row{ display:flex; gap:14px; flex-wrap:wrap; margin-top:16px; }
 .intel-stat{ flex:1; min-width:120px; background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; padding:12px 14px; }
 .intel-stat-label{ font-family:var(--font-mono); font-size:.6em; text-transform:uppercase; color:var(--text-lo); font-weight:700; }
@@ -581,12 +561,11 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
             <button class="seg-btn" data-view="discipline" onclick="switchMxTableView('discipline')">K / Discipline</button>
           </div>
           <input type="text" id="mx-h2h-search" placeholder="Search batter…" oninput="onH2hSearch(event)" style="flex:1;min-width:180px;">
-          <span class="mono" style="font-size:.68em;color:var(--text-lo);">Click a column to sort &middot; hover a pitch above to cross-highlight</span>
+          <span class="mono" style="font-size:.68em;color:var(--text-lo);">Click a column to sort</span>
         </div>
         <div class="card lineup-table-card"><table class="lineup-table">
           <thead><tr id="mx-lineup-head">
             <th>#</th><th>Batter</th>
-            <th data-tip="Real per-pitch-type whiff/hard-hit vs this pitcher's arsenal, from the batter's own last 7 games — not a season K% proxy">vs Arsenal</th>
             <th data-key="pa" class="view-contact" onclick="sortH2h('pa')">H2H PA</th>
             <th data-key="avg" class="view-contact" onclick="sortH2h('avg')">H2H AVG</th>
             <th data-key="proxyXba" class="view-contact" onclick="sortH2h('proxyXba')">Proxy xBA</th>
@@ -600,10 +579,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
           </tr></thead>
           <tbody id="mx-lineup-body"></tbody>
         </table></div>
-        <div class="heat-strip-legend">
-          <span class="lg-item"><span class="lg-swatch" style="background:conic-gradient(#e8495f 0% 50%, #33c17a 50% 100%);"></span>Left half = whiff rate, right half = hard-hit rate on that pitch</span>
-          <span class="lg-item"><span class="lg-swatch" style="border:1.5px dashed var(--border-soft);background:transparent;"></span>Dashed / dim = under 6-pitch sample, treat as noisy</span>
-        </div>
       </div>
       <div class="mx-panel" id="mx-panel-teamintel">
         <div class="edge-summary-card">
@@ -1243,19 +1218,18 @@ async function renderGameDrawer(){
 }
 function pitcherColumnHTML(side, data){
   if(!side.pitcherId){
-    return `<div class="gd-col" id="gd-col-${side.side}"><div class="gd-col-head"><div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">—</div><div><div class="gd-col-name">${escapeHTML(side.pitcherTeam)}</div><div class="gd-col-sub">Starting pitcher TBD</div></div></div></div>`;
+    return `<div class="gd-col"><div class="gd-col-head"><div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">—</div><div><div class="gd-col-name">${escapeHTML(side.pitcherTeam)}</div><div class="gd-col-sub">Starting pitcher TBD</div></div></div></div>`;
   }
   if(!data || data.__error){
-    return `<div class="gd-col" id="gd-col-${side.side}"><div class="gd-col-head"><div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">—</div><div><div class="gd-col-name">${escapeHTML(side.pitcherName||side.pitcherTeam)}</div><div class="gd-col-sub" style="color:var(--red);">${escapeHTML((data&&data.__error)||'Failed to load pitcher data.')}</div></div></div></div>`;
+    return `<div class="gd-col"><div class="gd-col-head"><div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">—</div><div><div class="gd-col-name">${escapeHTML(side.pitcherName||side.pitcherTeam)}</div><div class="gd-col-sub" style="color:var(--red);">${escapeHTML((data&&data.__error)||'Failed to load pitcher data.')}</div></div></div></div>`;
   }
   const initials = (side.pitcherName||'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const vsL = data.splits.vsL, vsR = data.splits.vsR;
-  return `<div class="gd-col" id="gd-col-${side.side}" data-pitcher-id="${side.pitcherId}">
+  return `<div class="gd-col">
     <div class="gd-col-head">
       <div class="avatar-circle" style="width:38px;height:38px;font-size:12px;">${initials}</div>
       <div><div class="gd-col-name">${escapeHTML(side.pitcherName)}</div><div class="gd-col-sub">${escapeHTML(side.pitcherTeam)} &middot; Throws ${data.throws}</div></div>
     </div>
-    ${pitchMixMiniBarHTML(side.pitcherId, side.side)}
     <div class="gd-hud-row">
       <div class="card hud-card" style="padding:10px 12px;"><span class="eyebrow">Proj K</span><span class="hud-val" style="font-size:1.1em;color:var(--batter);">${data.projK.toFixed(1)}</span></div>
       <div class="card hud-card" style="padding:10px 12px;"><span class="eyebrow">Proj ER</span><span class="hud-val" style="font-size:1.1em;">${data.projER.toFixed(1)}</span></div>
@@ -1265,63 +1239,10 @@ function pitcherColumnHTML(side, data){
       <tr><td>vs RHB</td><td>${vsR.baa.toFixed(3)}</td><td>${vsR.k.toFixed(1)}%</td><td>${vsR.bb.toFixed(1)}%</td><td>${vsR.hr.toFixed(1)}%</td></tr>
     </tbody></table>
     <div class="gd-lineup-head">Opposing Lineup <span class="sub">${escapeHTML(side.oppTeam)}</span></div>
-    ${opposingLineupHTML(side.pitcherId, data.throws, side.side)}
+    ${opposingLineupHTML(side.pitcherId, data.throws)}
   </div>`;
 }
-/* ---- v2.5: mini stacked pitch-mix bar under the pitcher's face in the
-   Dual Pitcher Drawer. Hovering a segment highlights every opposing
-   batter who is a real match/miss on that pitch (per pitchVulnerability);
-   hovering a batter row highlights their single weakest pitch back on
-   this bar. Scoped per-side (away/home) so the two drawer columns never
-   cross-highlight each other. ---- */
-function pitchMixMiniBarHTML(pitcherId, scopeSide){
-  const matchup = State.pitcher.matchups.find(m=>String(m.pitcherId)===String(pitcherId));
-  const mix = (matchup && matchup.pitchMix) || [];
-  if(!mix.length) return '';
-  const segs = mix.map(p=>`<div class="pitchmix-bar-seg" style="width:${p.usagePct}%;background:${pitchColor(p.type)};" data-code="${p.code}" onmouseenter="gdHighlightPitch('${scopeSide}','${p.code}')" onmouseleave="gdClearHighlight('${scopeSide}')" data-tip="${escapeHTML(p.type)} &middot; ${p.usagePct.toFixed(0)}% usage"></div>`).join('');
-  return `<div class="pitchmix-bar">${segs}</div>`;
-}
-function gdWeakestPitchForBatter(matchup, batterId){
-  const b = matchup && matchup.batters && matchup.batters.find(x=>String(x.id)===String(batterId));
-  const vuln = b && b.pitchVulnerability;
-  if(!vuln) return null;
-  let best=null, bestScore=-1;
-  Object.entries(vuln).forEach(([code,v])=>{
-    if(v.whiffPct===null && v.hardHitPct===null) return;
-    const score = (v.whiffPct||0) + (v.hardHitPct||0);
-    if(score>bestScore){ bestScore=score; best=code; }
-  });
-  return best;
-}
-function gdHighlightPitch(scopeSide, code){
-  const col = document.getElementById('gd-col-'+scopeSide);
-  if(!col) return;
-  col.querySelectorAll('.pitchmix-bar-seg').forEach(s=>s.classList.toggle('pitch-hover-active', s.dataset.code===code));
-  const pitcherId = col.dataset.pitcherId;
-  const matchup = State.pitcher.matchups.find(m=>String(m.pitcherId)===String(pitcherId));
-  col.querySelectorAll('.gd-lineup-row').forEach(row=>{
-    const b = matchup && matchup.batters && matchup.batters.find(x=>String(x.id)===String(row.dataset.batterId));
-    const vuln = b && b.pitchVulnerability && b.pitchVulnerability[code];
-    const weak = isWeakVsPitch(vuln);
-    row.classList.toggle('pitch-hover-match', weak===true);
-    row.classList.toggle('pitch-hover-dim', weak!==true);
-  });
-}
-function gdHighlightBatterRow(scopeSide, batterId){
-  const col = document.getElementById('gd-col-'+scopeSide);
-  if(!col) return;
-  const pitcherId = col.dataset.pitcherId;
-  const matchup = State.pitcher.matchups.find(m=>String(m.pitcherId)===String(pitcherId));
-  const code = gdWeakestPitchForBatter(matchup, batterId);
-  if(code) gdHighlightPitch(scopeSide, code);
-}
-function gdClearHighlight(scopeSide){
-  const col = document.getElementById('gd-col-'+scopeSide);
-  if(!col) return;
-  col.querySelectorAll('.pitchmix-bar-seg').forEach(s=>s.classList.remove('pitch-hover-active'));
-  col.querySelectorAll('.gd-lineup-row').forEach(row=>row.classList.remove('pitch-hover-match','pitch-hover-dim'));
-}
-function opposingLineupHTML(pitcherId, pitcherThrows, scopeSide){
+function opposingLineupHTML(pitcherId, pitcherThrows){
   const matchup = State.pitcher.matchups.find(m=>String(m.pitcherId)===String(pitcherId));
   if(!matchup || !matchup.batters || !matchup.batters.length){
     return `<div class="matchup-empty-state" style="padding:14px;font-size:.76em;">Lineup not available yet — run the pitcher props sync (generate_projections.py) to populate this.</div>`;
@@ -1333,7 +1254,7 @@ function opposingLineupHTML(pitcherId, pitcherThrows, scopeSide){
     const adv = !!(bats && pitcherThrows && (bats==='S' || bats!==pitcherThrows));
     const handTag = bats ? `<span class="gd-hand">${bats==='S'?'SWITCH':bats+'HB'}</span>` : '';
     const advBadge = adv ? `<span class="gd-adv-badge" data-tip="Platoon advantage — vs ${escapeHTML(pitcherThrows)}HP">ADV</span>` : '';
-    return `<div class="gd-lineup-row${adv?' adv':''}" data-batter-id="${b.id}" onmouseenter="gdHighlightBatterRow('${scopeSide}','${b.id}')" onmouseleave="gdClearHighlight('${scopeSide}')">
+    return `<div class="gd-lineup-row${adv?' adv':''}">
       <span class="gd-lineup-order">${b.order ?? (i+1)}</span>
       <span class="gd-lineup-name">${escapeHTML(b.name)}</span>
       ${handTag}${advBadge}
@@ -1585,75 +1506,12 @@ function renderPitchMix(pitches){
            <span class="sample-badge${lowSample?' low':''}" data-tip="Counted from real pitch-by-pitch live-feed data across this pitcher's last 5 starts — not estimated">n=${sample} &middot; L5 starts${lowSample?' &middot; SMALL':''}</span>
          </div>`
       : `<div class="mono" style="font-size:.6em;color:var(--text-lo);margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);">No recent-start pitch data yet</div>`;
-    return `<div class="card pitch-card" data-code="${p.code}" onmouseenter="mxHighlightPitch('${p.code}')" onmouseleave="mxClearHighlight()" style="--pc:${color};">
+    return `<div class="card pitch-card" style="--pc:${color};">
       <div class="pitch-card-top"><div><div class="pitch-card-name">${escapeHTML(p.type)}</div><div class="pitch-card-rank">USAGE RANK #${i+1}</div></div>
       <div class="pitch-ring" style="--pct:${p.usagePct};--pc:${color};"><div class="pitch-ring-inner">${p.usagePct.toFixed(0)}%</div></div></div>
       <div><span class="pitch-velo-badge"><span class="dot"></span>${p.avgVelo?p.avgVelo.toFixed(1)+' mph':'—'}</span></div>
       ${lethalityRow}</div>`;
   }).join('');
-}
-
-/* ---- v2.5: bidirectional hover between pitch cards and the lineup's
-   per-pitch heat strip. Hover a pitch card -> tag every batter row as a
-   real match (whiff/hard-hit vs that pitch is meaningfully high) or dim
-   it. Hover a batter row -> light up whichever pitch they're weakest
-   against. All thresholds below are display heuristics, not the raw
-   backend numbers — the tooltip on each dot always shows the real %. ---- */
-const PITCH_HOVER_WHIFF_THRESHOLD = 32;   // %, swing-and-miss weak
-const PITCH_HOVER_HARDHIT_THRESHOLD = 45; // %, contact-damage weak
-
-function isWeakVsPitch(vuln){
-  if(!vuln || (vuln.whiffPct===null && vuln.hardHitPct===null)) return null; // no data
-  return (vuln.whiffPct??0) >= PITCH_HOVER_WHIFF_THRESHOLD || (vuln.hardHitPct??0) >= PITCH_HOVER_HARDHIT_THRESHOLD;
-}
-function mxHighlightPitch(code){
-  document.querySelectorAll('#mx-pitchmix .pitch-card').forEach(card=>{
-    card.classList.toggle('pitch-hover-active', card.dataset.code===code);
-    card.classList.toggle('pitch-hover-inactive', card.dataset.code!==code);
-  });
-  document.querySelectorAll('#mx-lineup-body .heat-dot[data-code="'+code+'"]').forEach(dot=>dot.classList.add('pitch-hover-match'));
-  document.querySelectorAll('#mx-lineup-body tr[data-batter-id]').forEach(row=>{
-    const b = (State.ui.mxMatchup.batters||[]).find(x=>String(x.id)===row.dataset.batterId);
-    const vuln = b && b.pitchVulnerability && b.pitchVulnerability[code];
-    const weak = isWeakVsPitch(vuln);
-    row.classList.toggle('pitch-hover-match', weak===true);
-    row.classList.toggle('pitch-hover-dim', weak!==true);
-  });
-}
-function mxWeakestPitchForBatter(batter){
-  if(!batter || !batter.pitchVulnerability) return null;
-  let best=null, bestScore=-1;
-  Object.entries(batter.pitchVulnerability).forEach(([code,v])=>{
-    if(v.whiffPct===null && v.hardHitPct===null) return;
-    const score = (v.whiffPct||0) + (v.hardHitPct||0);
-    if(score>bestScore){ bestScore=score; best=code; }
-  });
-  return best;
-}
-function mxHighlightBatter(batterId){
-  const b = (State.ui.mxMatchup.batters||[]).find(x=>String(x.id)===String(batterId));
-  const code = mxWeakestPitchForBatter(b);
-  if(code) mxHighlightPitch(code);
-}
-function mxClearHighlight(){
-  document.querySelectorAll('#mx-pitchmix .pitch-card').forEach(card=>card.classList.remove('pitch-hover-active','pitch-hover-inactive'));
-  document.querySelectorAll('#mx-lineup-body .heat-dot').forEach(dot=>dot.classList.remove('pitch-hover-match'));
-  document.querySelectorAll('#mx-lineup-body tr[data-batter-id]').forEach(row=>row.classList.remove('pitch-hover-match','pitch-hover-dim'));
-}
-function heatStripHTML(batter, pitchMix){
-  const top = (pitchMix||[]).slice(0,4);
-  if(!top.length) return '<span class="mono" style="color:var(--text-lo);font-size:.72em;">—</span>';
-  const dots = top.map(p=>{
-    const v = batter.pitchVulnerability && batter.pitchVulnerability[p.code];
-    if(!v || (v.whiffPct===null && v.hardHitPct===null)){
-      return `<span class="heat-dot no-data" data-code="${p.code}" data-tip="${escapeHTML(p.type)} — no recent-game sample yet for this batter"></span>`;
-    }
-    const whiff = v.whiffPct??0, hard = v.hardHitPct??0;
-    const whiffShare = (whiff+hard)>0 ? Math.round(whiff/(whiff+hard)*100) : 50;
-    const dim = (v.sampleSize||0) < 6 ? ' dim':'';
-    return `<span class="heat-dot dual-tone-dot${dim}" data-code="${p.code}" style="--whiff-share:${whiffShare}%;--dot-whiff:#e8495f;--dot-hardhit:#33c17a;" data-tip="${escapeHTML(p.type)} vs this batter (L7 games) — Whiff ${fmtPct(v.whiffPct)} · Hard-Hit ${fmtPct(v.hardHitPct)} · n=${v.sampleSize}${dim?' (small sample)':''}"></span>`;
-  }).join('');
-  return `<div class="heat-strip">${dots}</div>`;
 }
 function onH2hSearch(e){ State.ui.h2hFilter = (e.target.value||'').toLowerCase(); renderLineupTable(); }
 function sortH2h(key){
@@ -1684,24 +1542,22 @@ function h2hSortValue(b,key){
 function renderLineupTable(){
   const body = document.getElementById('mx-lineup-body');
   const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
-  const pitchMix = (State.ui.mxMatchup && State.ui.mxMatchup.pitchMix) || [];
   document.querySelectorAll('.lineup-table thead th[data-key]').forEach(th=>th.classList.toggle('sort-active', th.dataset.key===State.ui.h2hSort.key));
-  if(!batters.length){ body.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
+  if(!batters.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
   let rows = batters.filter(b=>!State.ui.h2hFilter || b.name.toLowerCase().includes(State.ui.h2hFilter));
   rows = rows.slice().sort((a,b)=>{ const av=h2hSortValue(a,State.ui.h2hSort.key), bv=h2hSortValue(b,State.ui.h2hSort.key); return State.ui.h2hSort.dir==='desc'?bv-av:av-bv; });
-  if(!rows.length){ body.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
+  if(!rows.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
   
   body.innerHTML = rows.map((b)=>{
     const h2h = b.h2h||{pa:0,avg:'.000',ops:0}; const small = h2h.pa<10;
     const proxyXba = b.proxyXba!==undefined ? b.proxyXba.toFixed(3) : '—';
     const proxyXslg = b.proxyXslg!==undefined ? b.proxyXslg.toFixed(3) : '—';
     
-    let rowHtml = `<tr data-batter-id="${b.id}" onmouseenter="mxHighlightBatter('${b.id}')" onmouseleave="mxClearHighlight()">
+    let rowHtml = `<tr>
       <td class="batter-cell"><span class="lineup-order">${b._order}</span></td>
       <td class="batter-cell">
         <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
-      </td>
-      <td>${heatStripHTML(b, pitchMix)}</td>`;
+      </td>`;
 
     if (State.ui.mxTableView === 'contact') {
       rowHtml += `

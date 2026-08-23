@@ -1,5 +1,5 @@
 """
-trckr21 — MLB Quant Terminal Data Engine  (v2.5 — Batter Pitch-Type Vulnerability)
+trckr21 — MLB Quant Terminal Data Engine  (v2.4 — Pitch-Code Fix + PutAway% Fix)
 ====================================================================
 Pulls today's slate from the MLB Stats API and produces `projections.json`
 in the shape the frontend consumes: db.pitchers / db.teams / db.matchups.
@@ -59,25 +59,6 @@ FIXES IN v2.4
      is also the final pitch of the plate appearance and the play's
      result is a strikeout. This matches how PutAway% is defined
      everywhere else in the industry (Baseball Savant included).
-
-v2.5 — BATTER-SIDE PITCH-TYPE VULNERABILITY
---------------------------------------------
-Added `get_batter_pitch_vulnerability()`, the mirror image of the
-pitcher lethality function above but walked from the BATTER's own last
-BATTER_VULN_LOOKBACK_GAMES games, bucketed by pitch code, regardless of
-which pitcher threw it. Each matchup's `batters[].pitchVulnerability`
-now carries real whiffPct/chasePct/hardHitPct + sampleSize + a
-confidenceTier per pitch code — this is what the frontend's pitch-mix
-hover-highlight is keyed against (join on the same pitch `code` used in
-`pitchMix`). It is intentionally separate from the existing
-seasonWhiff/seasonChase/seasonCsw fields, which are K%-derived proxies
-and identical in shape for any two batters with the same K% — this is
-real counted per-pitch data instead.
-
-`get_live_feed()` is now cached by game_pk in-process, since teammates
-in the same lineup share most of their recent games — without it this
-would have multiplied the live-feed call volume by roughly 9x per
-lineup for no new data.
 """
 
 from __future__ import annotations
@@ -121,16 +102,6 @@ PLATE_HALF_WIDTH_FT = 0.708          # 17-inch plate, half-width in feet
 HARD_HIT_THRESHOLD_MPH = 95.0
 LETHALITY_LOOKBACK_STARTS = 5        # real games aggregated per pitcher
 MIN_LETHALITY_SAMPLE = 8             # below this, report None not a noisy ratio
-
-# --- v2.5: batter-side per-pitch-type vulnerability knobs ---
-# Mirrors the pitcher lethality window but on the BATTER's own recent
-# games (their team's last N games), bucketed by the pitch code thrown
-# to them, regardless of which pitcher threw it. This is what powers
-# the "is this batter actually weak vs THIS pitcher's slider" UI —
-# distinct from seasonWhiff/seasonChase (which are K%-derived proxies,
-# not real per-pitch-type numbers).
-BATTER_VULN_LOOKBACK_GAMES = 7
-MIN_BATTER_VULN_SAMPLE = 6           # below this, report None not a noisy ratio
 
 DEBUG_DUMP_RAW = False
 
@@ -543,26 +514,12 @@ def get_pitch_arsenal(pitcher_id: int) -> list[dict]:
 
 # --- real per-pitch lethality from the live feed ---
 
-_LIVE_FEED_CACHE: dict[int, dict] = {}
-
-
 def get_live_feed(game_pk: int) -> dict:
     """The v1 endpoints elsewhere in this file are season/summary stats.
     Real pitch-by-pitch data — coordinates, descriptions, hit data — lives
-    on the v1.1 live feed, a genuinely different endpoint family.
-
-    v2.5: cached by game_pk. Once we added batter-side vulnerability
-    lookups, teammates in the same lineup started requesting the same
-    handful of recent games over and over (9 batters x their last 7
-    games overlaps heavily) — caching turns that from ~63 redundant
-    live-feed pulls down to however many distinct games actually exist.
-    """
-    if game_pk in _LIVE_FEED_CACHE:
-        return _LIVE_FEED_CACHE[game_pk]
+    on the v1.1 live feed, a genuinely different endpoint family."""
     url = f"https://statsapi.mlb.com/api/v1.1/game/{game_pk}/feed/live"
-    feed = fetch_json(url)
-    _LIVE_FEED_CACHE[game_pk] = feed
-    return feed
+    return fetch_json(url)
 
 
 def get_pitcher_recent_game_pks(pitcher_id: int, limit: int = LETHALITY_LOOKBACK_STARTS) -> list[int]:
@@ -701,112 +658,6 @@ def get_pitcher_pitch_lethality(pitcher_id: int, game_pks: list[int]) -> dict[st
     return results
 
 
-def get_batter_recent_game_pks(batter_id: int, limit: int = BATTER_VULN_LOOKBACK_GAMES) -> list[int]:
-    """Batter's own last `limit` games this season (hitting game log),
-    used as the window for their real per-pitch-type vulnerability —
-    separate from the pitcher's own recent-starts window."""
-    season = datetime.now(MLB_TZ).year
-    url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=gameLog&group=hitting&season={season}"
-    try:
-        data = fetch_json(url)
-        stats = data.get("stats", [])
-        splits = stats[0].get("splits", []) if stats else []
-        pks = [s.get("game", {}).get("gamePk") for s in splits if s.get("game", {}).get("gamePk")]
-        return pks[-limit:]
-    except Exception as e:
-        log.warning(f"Recent-game lookup failed for batter {batter_id}: {e}")
-        return []
-
-
-def get_batter_pitch_vulnerability(batter_id: int, game_pks: list[int]) -> dict[str, dict]:
-    """Real, counted Whiff%/Chase%/Hard-Hit% for THIS BATTER, bucketed by
-    pitch code, aggregated over their own last `game_pks` games — across
-    whichever pitchers they actually faced, not fitted from K%.
-
-    This is the piece the frontend's pitch-mix hover-highlight needs:
-    'this batter whiffs 41% against sliders' as a real per-pitch number,
-    not the seasonWhiff/seasonChase proxies (which are just K%-derived
-    and identical in shape for every batter with the same K%).
-
-    Same play-by-play walk as get_pitcher_pitch_lethality, filtered by
-    matchup.batter.id instead of matchup.pitcher.id. PutAway% is omitted
-    here — that's a pitcher's-eye stat (finishing the AB), not a batter
-    vulnerability metric.
-    """
-    buckets: dict[str, dict] = {}
-    display_names: dict[str, str] = {}
-
-    def _bucket(code: str) -> dict:
-        return buckets.setdefault(code, {
-            "pitches": 0, "swings": 0, "whiffs": 0,
-            "outOfZonePitches": 0, "outOfZoneSwings": 0,
-            "battedBalls": 0, "hardHitBalls": 0,
-        })
-
-    for game_pk in game_pks:
-        try:
-            feed = get_live_feed(game_pk)
-        except Exception as e:
-            log.warning(f"Live feed fetch failed for game {game_pk}: {e}")
-            continue
-
-        plays = feed.get("liveData", {}).get("plays", {}).get("allPlays", [])
-        for play in plays:
-            matchup = play.get("matchup", {})
-            if matchup.get("batter", {}).get("id") != batter_id:
-                continue
-
-            for event in play.get("playEvents", []):
-                if not event.get("isPitch"):
-                    continue
-                details = event.get("details", {})
-                type_obj = details.get("type", {}) or {}
-                code = resolve_pitch_code(type_obj.get("code"), type_obj.get("description"))
-                display_names.setdefault(code, pitch_display_name(code, type_obj.get("description")))
-
-                description_text = details.get("description", "")
-                b = _bucket(code)
-                b["pitches"] += 1
-
-                is_swing = description_text in _SWING_DESCRIPTIONS
-                is_whiff = description_text in _WHIFF_DESCRIPTIONS
-                if is_swing:
-                    b["swings"] += 1
-                if is_whiff:
-                    b["whiffs"] += 1
-
-                pitch_data = event.get("pitchData", {})
-                coords = pitch_data.get("coordinates", {})
-                px, pz = coords.get("pX"), coords.get("pZ")
-                sz_top, sz_bot = pitch_data.get("strikeZoneTop"), pitch_data.get("strikeZoneBottom")
-                if px is not None and pz is not None and sz_top is not None and sz_bot is not None:
-                    out_of_zone = abs(px) > PLATE_HALF_WIDTH_FT or pz < sz_bot or pz > sz_top
-                    if out_of_zone:
-                        b["outOfZonePitches"] += 1
-                        if is_swing:
-                            b["outOfZoneSwings"] += 1
-
-                if description_text in _IN_PLAY_DESCRIPTIONS:
-                    hit_data = event.get("hitData", {})
-                    launch_speed = hit_data.get("launchSpeed")
-                    if launch_speed is not None:
-                        b["battedBalls"] += 1
-                        if launch_speed >= HARD_HIT_THRESHOLD_MPH:
-                            b["hardHitBalls"] += 1
-
-    results: dict[str, dict] = {}
-    for code, b in buckets.items():
-        results[code] = {
-            "type": display_names.get(code, code),
-            "sampleSize": b["pitches"],
-            "whiffPct": round(b["whiffs"] / b["swings"] * 100, 1) if b["swings"] >= 3 else None,
-            "chasePct": round(b["outOfZoneSwings"] / b["outOfZonePitches"] * 100, 1) if b["outOfZonePitches"] >= 3 else None,
-            "hardHitPct": round(b["hardHitBalls"] / b["battedBalls"] * 100, 1) if b["battedBalls"] >= 3 else None,
-            "confidenceTier": confidence_tier(b["pitches"]),
-        }
-    return results
-
-
 def get_probable_lineup(game_pk: int, team_id: int) -> tuple[list[dict], bool]:
     try:
         box = fetch_json(f"https://statsapi.mlb.com/api/v1/game/{game_pk}/boxscore")
@@ -933,15 +784,6 @@ def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
         h2h["pa"], safe_float(h2h["avg"]), safe_float(h2h["slg"]),
         season_slash["avg"], season_slash["slg"],
     )
-
-    # v2.5: real per-pitch-type vulnerability for THIS batter (their own
-    # last BATTER_VULN_LOOKBACK_GAMES games), keyed by pitch code so the
-    # frontend can join it against the pitcher's pitchMix codes directly.
-    # This powers the pitch-mix hover-highlight — it's real counted data,
-    # not the K%-derived seasonWhiff/seasonChase proxies above.
-    recent_pks = get_batter_recent_game_pks(batter["id"])
-    pitch_vuln = get_batter_pitch_vulnerability(batter["id"], recent_pks) if recent_pks else {}
-
     return {
         **batter,
         "h2h": h2h,
@@ -951,7 +793,6 @@ def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
         "seasonWhiff": season_slash["whiff"],
         "seasonChase": season_slash["chase"],
         "seasonCsw": season_slash["csw"],
-        "pitchVulnerability": pitch_vuln,
         **shrink,
         **proxy,
     }
