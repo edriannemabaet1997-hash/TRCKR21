@@ -404,8 +404,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .intel-stat-value{ font-family:var(--font-mono); font-size:1.1em; font-weight:700; color:var(--text-hi); margin-top:4px; }
 .threat-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-soft); }
 .threat-row:last-child{ border-bottom:none; }
-.threat-row-hover{ cursor:help; border-radius:8px; margin:0 -8px; padding:10px 8px; transition:background-color .12s var(--ease); }
-.threat-row-hover:hover{ background:var(--bg-raised); }
 .threat-rank{ font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); width:16px; }
 .threat-avatar{ width:32px; height:32px; border-radius:50%; background:var(--bg-raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:.7em; color:var(--text-hi); flex-shrink:0; }
 .threat-name{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.85em; }
@@ -1681,110 +1679,24 @@ function mxShowBatterTip(anchorEl, idx){
   showFloatTip(anchorEl, html);
 }
 
-/* ---- Team Intel threat-row hover: platoon splits (vs RHP/LHP) + trailing
-   14-day recent form. Both come straight off the batter object already in
-   State.ui.mxMatchup.batters (platoonSplits / recentForm from the backend);
-   this just looks the batter up by id rather than re-passing data through
-   the row markup. ---- */
-const RECENT_FORM_TIER_META = {
-  hot:     {color:'var(--green)', label:'HOT'},
-  cold:    {color:'var(--red)',   label:'COLD'},
-  neutral: {color:'var(--text-mid)', label:'NEUTRAL'},
-  limited: {color:'var(--text-lo)',  label:'LIMITED SAMPLE'},
-};
-function mxPlatoonCard(label, side){
-  const s = side || {avg:'.000', ops:0, pa:0, hr:0};
-  return `<div style="flex:1; background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:8px; padding:9px 10px;">
-    <div style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-lo); font-weight:700; margin-bottom:6px;">${label}</div>
-    <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-hi);">${s.ops?Number(s.ops).toFixed(3):'—'}</div>
-    <div style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); margin-top:2px;">OPS &middot; ${s.avg||'.000'} AVG &middot; ${s.pa||0} PA</div>
-  </div>`;
-}
-function mxThreatTipHTML(b){
-  const platoon = b.platoonSplits || {};
-  const form = b.recentForm || {};
-  const formMeta = RECENT_FORM_TIER_META[form.tier] || RECENT_FORM_TIER_META.limited;
-  return `<div style="width:250px;">
-    <div style="display:flex; align-items:center; gap:9px; margin-bottom:12px;">
-      <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_213,q_auto:best/v1/people/${b.id}/headshot/silo/current" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-card-2);flex-shrink:0;">
-      <div style="font-family:var(--font-display); font-size:12.5px; font-weight:700; color:var(--text-hi);">${escapeHTML(b.name)}</div>
-    </div>
-    <div style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-lo); font-weight:700; margin-bottom:6px;">Platoon Splits &middot; Season</div>
-    <div style="display:flex; gap:8px; margin-bottom:12px;">
-      ${mxPlatoonCard('vs RHP', platoon.vsRHP)}
-      ${mxPlatoonCard('vs LHP', platoon.vsLHP)}
-    </div>
-    <div style="background:linear-gradient(135deg, rgba(255,255,255,.03), transparent); border:1px solid ${formMeta.color}; border-radius:8px; padding:9px 11px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-        <span style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-lo); font-weight:700;">Last ${form.days||14} Days</span>
-        <span style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:${formMeta.color}; letter-spacing:.4px;">&#9679; ${formMeta.label}</span>
-      </div>
-      <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-hi);">${form.ops?Number(form.ops).toFixed(3):'—'} <span style="font-size:9px; color:var(--text-lo); font-weight:500; font-family:var(--font-mono);">OPS</span></div>
-      <div style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); margin-top:2px;">${form.avg||'.000'} AVG &middot; ${form.hr||0} HR &middot; ${form.pa||0} PA</div>
-    </div>
-  </div>`;
-}
-function mxShowThreatTip(anchorEl, batterId){
-  const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
-  const b = batters.find(x=>String(x.id)===String(batterId));
-  if(!b) return;
-  showFloatTip(anchorEl, mxThreatTipHTML(b));
-}
-
 /* ---- Pitcher hover tooltip (Matchup Analyzer sidebar list) ----
    Whiff% is the pitcher's arsenal usage-weighted whiff rate (pitcherArsenalWhiffPct),
-   ERA/WHIP are season-to-date (pitcherEra/pitcherWhip), and "Projected vs Lineup"
-   reuses the model's own lineupEdgeOps/lineupEdgeTier — the same credibility-weighted
-   blendedOps math already computed per batter in the H2H table, averaged across the
-   opposing lineup and tiered by edge_tier() (elite/strong/average/soft — labeled here
-   as Elite/Strong/Average/Poor). No separate projection model; this restyles + surfaces
-   figures the backend already produces. */
-const MX_TIER_META = {
-  elite:   {color:'var(--green)',    glow:'rgba(51,193,122,.45)',  label:'Elite Matchup'},
-  strong:  {color:'var(--batter)',   glow:'rgba(51,214,192,.4)',   label:'Strong Matchup'},
-  average: {color:'var(--amber)',    glow:'rgba(242,169,59,.4)',   label:'Average Matchup'},
-  soft:    {color:'var(--red)',      glow:'rgba(232,73,95,.4)',    label:'Poor Matchup'},
-};
-function mxStatDial(value, max, color, label, sub){
-  const pct = value==null ? 0 : Math.max(0, Math.min(100, (value/max)*100));
-  return `<div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
-    <div style="width:46px; height:46px; border-radius:50%; background:conic-gradient(${color} calc(${pct}*1%), var(--bg-raised) 0); display:flex; align-items:center; justify-content:center;">
-      <div style="width:36px; height:36px; border-radius:50%; background:#08090b; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:11px; color:var(--text-hi);">${sub}</div>
-    </div>
-    <div style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-lo); font-weight:700;">${label}</div>
-  </div>`;
-}
+   ERA is season ERA (pitcherEra), and "expected vs lineup" reuses the model's
+   own lineupEdgeOps/lineupEdgeTier — its projection of how this pitcher performs
+   against today's opposing lineup. */
 function mxPitcherTipHTML(m){
   const era = (m.pitcherEra!=null) ? Number(m.pitcherEra).toFixed(2) : '—';
-  const whip = (m.pitcherWhip!=null) ? Number(m.pitcherWhip).toFixed(2) : '—';
-  const whiff = (m.pitcherArsenalWhiffPct!=null) ? Number(m.pitcherArsenalWhiffPct) : null;
-  const tier = MX_TIER_META[m.lineupEdgeTier] || {color:'var(--text-mid)', glow:'transparent', label:'—'};
+  const whiff = (m.pitcherArsenalWhiffPct!=null) ? Number(m.pitcherArsenalWhiffPct).toFixed(1)+'%' : '—';
+  const tierColor = {elite:'var(--green)', strong:'var(--green)', average:'var(--amber)', soft:'var(--red)'}[m.lineupEdgeTier] || 'var(--text-mid)';
+  const tierLabel = {elite:'Elite Edge', strong:'Strong Edge', average:'Average', soft:'Soft Matchup'}[m.lineupEdgeTier] || '—';
   const edgeOps = (m.lineupEdgeOps!=null) ? Number(m.lineupEdgeOps).toFixed(3) : '—';
-  return `<div style="width:252px; font-family:var(--font-body);">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-      <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_213,q_auto:best/v1/people/${m.pitcherId}/headshot/silo/current" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">
-      <div style="min-width:0;">
-        <div style="font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-hi); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m.pitcherName)}</div>
-        <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-lo);">${escapeHTML(m.matchup||'')}</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:4px; padding:12px 4px; background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; margin-bottom:12px;">
-      ${mxStatDial(era, 6, 'var(--pitcher)', 'ERA', era)}
-      ${mxStatDial(whip, 2, 'var(--mlb)', 'WHIP', whip)}
-      ${mxStatDial(whiff, 45, 'var(--batter)', 'WHIFF', whiff!=null?whiff.toFixed(0)+'%':'—')}
-    </div>
-    <div style="background:linear-gradient(135deg, ${tier.glow.replace('.45','.1').replace('.4','.1')}, transparent); border:1px solid ${tier.color}; border-radius:10px; padding:10px 12px; margin-bottom:10px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-lo); font-weight:700;">Projected vs Lineup</span>
-        <span style="font-family:var(--font-mono); font-size:9px; font-weight:800; text-transform:uppercase; color:${tier.color}; letter-spacing:.3px;">${tier.label}</span>
-      </div>
-      <div style="font-family:var(--font-display); font-size:19px; font-weight:700; color:${tier.color};">${edgeOps} <span style="font-size:11px; color:var(--text-lo); font-weight:500; font-family:var(--font-mono);">blended OPS</span></div>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:10px;">
-      <span style="color:var(--text-lo);">Roster Status</span>
-      <span class="lineup-status ${m.lineupConfirmed?'confirmed':'projected'}" style="padding:2px 9px; font-size:.95em;"><span class="dot"></span>${m.lineupConfirmed?'Confirmed':'Projected'}</span>
-    </div>
-  </div>`;
+  return `<div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">${escapeHTML(m.pitcherName)} <span style="color:var(--text-lo); font-weight:500;">${escapeHTML(m.matchup||'')}</span></div>
+    <div style="display:flex; flex-direction:column; gap:6px; font-family:var(--font-mono); font-size:11px;">
+      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Season ERA</span><span style="color:var(--text-hi); font-weight:700;">${era}</span></div>
+      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Arsenal Whiff%</span><span style="color:var(--text-hi); font-weight:700;">${whiff}</span></div>
+      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Expected vs Lineup</span><span style="color:${tierColor}; font-weight:700;">${edgeOps} OPS &middot; ${tierLabel}</span></div>
+      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Roster Status</span><span style="color:var(--text-mid);">${m.lineupConfirmed?'Confirmed':'Projected'}</span></div>
+    </div>`;
 }
 function onH2hSearch(e){ State.ui.h2hFilter = (e.target.value||'').toLowerCase(); renderLineupTable(); }
 function sortH2h(key){
@@ -1831,30 +1743,13 @@ function renderLineupTable(){
     const popoverContent = (pitchMix||[]).map(p => {
       const v = b.pitchVulnerability && b.pitchVulnerability[p.code];
       if(!v || (v.whiffPct===null && v.hardHitPct===null)) return '';
-      const color = pitchColor(p.type);
-      const weak = isWeakVsPitch(v);
-      const whiffPct = v.whiffPct??0, hardPct = v.hardHitPct??0;
-      return `<div style="margin-bottom:10px; padding:8px 10px; border-radius:8px; background:${weak?'rgba(232,73,95,.07)':'var(--bg-raised)'}; border:1px solid ${weak?'rgba(232,73,95,.3)':'var(--border-soft)'};">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <span style="display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--text-hi);"><span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>${p.type}</span>
-          <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo);">n=${v.sampleSize}${weak?' · <span style="color:var(--red);font-weight:700;">WEAK</span>':''}</span>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); width:36px; flex-shrink:0;">Whiff</span>
-            <div style="flex:1; height:5px; background:var(--bg-card-2); border-radius:3px; overflow:hidden;"><div style="height:100%; width:${Math.min(100,whiffPct)}%; background:${whiffPct>=PITCH_HOVER_WHIFF_THRESHOLD?'var(--red)':'var(--pitcher)'}; border-radius:3px;"></div></div>
-            <span style="font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--text-hi); width:34px; text-align:right; flex-shrink:0;">${fmtPct(v.whiffPct)}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); width:36px; flex-shrink:0;">Hard</span>
-            <div style="flex:1; height:5px; background:var(--bg-card-2); border-radius:3px; overflow:hidden;"><div style="height:100%; width:${Math.min(100,hardPct)}%; background:${hardPct>=PITCH_HOVER_HARDHIT_THRESHOLD?'var(--red)':'var(--amber)'}; border-radius:3px;"></div></div>
-            <span style="font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--text-hi); width:34px; text-align:right; flex-shrink:0;">${fmtPct(v.hardHitPct)}</span>
-          </div>
-        </div>
+      return `<div style="display:flex; justify-content:space-between; gap:16px; margin-bottom:6px; font-family:var(--font-mono); font-size:11px;">
+          <span style="color:${pitchColor(p.type)}; font-weight:700;">${p.type}</span>
+          <span style="color:var(--text-mid);">Whiff ${fmtPct(v.whiffPct)} | Hard ${fmtPct(v.hardHitPct)} | n=${v.sampleSize}</span>
       </div>`;
     }).filter(Boolean).join('');
 
-    const popoverHTML = popoverContent ? `<div style="width:230px;"><div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:10px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:8px;">vs ${escapeHTML(State.ui.mxMatchup.pitcherName)}'s Arsenal</div>${popoverContent}</div>` : '';
+    const popoverHTML = popoverContent ? `<div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">vs ${escapeHTML(State.ui.mxMatchup.pitcherName)}'s Arsenal</div>${popoverContent}` : '';
     window.__mxBatterTips[idx] = popoverHTML || null;
 
     let rowHtml = `<tr data-batter-id="${b.id}" onmouseenter="mxHighlightBatter('${b.id}')" onmouseleave="mxClearHighlight()">
@@ -1902,7 +1797,7 @@ function renderTeamIntel(m){
     <div class="intel-stat"><div class="intel-stat-label">Stable Sample Batters</div><div class="intel-stat-value">${confirmedBatters}/${batters.length}</div></div>`;
   const ranked = batters.slice().sort((a,b)=>b.blendedOps-a.blendedOps);
   const top3 = ranked.slice(0,3), bottom3 = ranked.slice(-3).reverse();
-  const threatRow = (b,rankLabel)=>`<div class="threat-row threat-row-hover" onmouseenter="mxShowThreatTip(this, '${b.id}')" onmouseleave="hideFloatTip()"><span class="threat-rank">${rankLabel}</span><img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${b.id}/headshot/silo/current" class="threat-avatar" style="object-fit:cover; padding:0;"><div><div class="threat-name">${escapeHTML(b.name)}</div><div class="threat-sub">${b.h2h&&b.h2h.pa?b.h2h.pa+' H2H PA':'No H2H history'} &middot; ${(b.credibility*100).toFixed(0)}% credibility</div></div><span class="threat-ops blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</span></div>`;
+  const threatRow = (b,rankLabel)=>`<div class="threat-row"><span class="threat-rank">${rankLabel}</span><img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${b.id}/headshot/silo/current" class="threat-avatar" style="object-fit:cover; padding:0;"><div><div class="threat-name">${escapeHTML(b.name)}</div><div class="threat-sub">${b.h2h&&b.h2h.pa?b.h2h.pa+' H2H PA':'No H2H history'} &middot; ${(b.credibility*100).toFixed(0)}% credibility</div></div><span class="threat-ops blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</span></div>`;
   document.getElementById('mx-top-threats').innerHTML = top3.length ? top3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
   document.getElementById('mx-soft-threats').innerHTML = bottom3.length ? bottom3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
 }

@@ -1,5 +1,5 @@
 """
-trckr21 — MLB Quant Terminal Data Engine  (v2.6 — Platoon Splits & Recent Form)
+trckr21 — MLB Quant Terminal Data Engine  (v2.5 — Batter Pitch-Type Vulnerability)
 ====================================================================
 Pulls today's slate from the MLB Stats API and produces `projections.json`
 in the shape the frontend consumes: db.pitchers / db.teams / db.matchups.
@@ -78,28 +78,6 @@ real counted per-pitch data instead.
 in the same lineup share most of their recent games — without it this
 would have multiplied the live-feed call volume by roughly 9x per
 lineup for no new data.
-
-v2.6 — PLATOON SPLITS + RECENT FORM (Team Intel hover cards)
---------------------------------------------------------------------------
-Every batter in `matchups[].batters[]` now also carries:
-  - `platoonSplits.vsRHP` / `.vsLHP` — season AVG/OPS/PA/HR from the Stats
-    API's `statSplits` group (sitCodes vr/vl). Real season-to-date splits,
-    not a modeled estimate.
-  - `recentForm` — trailing RECENT_FORM_WINDOW_DAYS-day (14) AVG/OPS/PA/HR
-    via `stats=byDateRange`, plus a `tier` ("hot"/"cold"/"neutral"/
-    "limited") the frontend uses to badge a batter as trending up or down.
-    "limited" fires under 8 PA in the window — too little data to call a
-    trend either way, so the UI shows it as a neutral/gray state rather
-    than a false hot or cold read.
-
-Pitcher hover card (Matchup Analyzer sidebar) was already carrying
-`pitcherEra` / `pitcherWhip` / `pitcherArsenalWhiffPct` and the model's
-own `lineupEdgeOps` / `lineupEdgeTier` (the "projected performance vs
-this specific opposing lineup" figure — an average of the same
-credibility-weighted blendedOps already computed per batter in the
-lineup, tiered by the existing edge_tier() cutoffs). v2.6 doesn't change
-that math; it's a frontend-only restyle plus surfacing WHIP, which the
-backend was already computing but not sending to that card's markup.
 """
 
 from __future__ import annotations
@@ -113,7 +91,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo
 
@@ -216,7 +194,7 @@ def fetch_json(url: str) -> dict:
     last_err = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.6"})
+            req = urllib.request.Request(url, headers={"User-Agent": "trckr21-quant-engine/2.5"})
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
                 return json.loads(resp.read().decode())
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
@@ -900,78 +878,6 @@ def get_batter_season_slash(batter_id: int) -> dict:
         return fallback
 
 
-def _split_slash(stat: dict) -> dict:
-    return {
-        "avg": stat.get("avg") or ".000",
-        "ops": safe_float(stat.get("ops"), 0.0),
-        "pa": int(stat.get("plateAppearances", 0) or 0),
-        "hr": int(stat.get("homeRuns", 0) or 0),
-    }
-
-
-def get_batter_platoon_splits(batter_id: int) -> dict:
-    """Season vs-RHP / vs-LHP slash lines for the Team Intel threat hover card.
-    Uses the Stats API's `statSplits` group with sitCodes vr (vs RHP) / vl
-    (vs LHP) — standard splits, not a derived/estimated stat."""
-    season = datetime.now(MLB_TZ).year
-    empty_side = {"avg": ".000", "ops": 0.0, "pa": 0, "hr": 0}
-    fallback = {"vsRHP": empty_side, "vsLHP": empty_side}
-    try:
-        url = (f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats"
-               f"?stats=statSplits&group=hitting&sitCodes=vr&sitCodes=vl&season={season}")
-        data = fetch_json(url)
-        splits = data.get("stats", [{}])[0].get("splits", [])
-        out = dict(fallback)
-        for s in splits:
-            code = (s.get("split", {}) or {}).get("code")
-            stat = s.get("stat", {})
-            if code == "vr":
-                out["vsRHP"] = _split_slash(stat)
-            elif code == "vl":
-                out["vsLHP"] = _split_slash(stat)
-        return out
-    except Exception as e:
-        log.warning(f"Platoon split fetch failed batter={batter_id}: {e}")
-        return fallback
-
-
-RECENT_FORM_WINDOW_DAYS = 14
-RECENT_FORM_HOT_OPS = 0.900
-RECENT_FORM_COLD_OPS = 0.600
-
-
-def recent_form_tier(ops: float, pa: int) -> str:
-    if pa < 8:
-        return "limited"
-    if ops >= RECENT_FORM_HOT_OPS:
-        return "hot"
-    if ops <= RECENT_FORM_COLD_OPS:
-        return "cold"
-    return "neutral"
-
-
-def get_batter_recent_form(batter_id: int) -> dict:
-    """Trailing RECENT_FORM_WINDOW_DAYS-day slash line — "is this batter hot
-    or cold right now" for the Team Intel threat hover card."""
-    end = datetime.now(MLB_TZ)
-    start = end - timedelta(days=RECENT_FORM_WINDOW_DAYS)
-    fallback = {"avg": ".000", "ops": 0.0, "pa": 0, "hr": 0, "tier": "limited", "days": RECENT_FORM_WINDOW_DAYS}
-    try:
-        url = (f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats"
-               f"?stats=byDateRange&group=hitting&startDate={start.strftime('%Y-%m-%d')}"
-               f"&endDate={end.strftime('%Y-%m-%d')}")
-        data = fetch_json(url)
-        splits = data.get("stats", [{}])[0].get("splits", [])
-        if not splits:
-            return fallback
-        stat = splits[0].get("stat", {})
-        slash = _split_slash(stat)
-        return {**slash, "tier": recent_form_tier(slash["ops"], slash["pa"]), "days": RECENT_FORM_WINDOW_DAYS}
-    except Exception as e:
-        log.warning(f"Recent-form fetch failed batter={batter_id}: {e}")
-        return fallback
-
-
 def shrink_h2h_ops(h2h_pa: int, h2h_ops: float, season_ops: float) -> dict:
     credibility = h2h_pa / (h2h_pa + STABILIZATION_PA)
     blended = credibility * h2h_ops + (1 - credibility) * season_ops
@@ -996,8 +902,6 @@ def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
 
     recent_pks = get_batter_recent_game_pks(batter["id"])
     pitch_vuln = get_batter_pitch_vulnerability(batter["id"], recent_pks) if recent_pks else {}
-    platoon_splits = get_batter_platoon_splits(batter["id"])
-    recent_form = get_batter_recent_form(batter["id"])
 
     return {
         **batter,
@@ -1009,8 +913,6 @@ def batter_matchup_job(batter: dict, pitcher_id: int) -> dict:
         "seasonChase": season_slash["chase"],
         "seasonCsw": season_slash["csw"],
         "pitchVulnerability": pitch_vuln,
-        "platoonSplits": platoon_splits,
-        "recentForm": recent_form,
         **shrink,
         **proxy,
     }
