@@ -1297,9 +1297,7 @@ function gdWeakestPitchForBatter(matchup, batterId){
   let best=null, bestScore=-1;
   Object.entries(vuln).forEach(([code,v])=>{
     if(v.whiffPct===null && v.hardHitPct===null) return;
-    // FIX: low hardHitPct (not high) means the batter struggles vs this pitch,
-    // so it should push the "weakest pitch" score up, not down.
-    const score = (v.whiffPct??0) + (v.hardHitPct===null ? 0 : (100 - v.hardHitPct));
+    const score = (v.whiffPct||0) + (v.hardHitPct||0);
     if(score>bestScore){ bestScore=score; best=code; }
   });
   return best;
@@ -1605,17 +1603,11 @@ function renderPitchMix(pitches){
 }
 
 const PITCH_HOVER_WHIFF_THRESHOLD = 32;
-// FIX: this used to be a "weak if hardHitPct >= 45" check, which was backwards —
-// a HIGH hard-hit% means the batter squares that pitch up often, i.e. a BATTER
-// STRENGTH, not a weakness. "Weak vs this pitch" should fire on a LOW hard-hit%
-// (batter isn't making solid contact), mirrored the same way a high whiff% does.
-const PITCH_HOVER_HARDHIT_WEAK_THRESHOLD = 20;
+const PITCH_HOVER_HARDHIT_THRESHOLD = 45;
 
 function isWeakVsPitch(vuln){
   if(!vuln || (vuln.whiffPct===null && vuln.hardHitPct===null)) return null;
-  const highWhiff = vuln.whiffPct!==null && vuln.whiffPct >= PITCH_HOVER_WHIFF_THRESHOLD;
-  const lowHardHit = vuln.hardHitPct!==null && vuln.hardHitPct <= PITCH_HOVER_HARDHIT_WEAK_THRESHOLD;
-  return highWhiff || lowHardHit;
+  return (vuln.whiffPct??0) >= PITCH_HOVER_WHIFF_THRESHOLD || (vuln.hardHitPct??0) >= PITCH_HOVER_HARDHIT_THRESHOLD;
 }
 function mxHighlightPitch(code){
   document.querySelectorAll('#mx-pitchmix .pitch-card').forEach(card=>{
@@ -1635,9 +1627,7 @@ function mxWeakestPitchForBatter(batter){
   let best=null, bestScore=-1;
   Object.entries(batter.pitchVulnerability).forEach(([code,v])=>{
     if(v.whiffPct===null && v.hardHitPct===null) return;
-    // FIX: low hardHitPct (not high) means the batter struggles vs this pitch,
-    // so it should push the "weakest pitch" score up, not down.
-    const score = (v.whiffPct??0) + (v.hardHitPct===null ? 0 : (100 - v.hardHitPct));
+    const score = (v.whiffPct||0) + (v.hardHitPct||0);
     if(score>bestScore){ bestScore=score; best=code; }
   });
   return best;
@@ -1857,7 +1847,7 @@ function renderLineupTable(){
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); width:36px; flex-shrink:0;">Hard</span>
-            <div style="flex:1; height:5px; background:var(--bg-card-2); border-radius:3px; overflow:hidden;"><div style="height:100%; width:${Math.min(100,hardPct)}%; background:${(v.hardHitPct!==null && v.hardHitPct<=PITCH_HOVER_HARDHIT_WEAK_THRESHOLD)?'var(--red)':'var(--amber)'}; border-radius:3px;"></div></div>
+            <div style="flex:1; height:5px; background:var(--bg-card-2); border-radius:3px; overflow:hidden;"><div style="height:100%; width:${Math.min(100,hardPct)}%; background:${hardPct>=PITCH_HOVER_HARDHIT_THRESHOLD?'var(--red)':'var(--amber)'}; border-radius:3px;"></div></div>
             <span style="font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--text-hi); width:34px; text-align:right; flex-shrink:0;">${fmtPct(v.hardHitPct)}</span>
           </div>
         </div>
