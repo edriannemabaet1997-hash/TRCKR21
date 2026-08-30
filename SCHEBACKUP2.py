@@ -121,18 +121,6 @@ class GameResponse(BaseModel):
     awaySeasonSeriesWins: int | None = None
     awaySeasonSeriesLosses: int | None = None
     recentH2H: str | None = None
-    # NEW (2026-08-31): weather badge for the Moneylines card, sourced from
-    # prediction_service's cached WeatherContext (same fetch that already
-    # feeds the win-probability model's weather_mult — no extra I/O).
-    # weatherSummary is always populated ("Weather unavailable" on any
-    # fetch/venue-coordinate failure, never null/blank) so the frontend can
-    # render it directly without a fallback branch. weatherTone drives the
-    # badge color: "boost" -> --green, "penalty" -> --amber, "neutral" ->
-    # default (includes calm, crosswind, and the unavailable case).
-    weatherTempF: int | None = None
-    weatherSummary: str = "Weather unavailable"
-    weatherTone: Literal["boost", "penalty", "neutral"] = "neutral"
-    weatherDetail: str | None = None
 
 
 class SlateMeta(BaseModel):

@@ -474,16 +474,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .game-context .gc-sep{ color:var(--text-ghost); }
 .game-context .gc-tbd{ color:var(--text-ghost); font-style:italic; }
 
-/* NEW (2026-08-31) — weather badge, next to venue in the game-context strip
-   and the gc-topline. Same pill shape/typography as .gc-badge (FAV/DOG) for
-   a consistent premium/terminal look; color-coded off weatherTone. */
-.weather-badge{ display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:1em; font-weight:700; letter-spacing:.3px; padding:2px 8px; border-radius:20px; white-space:nowrap; color:var(--text-lo); background:rgba(255,255,255,.04); border:1px solid var(--border-soft); cursor:help; }
-.weather-badge-icon{ font-size:.95em; line-height:1; }
-.weather-badge.boost{ color:var(--green); background:rgba(51,193,122,.14); border-color:rgba(51,193,122,.35); }
-.weather-badge.penalty{ color:var(--amber); background:rgba(242,169,59,.14); border-color:rgba(242,169,59,.35); }
-.weather-badge.neutral{ color:var(--text-lo); background:rgba(255,255,255,.04); border-color:var(--border-soft); }
-.weather-badge.unavailable{ color:var(--text-ghost); font-style:italic; background:transparent; cursor:default; }
-
 /* NEW — team logos (MLB Static CDN) */
 .team-logo-wrap{ position:relative; display:inline-flex; flex-shrink:0; }
 .team-logo{ display:block; object-fit:contain; }
@@ -492,7 +482,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 /* NEW — team-first Moneyline card */
 .gc-v2{ padding:16px 18px; gap:12px; }
 .gc-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
-.gc-topline{ display:flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); flex-wrap:wrap; row-gap:4px; }
+.gc-topline{ display:flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); overflow:hidden; }
 .gc-topline .gc-sep{ color:var(--text-ghost); }
 .gc-fairline{ font-family:var(--font-mono); font-size:.66em; color:var(--text-ghost); letter-spacing:.6px; flex-shrink:0; }
 .gc-matchup{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
@@ -1427,30 +1417,14 @@ function formatGameStartTime(iso){
     return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York', hour:'numeric', minute:'2-digit'}).format(d)+' ET';
   }catch(e){ return null; }
 }
-// NEW (2026-08-31) — small weather pill for the Moneylines game-context
-// strip. tone maps to badge color: boost->green, penalty->amber, neutral
-// (calm/crosswind/unknown-orientation) -> neutral gray. weatherSummary is
-// always populated by the backend ("Weather unavailable" on fetch failure),
-// so this only returns '' when the field itself is missing entirely
-// (e.g. an older cached response before this field existed).
-function weatherBadgeHTML(g){
-  const summary = g.weatherSummary;
-  if(!summary) return '';
-  const unavailable = summary === 'Weather unavailable';
-  const tone = unavailable ? 'unavailable' : (g.weatherTone || 'neutral');
-  const icon = unavailable ? '&ndash;' : (tone==='boost' ? '&#8599;' : tone==='penalty' ? '&#8600;' : '&#8776;');
-  const tip = (!unavailable && g.weatherDetail) ? ` data-tip="${escapeHTML(g.weatherDetail)}"` : '';
-  return `<span class="weather-badge ${tone}"${tip}><span class="weather-badge-icon">${icon}</span>${escapeHTML(summary)}</span>`;
-}
 function gameContextHTML(g){
   const startTime = formatGameStartTime(g.startTimeUTC || g.startTime || g.gameDate);
   const venue = g.venue || null;
-  const weather = weatherBadgeHTML(g);
-  if(!startTime && !venue) return `<div class="game-context"><span class="gc-tbd">Time &amp; venue TBD</span>${weather}</div>`;
+  if(!startTime && !venue) return `<div class="game-context"><span class="gc-tbd">Time &amp; venue TBD</span></div>`;
   const parts = [];
   if(startTime) parts.push(`<span>${escapeHTML(startTime)}</span>`);
   if(venue) parts.push(`<span>${escapeHTML(venue)}</span>`);
-  return `<div class="game-context">${parts.join('<span class="gc-sep">&middot;</span>')}${weather}</div>`;
+  return `<div class="game-context">${parts.join('<span class="gc-sep">&middot;</span>')}</div>`;
 }
 function renderMoneylines(){
   const grid = document.getElementById('ml-grid');
@@ -1471,7 +1445,6 @@ function renderMoneylines(){
         <div class="gc-topline">
           <span>${escapeHTML(startTime||'Time TBD')}</span>
           ${venue?`<span class="gc-sep">&middot;</span><span>${escapeHTML(venue)}</span>`:''}
-          ${weatherBadgeHTML(g)}
         </div>
         <span class="gc-fairline">FAIR LINE</span>
       </div>

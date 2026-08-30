@@ -51,7 +51,6 @@ from __future__ import annotations
 import logging
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import Lock
 
@@ -102,7 +101,6 @@ from math_engine import (
     shrink_rate,
     velocity_control_penalty,
     weather_scoring_multiplier,
-    weather_wind_context,
 )
 from mlb_client import MLBClient
 from odds_client import OddsClient
@@ -117,28 +115,6 @@ from weather_client import WeatherClient
 # default "handler of last resort" still prints WARNING+ to stderr even with
 # zero configuration, so these are visible out of the box either way.
 logger = logging.getLogger("trckr21.prediction_service")
-
-
-# TASK 1 UI (2026-08-31) — carries the weather signal both consumers need:
-# the raw scoring multiplier (Poisson Monte Carlo / calculate_team_xruns_v2
-# inputs, unchanged from before) AND the display fields for the Moneylines
-# weather badge (GameResponse.weatherTempF/weatherSummary/weatherTone/
-# weatherDetail). One fetch + one cache entry serves both, instead of a
-# second venue/forecast round trip just for display.
-@dataclass(frozen=True)
-class WeatherContext:
-    mult: float = 1.0
-    temp_f: int | None = None
-    wind_label: str | None = None
-    wind_tone: str = "neutral"
-    wind_detail: str | None = None
-
-    @property
-    def summary(self) -> str:
-        if self.temp_f is None or not self.wind_label:
-            return "Weather unavailable"
-        return f"{self.temp_f}\u00b0F \u00b7 {self.wind_label}"
-
 
 # ---------------------------------------------------------------------------
 # CONSOLIDATION (2026-08-29) — Pitcher Props / Team Matchups / Matchup
@@ -321,7 +297,7 @@ class PredictionService:
         # the team caches above. Weather is keyed by (venue_id, game_time)
         # since it's a per-GAME signal, not per-team; bullpen fatigue is
         # keyed by team_id alone, same shape as the other team-level caches.
-        self._weather_mult_cache: dict[tuple[int, str], WeatherContext] = {}
+        self._weather_mult_cache: dict[tuple[int, str], float] = {}
         self._bullpen_fatigue_cache: dict[int, float] = {}
         self._team_cache_lock = Lock()
 
@@ -376,31 +352,24 @@ class PredictionService:
         return data
 
     # ------------------------------------------------------------------
-    # TASK 1 (2026-08-30, extended 2026-08-31) — weather context. venue()
-    # gives us lat/lon + park azimuth (already fetched via MLBClient, no new
-    # dependency there); WeatherClient.forecast_at_game_time() is the only
-    # new I/O. Falls back to a neutral WeatherContext (mult=1.0, "Weather
-    # unavailable") on any missing venue/coordinate/forecast data — this is
-    # a nice-to-have signal, not something that should ever take a game off
-    # the slate.
-    #
-    # Returns the full WeatherContext (not just the multiplier) so the same
-    # cached fetch feeds both the Poisson Monte Carlo model AND the
-    # Moneylines weather badge (GameResponse.weatherTempF/weatherSummary/
-    # weatherTone/weatherDetail) — see WeatherContext above. Call sites that
-    # only need the multiplier read `.mult` off the result.
+    # TASK 1 (2026-08-30) — weather_mult. venue() gives us lat/lon + park
+    # azimuth (already fetched via MLBClient, no new dependency there);
+    # WeatherClient.forecast_at_game_time() is the only new I/O. Falls back
+    # to a neutral 1.0 on any missing venue/coordinate/forecast data — this
+    # is a nice-to-have signal, not something that should ever take a game
+    # off the slate.
     # ------------------------------------------------------------------
 
-    def _cached_weather_context(self, venue_id: int | None, game_time_utc: str | None) -> WeatherContext:
+    def _cached_weather_mult(self, venue_id: int | None, game_time_utc: str | None) -> float:
         if not venue_id or not game_time_utc:
-            return WeatherContext()
+            return 1.0
         key = (venue_id, game_time_utc)
         with self._team_cache_lock:
             cached = self._weather_mult_cache.get(key)
         if cached is not None:
             return cached
 
-        ctx = WeatherContext()
+        mult = 1.0
         try:
             venue_data = self.mlb.venue(venue_id)
             location = venue_data.get("location", {}) if venue_data else {}
@@ -409,44 +378,28 @@ class PredictionService:
             if lat is not None and lon is not None:
                 forecast = self.weather.forecast_at_game_time(lat, lon, game_time_utc)
                 if forecast:
-                    temp_f = forecast["temperature_f"]
-                    wind_speed = forecast["wind_speed_mph"]
-                    wind_dir = forecast["wind_direction_deg"]
-                    park_azimuth = location.get("azimuthAngle")
                     mult = weather_scoring_multiplier(
-                        temperature_f=temp_f,
-                        wind_speed_mph=wind_speed,
-                        wind_direction_deg=wind_dir,
-                        park_azimuth_deg=park_azimuth,
-                    )
-                    wind_label, wind_tone, wind_detail = weather_wind_context(
-                        wind_speed_mph=wind_speed,
-                        wind_direction_deg=wind_dir,
-                        park_azimuth_deg=park_azimuth,
-                    )
-                    ctx = WeatherContext(
-                        mult=mult,
-                        temp_f=round(temp_f),
-                        wind_label=wind_label,
-                        wind_tone=wind_tone,
-                        wind_detail=wind_detail,
+                        temperature_f=forecast["temperature_f"],
+                        wind_speed_mph=forecast["wind_speed_mph"],
+                        wind_direction_deg=forecast["wind_direction_deg"],
+                        park_azimuth_deg=location.get("azimuthAngle"),
                     )
         except Exception:
             logger.warning(
-                "Could not compute weather context for venue_id=%s game_time=%s — using neutral fallback.",
+                "Could not compute weather_mult for venue_id=%s game_time=%s — using neutral 1.0.",
                 venue_id, game_time_utc, exc_info=True,
             )
-            ctx = WeatherContext()
+            mult = 1.0
 
         with self._team_cache_lock:
-            self._weather_mult_cache[key] = ctx
-        return ctx
+            self._weather_mult_cache[key] = mult
+        return mult
 
     # ------------------------------------------------------------------
     # TASK 2 (2026-08-30) — bullpen_fatigue_mult. Rolling 2-3 day relief-
     # innings workload from MLB Stats API only (see mlb_client.
     # team_bullpen_relief_innings). Falls back to a neutral 1.0 on any
-    # fetch failure, same convention as _cached_weather_context above.
+    # fetch failure, same convention as _cached_weather_mult above.
     # ------------------------------------------------------------------
 
     def _cached_bullpen_fatigue_mult(self, team_id: int | None, target_date: str) -> float:
@@ -682,8 +635,7 @@ class PredictionService:
         # the AWAY bullpen's ERA because the HOME team is the one batting
         # against it, and vice versa for bullpen_era_b — bullpen_fatigue_
         # mult_a/b follow the same away/home pairing.
-        weather_ctx = self._cached_weather_context(venue_id, game_date_utc)
-        weather_mult = weather_ctx.mult
+        weather_mult = self._cached_weather_mult(venue_id, game_date_utc)
         away_bullpen_fatigue_mult = self._cached_bullpen_fatigue_mult(away_id, target_date)
         home_bullpen_fatigue_mult = self._cached_bullpen_fatigue_mult(home_id, target_date)
         mc_result = poisson_monte_carlo_win_prob(
@@ -970,13 +922,6 @@ class PredictionService:
             "awayPitcher": away_pitcher.get("name"), "homePitcher": home_pitcher.get("name"),
             "awayPitcherId": away_pitcher.get("id"), "homePitcherId": home_pitcher.get("id"),
             "awayXRuns": round(away_xruns, 2), "homeXRuns": round(home_xruns, 2),
-            # TASK 1 UI (2026-08-31) — weather badge fields for the
-            # Moneylines card, sourced from the same cached WeatherContext
-            # that already feeds weather_mult above (no extra fetch).
-            "weatherTempF": weather_ctx.temp_f,
-            "weatherSummary": weather_ctx.summary,
-            "weatherTone": weather_ctx.wind_tone,
-            "weatherDetail": weather_ctx.wind_detail,
         }
 
         return {"game": game_row, "players": players, "pitchers": pitchers_out}
@@ -1378,7 +1323,7 @@ class PredictionService:
         # there). bullpen_fatigue_mult here tracks `opponent_id` specifically
         # because opp_bullpen_era above is already the OPPONENT's bullpen —
         # the one this team's offense is actually facing today.
-        weather_mult = self._cached_weather_context(venue_id, game_date_utc).mult
+        weather_mult = self._cached_weather_mult(venue_id, game_date_utc)
         opp_bullpen_fatigue_mult = self._cached_bullpen_fatigue_mult(opponent_id, target_date)
 
         matchup_mult = _matchup_multiplier(team_obp, team_slg, opp_pitcher_era)
