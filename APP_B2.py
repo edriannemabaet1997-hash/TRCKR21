@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import logging
-import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -19,13 +17,10 @@ from schemas import (
     CalibrationRequest,
     CalibrationResponse,
     GameResponse,
-    MatchupAnalyzerResponse,
     MatchupResponse,
-    PitcherPropsResponse,
     PitcherResponse,
     PlayerResponse,
     SlateResponse,
-    TeamMatchupsResponse,
     TrackRecordResponse,
 )
 
@@ -56,42 +51,6 @@ prediction_service = PredictionService(
 
 def eastern_today() -> str:
     return datetime.now(ZoneInfo(settings.timezone_name)).date().isoformat()
-
-
-# FIX (2026-08-29): the root cause of "BATTER MODEL OFFLINE" / 20s timeouts
-# on a fresh run. build_slate() for ~270 players across a full slate makes
-# hundreds of MLB Stats API calls; that cold build only ever used to happen
-# on whichever request hit /api/slate FIRST — in practice, the frontend's
-# own page load, whose fetch() aborts itself after a hardcoded 20s
-# (index.html BatterAPI.request). The backend kept working past 20s and
-# finished fine (that's why a manual GET a few minutes later returned
-# instantly — from the now-warm cache), but the frontend had already given
-# up and shown the offline banner. This kicks the same builds off in a
-# background thread the moment uvicorn finishes booting, so the cache is
-# warm — or already warming — before anyone opens the page, instead of
-# being built on-demand against a request with a hard client-side deadline.
-# Runs once per process start (and once per --reload restart); daemon=True
-# so it never blocks server shutdown.
-@app.on_event("startup")
-def _warm_cache_on_startup() -> None:
-    logger = logging.getLogger("trckr21.app")
-
-    def _warm() -> None:
-        target_date = eastern_today()
-        jobs = (
-            ("slate", lambda: prediction_service.build_slate(target_date)),
-            ("pitcher-props", lambda: prediction_service.build_pitcher_props(target_date)),
-            ("team-matchups", lambda: prediction_service.build_team_matchups(target_date)),
-            ("matchup-analyzer", lambda: prediction_service.build_matchup_analyzer(target_date)),
-        )
-        for label, builder in jobs:
-            try:
-                builder()
-                logger.info("Startup cache warm: %s ready for %s.", label, target_date)
-            except Exception:
-                logger.exception("Startup cache warm failed for %s (%s) — first request will build it instead.", label, target_date)
-
-    threading.Thread(target=_warm, daemon=True, name="cache-warmup").start()
 
 
 @app.get("/", include_in_schema=False)
@@ -169,44 +128,6 @@ def get_matchup(batter_id: int, pitcher_id: int) -> dict:
         return prediction_service.get_matchup(batter_id, pitcher_id)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Failed to build matchup: {exc}") from exc
-
-
-# --- NEW: consolidation (2026-08-29) — retires generate_projections.py /
-# projections.json. Same date/refresh/caching contract as /api/slate.
-@app.get("/api/pitcher-props", response_model=list[PitcherPropsResponse])
-def get_pitcher_props(
-    date: str | None = Query(default=None, description="Slate date in YYYY-MM-DD format."),
-    refresh: bool = Query(default=False, description="Ignore the in-memory cache."),
-) -> list[dict]:
-    target_date = date or eastern_today()
-    try:
-        return prediction_service.build_pitcher_props(target_date=target_date, force=refresh)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to build pitcher props: {exc}") from exc
-
-
-@app.get("/api/team-matchups", response_model=list[TeamMatchupsResponse])
-def get_team_matchups(
-    date: str | None = Query(default=None, description="Slate date in YYYY-MM-DD format."),
-    refresh: bool = Query(default=False, description="Ignore the in-memory cache."),
-) -> list[dict]:
-    target_date = date or eastern_today()
-    try:
-        return prediction_service.build_team_matchups(target_date=target_date, force=refresh)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to build team matchups: {exc}") from exc
-
-
-@app.get("/api/matchup-analyzer", response_model=list[MatchupAnalyzerResponse])
-def get_matchup_analyzer_slate(
-    date: str | None = Query(default=None, description="Slate date in YYYY-MM-DD format."),
-    refresh: bool = Query(default=False, description="Ignore the in-memory cache."),
-) -> list[dict]:
-    target_date = date or eastern_today()
-    try:
-        return prediction_service.build_matchup_analyzer(target_date=target_date, force=refresh)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to build matchup analyzer: {exc}") from exc
 
 
 @app.post("/api/calibrate", response_model=CalibrationResponse)

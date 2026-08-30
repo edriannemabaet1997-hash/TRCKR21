@@ -219,6 +219,25 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .avatar-circle{ width:52px; height:52px; border-radius:50%; background:var(--bg-raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; color:var(--batter); flex-shrink:0; font-family:var(--font-mono); }
 .field-row{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
 .field-row .flabel{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); }
+.calib-input-row{ display:flex; align-items:center; gap:10px; }
+.calib-slider{ flex:1; -webkit-appearance:none; appearance:none; height:4px; border-radius:2px; background:var(--bg-raised); outline:none; cursor:pointer; padding:0; border:none; }
+.calib-slider::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--text-hi); border:2px solid var(--bg-card); cursor:pointer; box-shadow:0 0 0 1px var(--border); margin-top:-5px; }
+.calib-slider::-moz-range-track{ height:4px; border-radius:2px; background:var(--bg-raised); border:none; }
+.calib-slider::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:var(--text-hi); border:2px solid var(--bg-card); cursor:pointer; }
+.calib-number{ width:90px; flex-shrink:0; text-align:right; transition:border-color .15s var(--ease), color .15s var(--ease); }
+.calib-number.green{ border-color:var(--green); color:var(--green); }
+.calib-number.amber{ border-color:var(--amber); color:var(--amber); }
+.calib-number.red{ border-color:var(--red); color:var(--red); }
+.calib-range-track{ position:relative; height:5px; border-radius:3px; background:var(--bg-raised); margin-top:9px; overflow:visible; }
+.calib-range-fill{ position:absolute; left:0; top:0; height:100%; border-radius:3px; width:0%; background:var(--text-lo); transition:width .12s linear, background .15s var(--ease); }
+.calib-range-fill.green{ background:var(--green); } .calib-range-fill.amber{ background:var(--amber); } .calib-range-fill.red{ background:var(--red); }
+.calib-range-marker{ position:absolute; top:-3px; width:2px; height:11px; border-radius:1px; background:var(--text-lo); left:0%; transform:translateX(-1px); transition:left .12s linear, background .15s var(--ease); }
+.calib-range-marker.green{ background:var(--green); box-shadow:0 0 6px rgba(51,193,122,.7); }
+.calib-range-marker.amber{ background:var(--amber); box-shadow:0 0 6px rgba(242,169,59,.7); }
+.calib-range-marker.red{ background:var(--red); box-shadow:0 0 6px rgba(232,73,95,.7); }
+.calib-avg-tick{ position:absolute; top:-2px; width:1px; height:9px; background:var(--text-lo); opacity:.55; }
+.calib-status{ font-family:var(--font-mono); font-size:.62em; text-align:right; margin-top:5px; height:12px; color:var(--text-lo); font-weight:600; letter-spacing:.02em; }
+.calib-status.green{ color:var(--green); } .calib-status.amber{ color:var(--amber); } .calib-status.red{ color:var(--red); }
 .btn{ padding:8px 15px; border-radius:8px; border:1px solid var(--border); font-weight:600; font-size:.8em; background:var(--bg-raised); color:var(--text-mid); display:inline-flex; align-items:center; gap:6px; transition:all .15s var(--ease); }
 .btn:hover{ border-color:var(--border-focus); color:var(--text-hi); }
 .btn-primary{ color:var(--batter); border-color:var(--batter-border); background:var(--batter-dim); }
@@ -404,6 +423,8 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .intel-stat-value{ font-family:var(--font-mono); font-size:1.1em; font-weight:700; color:var(--text-hi); margin-top:4px; }
 .threat-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-soft); }
 .threat-row:last-child{ border-bottom:none; }
+.threat-row-hover{ cursor:help; border-radius:8px; margin:0 -8px; padding:10px 8px; transition:background-color .12s var(--ease); }
+.threat-row-hover:hover{ background:var(--bg-raised); }
 .threat-rank{ font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); width:16px; }
 .threat-avatar{ width:32px; height:32px; border-radius:50%; background:var(--bg-raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:.7em; color:var(--text-hi); flex-shrink:0; }
 .threat-name{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.85em; }
@@ -670,9 +691,14 @@ const State = {
 };
 const STAT_LABELS = {hits:'Hits', runs:'Runs', homeruns:'Home Runs', rbi:'RBI'};
 const API_BASE = 'http://127.0.0.1:8000';
-const PROJECTIONS_URL = 'projections.json';
 const MARKET_IMPLIED_PROB = 110/210;
 const MARKET_B = 100/110;
+// CONSOLIDATION (2026-08-29): projections.json + generate_projections.py are
+// retired — Pitcher Props / Team Matchups / Matchup Analyzer now come from
+// the live FastAPI backend via BatterAPI, same as everything else on this
+// page. K_TEAM_RUNS mirrors math_engine.K_TEAM_RUNS server-side; it's only
+// used when a market carries a non-null model.anchorMu (team run markets).
+const K_TEAM_RUNS = 6;
 
 function escapeHTML(v){ return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
 function formatAmerican(v){ if(v===null||v===undefined) return 'N/A'; return Number(v)>0?`+${v}`:String(v); }
@@ -743,18 +769,34 @@ function currentStreak(arr,line){
   for(let i=arr.length-1;i>=0;i--){ if(dirOf(arr[i])===lastDir) count++; else break; }
   return {count,dir:lastDir};
 }
-function calibrateMarket(history,line){
-  const n=history.length, mu=sampleMean(history), variance=sampleVariance(history);
-  const vmr=mu>0?variance/mu:0;
+function shrinkRate(observed,sampleSize,anchor,kFactor){
+  if(sampleSize<=0) return anchor;
+  return (observed*sampleSize + anchor*kFactor) / (sampleSize + kFactor);
+}
+// CONSOLIDATION (2026-08-29): anchorMu/anchorK are OPTIONAL and mirror
+// math_engine.calibrate_count_market() server-side — the VMR gate
+// (useNb2, below) is still decided from the RAW observedMu/variance only,
+// never touched by shrinkage. Only `mu`, the mean actually fed into
+// whichever distribution the gate picked, can be pulled toward an anchor.
+// Called with no anchor (pitcher props) this is byte-identical to the old
+// calibrateMarket(). Team run markets pass market.model.anchorMu / K_TEAM_RUNS
+// so a custom line the user drags client-side stays consistent with the
+// server's calculate_team_xruns_v2-anchored mean instead of silently
+// reverting to a raw, unshrunk average.
+function calibrateMarket(history,line,anchorMu,anchorK){
+  const n=history.length, observedMu=sampleMean(history), variance=sampleVariance(history);
+  const vmr=observedMu>0?variance/observedMu:0;
+  const useNb2 = variance>observedMu && observedMu>0;
+  const mu = (anchorMu!=null && anchorK>0) ? shrinkRate(observedMu, n, anchorMu, anchorK) : observedMu;
   let overProb, distribution, fallback=false;
-  if(variance>mu && mu>0){
+  if(useNb2){
     try{ overProb=nbinomOverProb(mu,variance,line); distribution='negative_binomial'; }
     catch(e){ overProb=poissonOverProb(mu,line); distribution='poisson'; fallback=true; }
   } else { overProb=poissonOverProb(mu,line); distribution='poisson'; }
   const edgePct=(overProb-MARKET_IMPLIED_PROB)*100, edge=overProb-MARKET_IMPLIED_PROB;
   let kellyPct=0;
   if(edge>0){ const q=1-overProb, fStar=(MARKET_B*overProb-q)/MARKET_B; kellyPct=Math.max(0,fStar)*100; }
-  return { distribution, mu, variance, vmr, overProb, fallback, fairOdds:probToAmerican(overProb), edgePct, kellyPct, confidence:confidenceTier(n), sampleSize:n };
+  return { distribution, mu, observedMu, variance, vmr, overProb, fallback, fairOdds:probToAmerican(overProb), edgePct, kellyPct, confidence:confidenceTier(n), sampleSize:n, anchorMu: anchorMu??null };
 }
 
 function tickClock(){ document.getElementById('global-clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}); }
@@ -966,7 +1008,12 @@ const BatterAPI = {
   fetchSlate(date,refresh=false){ const p=new URLSearchParams(); if(date) p.append('date',date); if(refresh) p.append('refresh','true'); const q=p.toString()?`?${p}`:''; return this.request(`/api/slate${q}`); },
   fetchPitcher(id){ return this.request(`/api/pitchers/${id}`); },
   fetchTrackRecord(limit=100){ return this.request(`/api/track-record?limit=${limit}`); },
-  calibrate(payload){ return this.request('/api/calibrate',{method:'POST', body:JSON.stringify(payload)}); }
+  calibrate(payload){ return this.request('/api/calibrate',{method:'POST', body:JSON.stringify(payload)}); },
+  // CONSOLIDATION (2026-08-29): replaces the static projections.json fetch.
+  _dateQuery(date,refresh){ const p=new URLSearchParams(); if(date) p.append('date',date); if(refresh) p.append('refresh','true'); const q=p.toString()?`?${p}`:''; return q; },
+  fetchPitcherProps(date,refresh=false){ return this.request(`/api/pitcher-props${this._dateQuery(date,refresh)}`); },
+  fetchTeamMatchups(date,refresh=false){ return this.request(`/api/team-matchups${this._dateQuery(date,refresh)}`); },
+  fetchMatchupAnalyzer(date,refresh=false){ return this.request(`/api/matchup-analyzer${this._dateQuery(date,refresh)}`); }
 };
 
 function eastCoastToday(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date()); }
@@ -1089,12 +1136,37 @@ function renderDrawerContent(){
       <div style="margin-bottom:22px;"><h2 style="font-family:var(--font-display);color:var(--text-hi);margin:0 0 4px;">${escapeHTML(p.name)}</h2><div style="font-family:var(--font-mono);font-size:.8em;color:var(--text-lo);">${escapeHTML(p.team)} · Batting ${p.order??'—'} · vs ${escapeHTML(p.oppPitcher||'TBD')}</div></div>
       <div class="card" style="padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;"><span class="eyebrow">Statcast Baseline</span><button class="btn btn-primary" id="btn-calibrate" ${State.ui.drawer.calibrating?'disabled':''}>${State.ui.drawer.calibrating?'<span class=\\"spinner\\"></span> Calibrating':'Calibrate'}</button></div>
-        <div class="field-row"><div class="flabel"><span>xwOBA</span><span>.320 lg</span></div><input type="number" id="in-xwoba" value="${p.stats?.xwoba??''}" step="0.001" placeholder="Enter verified value"></div>
-        <div class="field-row"><div class="flabel"><span>xBA</span><span>.250 lg</span></div><input type="number" id="in-xba" value="${p.stats?.xba??''}" step="0.001" placeholder="Enter verified value"></div>
-        <div class="field-row" style="margin-bottom:0;"><div class="flabel"><span>Barrel %</span><span>8.0% lg</span></div><input type="number" id="in-barrel" value="${p.stats?.barrel??''}" step="0.1" placeholder="Enter verified value"></div>
+        <div class="field-row calib-field" data-stat="xwoba" data-avg="0.320" data-min="0.150" data-max="0.500">
+          <div class="flabel"><span>xwOBA</span><span>.320 lg</span></div>
+          <div class="calib-input-row">
+            <input type="range" class="calib-slider" min="0.150" max="0.500" step="0.001" value="${p.stats?.xwoba??0.320}">
+            <input type="number" class="calib-number" id="in-xwoba" value="${p.stats?.xwoba??''}" step="0.001" placeholder="Enter verified value">
+          </div>
+          <div class="calib-range-track"><div class="calib-range-fill"></div><div class="calib-avg-tick" style="left:48.57%;"></div><div class="calib-range-marker"></div></div>
+          <div class="calib-status"></div>
+        </div>
+        <div class="field-row calib-field" data-stat="xba" data-avg="0.250" data-min="0.100" data-max="0.400">
+          <div class="flabel"><span>xBA</span><span>.250 lg</span></div>
+          <div class="calib-input-row">
+            <input type="range" class="calib-slider" min="0.100" max="0.400" step="0.001" value="${p.stats?.xba??0.250}">
+            <input type="number" class="calib-number" id="in-xba" value="${p.stats?.xba??''}" step="0.001" placeholder="Enter verified value">
+          </div>
+          <div class="calib-range-track"><div class="calib-range-fill"></div><div class="calib-avg-tick" style="left:50%;"></div><div class="calib-range-marker"></div></div>
+          <div class="calib-status"></div>
+        </div>
+        <div class="field-row calib-field" data-stat="barrel" data-avg="8.0" data-min="0" data-max="25" style="margin-bottom:0;">
+          <div class="flabel"><span>Barrel %</span><span>8.0% lg</span></div>
+          <div class="calib-input-row">
+            <input type="range" class="calib-slider" min="0" max="25" step="0.1" value="${p.stats?.barrel??8.0}">
+            <input type="number" class="calib-number" id="in-barrel" value="${p.stats?.barrel??''}" step="0.1" placeholder="Enter verified value">
+          </div>
+          <div class="calib-range-track"><div class="calib-range-fill"></div><div class="calib-avg-tick" style="left:32%;"></div><div class="calib-range-marker"></div></div>
+          <div class="calib-status"></div>
+        </div>
       </div>
       <div class="card verdict-card"><div><div class="eyebrow">Model Verdict</div><div style="font-weight:600;color:var(--text-hi);margin-top:2px;">${State.ui.drawer.calibrationResult ? (State.ui.drawer.calibrationResult.finalProb>=.72?'Strong Push':State.ui.drawer.calibrationResult.finalProb>=.66?'Probable':'Avoid') : 'Run calibration'}</div></div><div class="mono" style="font-size:22px;color:var(--batter);">${State.ui.drawer.calibrationResult ? (State.ui.drawer.calibrationResult.finalProb*100).toFixed(1)+'%' : 'N/A'}</div></div>`;
     document.getElementById('btn-calibrate').onclick = ()=>runCalibration(p.id);
+    initCalibFields();
   } else {
     content.innerHTML = `
       <div style="margin-bottom:22px;"><h2 style="font-family:var(--font-display);color:var(--text-hi);margin:0 0 4px;">Matchup Vector</h2><div style="font-family:var(--font-mono);font-size:.8em;color:var(--text-lo);">${escapeHTML(p.name)} vs ${escapeHTML(p.oppPitcher||'TBD')}</div></div>
@@ -1149,6 +1221,56 @@ async function loadMatchupVerifier(batterId, pitcherId){
   }catch(e){
     target.innerHTML = `<div class="card" style="padding:16px;color:var(--red);">${escapeHTML(e.message || 'Failed to load matchup data.')}</div>`;
   }
+}
+/* ---- Calibration input: color-coded range indicator + slider/number sync ---- */
+function calibTier(val, avg){
+  if(!Number.isFinite(val)) return 'neutral';
+  const diff = (val - avg) / avg;
+  if(diff >= 0.12) return 'green';
+  if(diff <= -0.12) return 'red';
+  return 'amber';
+}
+function updateCalibField(fieldEl){
+  const min = parseFloat(fieldEl.dataset.min), max = parseFloat(fieldEl.dataset.max), avg = parseFloat(fieldEl.dataset.avg);
+  const numInput = fieldEl.querySelector('.calib-number');
+  const slider = fieldEl.querySelector('.calib-slider');
+  const marker = fieldEl.querySelector('.calib-range-marker');
+  const fill = fieldEl.querySelector('.calib-range-fill');
+  const status = fieldEl.querySelector('.calib-status');
+  const raw = numInput.value;
+  const val = Number(raw);
+  const valid = raw !== '' && Number.isFinite(val);
+  const displayVal = valid ? val : avg;
+  const clamped = Math.min(max, Math.max(min, displayVal));
+  const pct = ((clamped - min) / (max - min)) * 100;
+  const tier = valid ? calibTier(val, avg) : 'neutral';
+
+  marker.style.left = pct + '%';
+  fill.style.width = pct + '%';
+  marker.className = 'calib-range-marker ' + (tier==='neutral'?'':tier);
+  fill.className = 'calib-range-fill ' + (tier==='neutral'?'':tier);
+  numInput.className = 'calib-number ' + (tier==='neutral'?'':tier);
+
+  if(!valid){
+    status.textContent = '';
+    status.className = 'calib-status';
+  } else {
+    const diffPct = (val - avg) / avg * 100;
+    const sign = diffPct >= 0 ? '+' : '';
+    const label = tier==='green' ? '▲ Elite' : tier==='red' ? '▼ Below Avg' : '● Average';
+    status.textContent = `${label} · ${sign}${diffPct.toFixed(1)}% vs lg`;
+    status.className = 'calib-status ' + tier;
+  }
+  if(String(slider.value) !== String(clamped)) slider.value = clamped;
+}
+function initCalibFields(){
+  document.querySelectorAll('.calib-field').forEach(fieldEl=>{
+    const numInput = fieldEl.querySelector('.calib-number');
+    const slider = fieldEl.querySelector('.calib-slider');
+    slider.addEventListener('input', ()=>{ numInput.value = slider.value; updateCalibField(fieldEl); });
+    numInput.addEventListener('input', ()=> updateCalibField(fieldEl));
+    updateCalibField(fieldEl);
+  });
 }
 async function runCalibration(playerId){
   const p = State.batter.players.find(x=>String(x.id)===String(playerId));
@@ -1295,7 +1417,9 @@ function gdWeakestPitchForBatter(matchup, batterId){
   let best=null, bestScore=-1;
   Object.entries(vuln).forEach(([code,v])=>{
     if(v.whiffPct===null && v.hardHitPct===null) return;
-    const score = (v.whiffPct||0) + (v.hardHitPct||0);
+    // FIX: low hardHitPct (not high) means the batter struggles vs this pitch,
+    // so it should push the "weakest pitch" score up, not down.
+    const score = (v.whiffPct??0) + (v.hardHitPct===null ? 0 : (100 - v.hardHitPct));
     if(score>bestScore){ bestScore=score; best=code; }
   });
   return best;
@@ -1365,16 +1489,19 @@ function renderTrackRecord(){
   body.innerHTML = State.batter.trackRecord.map(r=>`<tr><td>${escapeHTML(r.date)}</td><td style="font-family:var(--font-body);color:var(--text-hi);">${escapeHTML(r.player)}</td><td>${escapeHTML(r.stat)}</td><td>${(r.predicted*100).toFixed(0)}%</td><td>${r.actual===1?'Hit':'No Hit'}</td><td style="color:${r.correct?'var(--green)':'var(--red)'};">${r.correct?'✓ Correct':'✗ Miss'}</td></tr>`).join('');
 }
 
-async function loadPitcherModel(){
+async function loadPitcherModel(refresh=false){
   State.pitcher.loading = true; State.pitcher.error = null;
   try{
-    const res = await fetch(PROJECTIONS_URL, {cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const json = await res.json();
-    State.pitcher.pitchers = json.pitchers||[]; State.pitcher.teams = json.teams||[]; State.pitcher.matchups = json.matchups||[];
+    const today = eastCoastToday();
+    const [pitchers, teams, matchups] = await Promise.all([
+      BatterAPI.fetchPitcherProps(today, refresh),
+      BatterAPI.fetchTeamMatchups(today, refresh),
+      BatterAPI.fetchMatchupAnalyzer(today, refresh)
+    ]);
+    State.pitcher.pitchers = pitchers||[]; State.pitcher.teams = teams||[]; State.pitcher.matchups = matchups||[];
     State.pitcher.loaded = true;
   }catch(e){
-    State.pitcher.error = (e.message||'Could not load projections.json') + ' — run generate_projections.py so projections.json sits next to this file.';
+    State.pitcher.error = e.message || 'Pitcher model unreachable.';
   }finally{
     State.pitcher.loading = false;
     if(['pitcherprops','teammatchups','matchupanalyzer'].includes(State.section)){
@@ -1442,7 +1569,7 @@ function renderPtHeaderStats(market,line){
   flashNumber(hrEl, 'odds-val '+(hitRate>=50?'val-green':'val-red'), hitRate, State.ui.prevPt.hitRate, 0.5);
   hrEl.textContent = hitRate+'%';
   State.ui.prevPt.hitRate = hitRate;
-  const calc = calibrateMarket(market.history, line);
+  const calc = calibrateMarket(market.history, line, market.model && market.model.anchorMu, K_TEAM_RUNS);
   document.getElementById('pt-dist-label').textContent = calc.distribution==='negative_binomial'?'NB2 Fair Odds':'Poisson Fair Odds';
   const fairEl = document.getElementById('pt-fair-odds'); fairEl.textContent = calc.fairOdds; fairEl.className = 'odds-val val-cyan';
   const edgeEl = document.getElementById('pt-edge');
@@ -1452,9 +1579,10 @@ function renderPtHeaderStats(market,line){
   document.getElementById('pt-model-status').innerHTML = `MODEL &middot; ${calc.distribution==='negative_binomial'?'Negative Binomial (NB2)':'Poisson'}${calc.fallback?' (fallback)':''} &middot; L${calc.sampleSize} sample<span class="dist-badge ${calc.distribution==='negative_binomial'?'nb2':'poi'}">${calc.distribution==='negative_binomial'?'NB2':'POI'}</span><span class="conf-badge ${calc.confidence}" data-tip="High = 10+ sample, Medium = 6-9, Low = under 6">${calc.confidence}</span>`;
 }
 function renderPtMetrics(market,line){
-  const calc = calibrateMarket(market.history,line), grid = document.getElementById('pt-metrics-grid'), sd = stdDev(market.history), streak = currentStreak(market.history,line);
+  const calc = calibrateMarket(market.history,line, market.model && market.model.anchorMu, K_TEAM_RUNS), grid = document.getElementById('pt-metrics-grid'), sd = stdDev(market.history), streak = currentStreak(market.history,line);
+  const muCaption = calc.anchorMu!=null ? `L${calc.sampleSize} avg ${calc.observedMu.toFixed(2)} &rarr; shrunk to xRuns anchor` : `L${calc.sampleSize} average`;
   grid.innerHTML = `
-    <div class="card metric-card"><span class="metric-label">Mean (&mu;)</span><span class="metric-value">${calc.mu.toFixed(2)}</span><span class="metric-caption">L${calc.sampleSize} average</span></div>
+    <div class="card metric-card"><span class="metric-label">Mean (&mu;)</span><span class="metric-value">${calc.mu.toFixed(2)}</span><span class="metric-caption">${muCaption}</span></div>
     <div class="card metric-card"><span class="metric-label">Std Dev (&sigma;)</span><span class="metric-value">${sd.toFixed(2)}</span><span class="metric-caption">Variance: ${calc.variance.toFixed(2)}</span></div>
     <div class="card metric-card"><span class="metric-label">VMR</span><span class="metric-value">${calc.vmr.toFixed(2)}</span><span class="metric-caption">${calc.vmr>1?'Over-dispersed &rarr; NB2':'Poisson-shaped'}</span></div>
     <div class="card metric-card"><span class="metric-label">Current Streak</span><span class="metric-value">${streak.count||'—'}${streak.dir?' '+streak.dir:''}</span><span class="metric-caption">consecutive results</span></div>
@@ -1601,11 +1729,17 @@ function renderPitchMix(pitches){
 }
 
 const PITCH_HOVER_WHIFF_THRESHOLD = 32;
-const PITCH_HOVER_HARDHIT_THRESHOLD = 45;
+// FIX: this used to be a "weak if hardHitPct >= 45" check, which was backwards —
+// a HIGH hard-hit% means the batter squares that pitch up often, i.e. a BATTER
+// STRENGTH, not a weakness. "Weak vs this pitch" should fire on a LOW hard-hit%
+// (batter isn't making solid contact), mirrored the same way a high whiff% does.
+const PITCH_HOVER_HARDHIT_WEAK_THRESHOLD = 20;
 
 function isWeakVsPitch(vuln){
   if(!vuln || (vuln.whiffPct===null && vuln.hardHitPct===null)) return null;
-  return (vuln.whiffPct??0) >= PITCH_HOVER_WHIFF_THRESHOLD || (vuln.hardHitPct??0) >= PITCH_HOVER_HARDHIT_THRESHOLD;
+  const highWhiff = vuln.whiffPct!==null && vuln.whiffPct >= PITCH_HOVER_WHIFF_THRESHOLD;
+  const lowHardHit = vuln.hardHitPct!==null && vuln.hardHitPct <= PITCH_HOVER_HARDHIT_WEAK_THRESHOLD;
+  return highWhiff || lowHardHit;
 }
 function mxHighlightPitch(code){
   document.querySelectorAll('#mx-pitchmix .pitch-card').forEach(card=>{
@@ -1625,7 +1759,9 @@ function mxWeakestPitchForBatter(batter){
   let best=null, bestScore=-1;
   Object.entries(batter.pitchVulnerability).forEach(([code,v])=>{
     if(v.whiffPct===null && v.hardHitPct===null) return;
-    const score = (v.whiffPct||0) + (v.hardHitPct||0);
+    // FIX: low hardHitPct (not high) means the batter struggles vs this pitch,
+    // so it should push the "weakest pitch" score up, not down.
+    const score = (v.whiffPct??0) + (v.hardHitPct===null ? 0 : (100 - v.hardHitPct));
     if(score>bestScore){ bestScore=score; best=code; }
   });
   return best;
@@ -1679,24 +1815,110 @@ function mxShowBatterTip(anchorEl, idx){
   showFloatTip(anchorEl, html);
 }
 
+/* ---- Team Intel threat-row hover: platoon splits (vs RHP/LHP) + trailing
+   14-day recent form. Both come straight off the batter object already in
+   State.ui.mxMatchup.batters (platoonSplits / recentForm from the backend);
+   this just looks the batter up by id rather than re-passing data through
+   the row markup. ---- */
+const RECENT_FORM_TIER_META = {
+  hot:     {color:'var(--green)', label:'HOT'},
+  cold:    {color:'var(--red)',   label:'COLD'},
+  neutral: {color:'var(--text-mid)', label:'NEUTRAL'},
+  limited: {color:'var(--text-lo)',  label:'LIMITED SAMPLE'},
+};
+function mxPlatoonCard(label, side){
+  const s = side || {avg:'.000', ops:0, pa:0, hr:0};
+  return `<div style="flex:1; background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:8px; padding:9px 10px;">
+    <div style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-lo); font-weight:700; margin-bottom:6px;">${label}</div>
+    <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-hi);">${s.ops?Number(s.ops).toFixed(3):'—'}</div>
+    <div style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); margin-top:2px;">OPS &middot; ${s.avg||'.000'} AVG &middot; ${s.pa||0} PA</div>
+  </div>`;
+}
+function mxThreatTipHTML(b){
+  const platoon = b.platoonSplits || {};
+  const form = b.recentForm || {};
+  const formMeta = RECENT_FORM_TIER_META[form.tier] || RECENT_FORM_TIER_META.limited;
+  return `<div style="width:250px;">
+    <div style="display:flex; align-items:center; gap:9px; margin-bottom:12px;">
+      <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_213,q_auto:best/v1/people/${b.id}/headshot/silo/current" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-card-2);flex-shrink:0;">
+      <div style="font-family:var(--font-display); font-size:12.5px; font-weight:700; color:var(--text-hi);">${escapeHTML(b.name)}</div>
+    </div>
+    <div style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-lo); font-weight:700; margin-bottom:6px;">Platoon Splits &middot; Season</div>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      ${mxPlatoonCard('vs RHP', platoon.vsRHP)}
+      ${mxPlatoonCard('vs LHP', platoon.vsLHP)}
+    </div>
+    <div style="background:linear-gradient(135deg, rgba(255,255,255,.03), transparent); border:1px solid ${formMeta.color}; border-radius:8px; padding:9px 11px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+        <span style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-lo); font-weight:700;">Last ${form.days||14} Days</span>
+        <span style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:${formMeta.color}; letter-spacing:.4px;">&#9679; ${formMeta.label}</span>
+      </div>
+      <div style="font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-hi);">${form.ops?Number(form.ops).toFixed(3):'—'} <span style="font-size:9px; color:var(--text-lo); font-weight:500; font-family:var(--font-mono);">OPS</span></div>
+      <div style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); margin-top:2px;">${form.avg||'.000'} AVG &middot; ${form.hr||0} HR &middot; ${form.pa||0} PA</div>
+    </div>
+  </div>`;
+}
+function mxShowThreatTip(anchorEl, batterId){
+  const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
+  const b = batters.find(x=>String(x.id)===String(batterId));
+  if(!b) return;
+  showFloatTip(anchorEl, mxThreatTipHTML(b));
+}
+
 /* ---- Pitcher hover tooltip (Matchup Analyzer sidebar list) ----
    Whiff% is the pitcher's arsenal usage-weighted whiff rate (pitcherArsenalWhiffPct),
-   ERA is season ERA (pitcherEra), and "expected vs lineup" reuses the model's
-   own lineupEdgeOps/lineupEdgeTier — its projection of how this pitcher performs
-   against today's opposing lineup. */
+   ERA/WHIP are season-to-date (pitcherEra/pitcherWhip), and "Projected vs Lineup"
+   reuses the model's own lineupEdgeOps/lineupEdgeTier — the same credibility-weighted
+   blendedOps math already computed per batter in the H2H table, averaged across the
+   opposing lineup and tiered by edge_tier() (elite/strong/average/soft — labeled here
+   as Elite/Strong/Average/Poor). No separate projection model; this restyles + surfaces
+   figures the backend already produces. */
+const MX_TIER_META = {
+  elite:   {color:'var(--green)',    glow:'rgba(51,193,122,.45)',  label:'Elite Matchup'},
+  strong:  {color:'var(--batter)',   glow:'rgba(51,214,192,.4)',   label:'Strong Matchup'},
+  average: {color:'var(--amber)',    glow:'rgba(242,169,59,.4)',   label:'Average Matchup'},
+  soft:    {color:'var(--red)',      glow:'rgba(232,73,95,.4)',    label:'Poor Matchup'},
+};
+function mxStatDial(value, max, color, label, sub){
+  const pct = value==null ? 0 : Math.max(0, Math.min(100, (value/max)*100));
+  return `<div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+    <div style="width:46px; height:46px; border-radius:50%; background:conic-gradient(${color} calc(${pct}*1%), var(--bg-raised) 0); display:flex; align-items:center; justify-content:center;">
+      <div style="width:36px; height:36px; border-radius:50%; background:#08090b; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:11px; color:var(--text-hi);">${sub}</div>
+    </div>
+    <div style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-lo); font-weight:700;">${label}</div>
+  </div>`;
+}
 function mxPitcherTipHTML(m){
   const era = (m.pitcherEra!=null) ? Number(m.pitcherEra).toFixed(2) : '—';
-  const whiff = (m.pitcherArsenalWhiffPct!=null) ? Number(m.pitcherArsenalWhiffPct).toFixed(1)+'%' : '—';
-  const tierColor = {elite:'var(--green)', strong:'var(--green)', average:'var(--amber)', soft:'var(--red)'}[m.lineupEdgeTier] || 'var(--text-mid)';
-  const tierLabel = {elite:'Elite Edge', strong:'Strong Edge', average:'Average', soft:'Soft Matchup'}[m.lineupEdgeTier] || '—';
+  const whip = (m.pitcherWhip!=null) ? Number(m.pitcherWhip).toFixed(2) : '—';
+  const whiff = (m.pitcherArsenalWhiffPct!=null) ? Number(m.pitcherArsenalWhiffPct) : null;
+  const tier = MX_TIER_META[m.lineupEdgeTier] || {color:'var(--text-mid)', glow:'transparent', label:'—'};
   const edgeOps = (m.lineupEdgeOps!=null) ? Number(m.lineupEdgeOps).toFixed(3) : '—';
-  return `<div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">${escapeHTML(m.pitcherName)} <span style="color:var(--text-lo); font-weight:500;">${escapeHTML(m.matchup||'')}</span></div>
-    <div style="display:flex; flex-direction:column; gap:6px; font-family:var(--font-mono); font-size:11px;">
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Season ERA</span><span style="color:var(--text-hi); font-weight:700;">${era}</span></div>
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Arsenal Whiff%</span><span style="color:var(--text-hi); font-weight:700;">${whiff}</span></div>
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Expected vs Lineup</span><span style="color:${tierColor}; font-weight:700;">${edgeOps} OPS &middot; ${tierLabel}</span></div>
-      <div style="display:flex; justify-content:space-between; gap:18px;"><span style="color:var(--text-lo);">Roster Status</span><span style="color:var(--text-mid);">${m.lineupConfirmed?'Confirmed':'Projected'}</span></div>
-    </div>`;
+  return `<div style="width:252px; font-family:var(--font-body);">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_213,q_auto:best/v1/people/${m.pitcherId}/headshot/silo/current" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">
+      <div style="min-width:0;">
+        <div style="font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-hi); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m.pitcherName)}</div>
+        <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-lo);">${escapeHTML(m.matchup||'')}</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:4px; padding:12px 4px; background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; margin-bottom:12px;">
+      ${mxStatDial(era, 6, 'var(--pitcher)', 'ERA', era)}
+      ${mxStatDial(whip, 2, 'var(--mlb)', 'WHIP', whip)}
+      ${mxStatDial(whiff, 45, 'var(--batter)', 'WHIFF', whiff!=null?whiff.toFixed(0)+'%':'—')}
+    </div>
+    <div style="background:linear-gradient(135deg, ${tier.glow.replace('.45','.1').replace('.4','.1')}, transparent); border:1px solid ${tier.color}; border-radius:10px; padding:10px 12px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-lo); font-weight:700;">Projected vs Lineup</span>
+        <span style="font-family:var(--font-mono); font-size:9px; font-weight:800; text-transform:uppercase; color:${tier.color}; letter-spacing:.3px;">${tier.label}</span>
+      </div>
+      <div style="font-family:var(--font-display); font-size:19px; font-weight:700; color:${tier.color};">${edgeOps} <span style="font-size:11px; color:var(--text-lo); font-weight:500; font-family:var(--font-mono);">blended OPS</span></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:10px;">
+      <span style="color:var(--text-lo);">Roster Status</span>
+      <span class="lineup-status ${m.lineupConfirmed?'confirmed':'projected'}" style="padding:2px 9px; font-size:.95em;"><span class="dot"></span>${m.lineupConfirmed?'Confirmed':'Projected'}</span>
+    </div>
+  </div>`;
 }
 function onH2hSearch(e){ State.ui.h2hFilter = (e.target.value||'').toLowerCase(); renderLineupTable(); }
 function sortH2h(key){
@@ -1743,13 +1965,30 @@ function renderLineupTable(){
     const popoverContent = (pitchMix||[]).map(p => {
       const v = b.pitchVulnerability && b.pitchVulnerability[p.code];
       if(!v || (v.whiffPct===null && v.hardHitPct===null)) return '';
-      return `<div style="display:flex; justify-content:space-between; gap:16px; margin-bottom:6px; font-family:var(--font-mono); font-size:11px;">
-          <span style="color:${pitchColor(p.type)}; font-weight:700;">${p.type}</span>
-          <span style="color:var(--text-mid);">Whiff ${fmtPct(v.whiffPct)} | Hard ${fmtPct(v.hardHitPct)} | n=${v.sampleSize}</span>
+      const color = pitchColor(p.type);
+      const weak = isWeakVsPitch(v);
+      const whiffPct = v.whiffPct??0, hardPct = v.hardHitPct??0;
+      return `<div style="margin-bottom:10px; padding:8px 10px; border-radius:8px; background:${weak?'rgba(232,73,95,.07)':'var(--bg-raised)'}; border:1px solid ${weak?'rgba(232,73,95,.3)':'var(--border-soft)'};">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--text-hi);"><span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>${p.type}</span>
+          <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo);">n=${v.sampleSize}${weak?' · <span style="color:var(--red);font-weight:700;">WEAK</span>':''}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); width:36px; flex-shrink:0;">Whiff</span>
+            <div style="flex:1; height:5px; background:var(--bg-card-2); border-radius:3px; overflow:hidden;"><div style="height:100%; width:${Math.min(100,whiffPct)}%; background:${whiffPct>=PITCH_HOVER_WHIFF_THRESHOLD?'var(--red)':'var(--pitcher)'}; border-radius:3px;"></div></div>
+            <span style="font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--text-hi); width:34px; text-align:right; flex-shrink:0;">${fmtPct(v.whiffPct)}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-family:var(--font-mono); font-size:9px; color:var(--text-lo); width:36px; flex-shrink:0;">Hard</span>
+            <div style="flex:1; height:5px; background:var(--bg-card-2); border-radius:3px; overflow:hidden;"><div style="height:100%; width:${Math.min(100,hardPct)}%; background:${(v.hardHitPct!==null && v.hardHitPct<=PITCH_HOVER_HARDHIT_WEAK_THRESHOLD)?'var(--red)':'var(--amber)'}; border-radius:3px;"></div></div>
+            <span style="font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--text-hi); width:34px; text-align:right; flex-shrink:0;">${fmtPct(v.hardHitPct)}</span>
+          </div>
+        </div>
       </div>`;
     }).filter(Boolean).join('');
 
-    const popoverHTML = popoverContent ? `<div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:6px;">vs ${escapeHTML(State.ui.mxMatchup.pitcherName)}'s Arsenal</div>${popoverContent}` : '';
+    const popoverHTML = popoverContent ? `<div style="width:230px;"><div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:10px; color:var(--text-hi); border-bottom:1px solid var(--border-soft); padding-bottom:8px;">vs ${escapeHTML(State.ui.mxMatchup.pitcherName)}'s Arsenal</div>${popoverContent}</div>` : '';
     window.__mxBatterTips[idx] = popoverHTML || null;
 
     let rowHtml = `<tr data-batter-id="${b.id}" onmouseenter="mxHighlightBatter('${b.id}')" onmouseleave="mxClearHighlight()">
@@ -1797,7 +2036,7 @@ function renderTeamIntel(m){
     <div class="intel-stat"><div class="intel-stat-label">Stable Sample Batters</div><div class="intel-stat-value">${confirmedBatters}/${batters.length}</div></div>`;
   const ranked = batters.slice().sort((a,b)=>b.blendedOps-a.blendedOps);
   const top3 = ranked.slice(0,3), bottom3 = ranked.slice(-3).reverse();
-  const threatRow = (b,rankLabel)=>`<div class="threat-row"><span class="threat-rank">${rankLabel}</span><img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${b.id}/headshot/silo/current" class="threat-avatar" style="object-fit:cover; padding:0;"><div><div class="threat-name">${escapeHTML(b.name)}</div><div class="threat-sub">${b.h2h&&b.h2h.pa?b.h2h.pa+' H2H PA':'No H2H history'} &middot; ${(b.credibility*100).toFixed(0)}% credibility</div></div><span class="threat-ops blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</span></div>`;
+  const threatRow = (b,rankLabel)=>`<div class="threat-row threat-row-hover" onmouseenter="mxShowThreatTip(this, '${b.id}')" onmouseleave="hideFloatTip()"><span class="threat-rank">${rankLabel}</span><img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${b.id}/headshot/silo/current" class="threat-avatar" style="object-fit:cover; padding:0;"><div><div class="threat-name">${escapeHTML(b.name)}</div><div class="threat-sub">${b.h2h&&b.h2h.pa?b.h2h.pa+' H2H PA':'No H2H history'} &middot; ${(b.credibility*100).toFixed(0)}% credibility</div></div><span class="threat-ops blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</span></div>`;
   document.getElementById('mx-top-threats').innerHTML = top3.length ? top3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
   document.getElementById('mx-soft-threats').innerHTML = bottom3.length ? bottom3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
 }

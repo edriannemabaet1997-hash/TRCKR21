@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from typing import Callable
-
-import numpy as np
 
 LEAGUE_AVG_XWOBA = 0.320
 LEAGUE_AVG_XBA = 0.250
@@ -27,32 +24,6 @@ K_HITS = 60
 K_RUNS = 100
 K_RBI = 100
 K_HR = 300
-
-# ---------------------------------------------------------------------------
-# CONSOLIDATION (2026-08-29) — shrinkage anchor for the Team Matchups VMR/
-# Poisson-NB2 engine. K_TEAM_RUNS=6 is "moderate": light enough that the
-# last-10-game empirical mu still dominates for a team with a full sample,
-# heavy enough that the anchor pulls the mean into line with
-# calculate_team_xruns_v2 (the same number the Moneylines tab's Pythagenpat
-# win prob is built from) when the sample is thin or noisy. See
-# calibrate_count_market() below — this only ever touches the mean fed into
-# whichever distribution the VMR gate already picked; it never touches the
-# gate itself.
-K_TEAM_RUNS = 6
-
-# -110 american odds vig-implied probability — the flat "market" reference
-# point generate_projections.py's board used for edge%/Kelly on
-# pitcher-props & team-matchup markets (moneyline/props from the live odds
-# feed already use remove_vig() against real two-sided book odds instead).
-MARKET_IMPLIED_PROB = 110.0 / 210.0
-DECIMAL_B = 100.0 / 110.0
-
-# Matchup Analyzer H2H credibility shrink (ported from shrink_h2h_ops /
-# shrink_proxy_xba_xslg) — same shape as shrink_rate(), just expressed via
-# credibility = pa / (pa + STABILIZATION_PA_H2H) for display. Reused through
-# shrink_rate() directly in prediction_service.py; no separate function.
-STABILIZATION_PA_H2H = 100
-LEAGUE_AVG_OPS_FALLBACK = 0.710
 
 MIN_PROB = 0.02
 MAX_PROB = 0.95
@@ -402,31 +373,13 @@ def process_run_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso, tea
     )
 
 
-def process_hr_prob(
-    rate,
-    pa,
-    pitcher_era,
-    bullpen_era,
-    park,
-    platoon,
-    iso_val,
-    hr_rate_observed,
-    fatigue_mult: float = 1.0,
-    count_boost_mult: float = 1.0,
-) -> float:
-    # fatigue_mult / count_boost_mult mirror Stage A's Pillar 6 (late-inning
-    # fatigue decay) and Pillar 4 (ahead-in-count bias overlay). Both used to
-    # only touch the Hits pipeline; wired into HR here too, since power output
-    # is arguably at least as fatigue/count sensitive as a generic hit. Default
-    # 1.0 keeps this a no-op for any caller that doesn't pass them.
+def process_hr_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso_val, hr_rate_observed) -> float:
     starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
     bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     power_index = hr_power_index(iso_val, hr_rate_observed)
     min_prob, max_prob = get_prob_bounds("hr")
-    adjusted_rate = rate * fatigue_mult * count_boost_mult
     return compute_event_probability(
-        adjusted_rate, pa, starter_mult, bullpen_mult, park * 1.1, platoon, power_index,
-        min_prob=min_prob, max_prob=max_prob,
+        rate, pa, starter_mult, bullpen_mult, park * 1.1, platoon, power_index, min_prob=min_prob, max_prob=max_prob
     )
 
 
@@ -554,204 +507,29 @@ def calibrate_with_statcast_full(
     }
 
 
-CONFIDENCE_RANK = {"low": 0, "med": 1, "high": 2}
-
-# ---------------------------------------------------------------------------
-# Sample-size confidence CAP — replaces the old hard "sample_size < 20 -> low"
-# gate. Below SAMPLE_SIZE_FLOOR the data is too thin to trust at all, so we
-# still force "low" outright. Between the floor and SAMPLE_SIZE_FULL_TRUST,
-# the sample is thin-but-usable: it caps how high the edge can push
-# confidence, instead of zeroing the edge signal out completely. At/above
-# SAMPLE_SIZE_FULL_TRUST there's no cap — edge strength alone decides.
-# Tune these three knobs (and the edge thresholds below) together if the
-# resulting tiers still feel too conservative or too loose.
-# ---------------------------------------------------------------------------
-SAMPLE_SIZE_FLOOR = 5
-SAMPLE_SIZE_FULL_TRUST = 20
-
-
 def confidence_from_edge(edge: float | None, probability: float, sample_size: int) -> str:
-    if sample_size < SAMPLE_SIZE_FLOOR:
+    if sample_size < 20:
         return "low"
-
-    cap = "med" if sample_size < SAMPLE_SIZE_FULL_TRUST else "high"
-
     if edge is None:
         if probability >= 0.70:
-            level = "high"
-        elif probability >= 0.55:
-            level = "med"
-        else:
-            level = "low"
-    elif edge >= 0.08:
-        level = "high"
-    elif edge >= 0.03:
-        level = "med"
-    else:
-        level = "low"
-
-    if CONFIDENCE_RANK[level] > CONFIDENCE_RANK[cap]:
-        level = cap
-    return level
+            return "high"
+        if probability >= 0.55:
+            return "med"
+        return "low"
+    if edge >= 0.08:
+        return "high"
+    if edge >= 0.03:
+        return "med"
+    return "low"
 
 
 def pythagenpat_win_prob(runs_a: float, runs_b: float) -> tuple[float, float]:
-    # Closed-form fallback / reference implementation. Superseded as the
-    # live Moneylines source by poisson_monte_carlo_win_prob() below (see
-    # prediction_service.py), kept here for parity checks and in case
-    # anything else in the codebase still imports it directly.
     if runs_a <= 0 or runs_b <= 0:
         return 0.5, 0.5
     exponent = (runs_a + runs_b) ** 0.285
     prob_a = (runs_a**exponent) / (runs_a**exponent + runs_b**exponent)
     prob_a = clamp(prob_a, MIN_PROB, MAX_PROB)
     return round(prob_a, 4), round(1.0 - prob_a, 4)
-
-
-# ---------------------------------------------------------------------------
-# TASK 1 (2026-08-30) — Poisson Monte Carlo moneyline win%, replacing
-# pythagenpat_win_prob() as the live source for the Moneylines tab.
-#
-# Same Poisson scoring model already used by poisson_tail_at_least() below —
-# each team's calculate_team_xruns_v2() output is treated as a Poisson
-# lambda — but instead of a closed-form Pythagenpat exponent, we draw
-# n_sims independent samples per team (vectorized via numpy.random.poisson,
-# runs in low-single-digit milliseconds even at 50k sims) and derive win%
-# from the share of simulations where one side out-scores the other.
-#
-# Baseball can't end in a regulation tie (extra innings), but independent
-# Poisson draws for two teams absolutely can land on the same integer — at
-# these run-environments that happens on a non-trivial share of sims. Ties
-# are broken with a fair coin flip per tied simulation. This is a
-# simplification (it doesn't model extra-inning run environment separately
-# from regulation), but it doesn't systematically favor either side over a
-# large n_sims run, and it's the same shortcut most public Poisson-based
-# MLB win-prob models use.
-#
-# Bonus: the combined (home+away) runs distribution comes back for free
-# off the same sims array — this is exactly the "total runs" number the
-# F5/full-game over/under lines care about, so no separate simulation is
-# needed if/when that gets wired into the Team Matchups totals market.
-#
-# TASK 3 (2026-08-30) — the function no longer takes a bare runs_a/runs_b
-# mean. It now takes the SAME quality-factor inputs calculate_team_xruns_v2
-# already accepts (matchup strength, park factor, weather multiplier,
-# opposing bullpen ERA, bullpen fatigue) for each side, and calls
-# calculate_team_xruns_v2() ITSELF to derive each side's lambda before
-# drawing a single sample. Two consequences, both intentional:
-#   1. The simulation is provably sampling off the park/weather/bullpen-
-#      adjusted mean, not a static league-average number — the adjustment
-#      happens inside this function, immediately before the numpy call.
-#   2. calculate_team_xruns_v2() now only runs ONCE per side per game
-#      (inside here) instead of once in prediction_service.py and then
-#      being handed in — mean_a/mean_b come back on the result object so
-#      callers that need the point-estimate xRuns (e.g. the awayXRuns/
-#      homeXRuns fields on GameResponse) read it off the same number the
-#      simulation actually used, with zero chance of the displayed mean
-#      drifting from the simulated one.
-# ---------------------------------------------------------------------------
-
-MC_DEFAULT_SIMS = 30_000
-# Runs above this per side get folded into a single tail bucket in the
-# returned total-runs PMF, so the dict stays small regardless of n_sims or
-# a freak high-lambda matchup (e.g. Coors Field).
-MC_MAX_TOTAL_RUNS_BUCKET = 24
-
-
-@dataclass(frozen=True)
-class MonteCarloWinResult:
-    prob_a: float
-    prob_b: float
-    # Quality-factor-adjusted Poisson lambda actually sampled from for each
-    # side (calculate_team_xruns_v2 output) — same numbers previously
-    # computed separately in prediction_service.py and handed in as
-    # runs_a/runs_b; now derived here so display and simulation can't drift.
-    mean_a: float
-    mean_b: float
-    n_sims: int
-    # Empirical PMF of (runs_a + runs_b) across the simulation, keyed by
-    # total-runs bucket -> probability. Last key is an overflow bucket for
-    # anything >= MC_MAX_TOTAL_RUNS_BUCKET. Bonus output — not yet wired
-    # into any response schema (see prediction_service.py TASK 1 note).
-    total_runs_dist: dict[int, float]
-    mean_total_runs: float
-
-
-def poisson_monte_carlo_win_prob(
-    matchup_mult_a: float,
-    matchup_mult_b: float,
-    park_factor: float,
-    weather_mult: float,
-    bullpen_era_a: float,
-    bullpen_era_b: float,
-    bullpen_fatigue_mult_a: float = 1.0,
-    bullpen_fatigue_mult_b: float = 1.0,
-    n_sims: int = MC_DEFAULT_SIMS,
-    rng: np.random.Generator | None = None,
-) -> MonteCarloWinResult:
-    # Side "a"/"b" mirror runs_a/runs_b from the pre-TASK-3 signature (and
-    # pythagenpat_win_prob's convention) — callers keep whichever side they
-    # call "a" mapped to home vs away themselves; this function doesn't
-    # care which is which, only that bullpen_era_a is the ERA of the
-    # bullpen side "a" is BATTING AGAINST (i.e. the opposing team's pen),
-    # same contract calculate_team_xruns_v2 already has.
-    mean_a = calculate_team_xruns_v2(
-        matchup_mult=matchup_mult_a, park_factor=park_factor, weather_mult=weather_mult,
-        bullpen_era=bullpen_era_a, bullpen_fatigue_mult=bullpen_fatigue_mult_a,
-    )
-    mean_b = calculate_team_xruns_v2(
-        matchup_mult=matchup_mult_b, park_factor=park_factor, weather_mult=weather_mult,
-        bullpen_era=bullpen_era_b, bullpen_fatigue_mult=bullpen_fatigue_mult_b,
-    )
-
-    # calculate_team_xruns_v2 clamps to [1.5, 10.0] so this floor is never
-    # actually hit in practice — kept as a defensive fallback (matches the
-    # runs_a<=0/runs_b<=0 guard the pre-TASK-3 version had) in case that
-    # clamp range ever changes.
-    if mean_a <= 0 or mean_b <= 0:
-        return MonteCarloWinResult(
-            prob_a=0.5, prob_b=0.5, mean_a=mean_a, mean_b=mean_b,
-            n_sims=0, total_runs_dist={}, mean_total_runs=0.0,
-        )
-
-    generator = rng if rng is not None else np.random.default_rng()
-    sims_a = generator.poisson(lam=mean_a, size=n_sims)
-    sims_b = generator.poisson(lam=mean_b, size=n_sims)
-
-    a_wins = sims_a > sims_b
-    b_wins = sims_b > sims_a
-    tie_mask = sims_a == sims_b
-
-    tie_count = int(tie_mask.sum())
-    if tie_count:
-        a_wins = a_wins.copy()
-        b_wins = b_wins.copy()
-        tie_idx = np.flatnonzero(tie_mask)
-        coin = generator.random(tie_count) < 0.5
-        a_wins[tie_idx[coin]] = True
-        b_wins[tie_idx[~coin]] = True
-
-    prob_a = clamp(float(a_wins.mean()), MIN_PROB, MAX_PROB)
-    prob_b = clamp(1.0 - prob_a, MIN_PROB, MAX_PROB)
-
-    total_runs = sims_a + sims_b
-    capped = np.minimum(total_runs, MC_MAX_TOTAL_RUNS_BUCKET)
-    counts = np.bincount(capped, minlength=MC_MAX_TOTAL_RUNS_BUCKET + 1)
-    total_runs_dist = {
-        int(bucket): round(float(count) / n_sims, 5)
-        for bucket, count in enumerate(counts)
-        if count > 0
-    }
-
-    return MonteCarloWinResult(
-        prob_a=round(prob_a, 4),
-        prob_b=round(prob_b, 4),
-        mean_a=round(mean_a, 3),
-        mean_b=round(mean_b, 3),
-        n_sims=n_sims,
-        total_runs_dist=total_runs_dist,
-        mean_total_runs=round(float(total_runs.mean()), 3),
-    )
 
 
 def calculate_team_xruns_v2(
@@ -778,173 +556,3 @@ def build_pitcher_ladder(expected: float, lines: list[float]) -> list[dict]:
         probability = poisson_tail_at_least(expected, threshold)
         output.append({"line": line, "prob": round(probability, 4), "odds": prob_to_american(probability)})
     return output
-
-
-# ---------------------------------------------------------------------------
-# CONSOLIDATION — ported from generate_projections.py's calibration engine
-# (sample_mean/sample_variance/poisson_*/nbinom_*/calibrate_market), now
-# shared by /api/pitcher-props and /api/team-matchups instead of living only
-# in the retired standalone script + a second copy in index.html's inline JS.
-#
-# poisson_over_prob/nbinom_over_prob use a *ceil(line)* threshold (P(X >=
-# ceil(line))), matching the script's "beat a X.5-style betting line"
-# semantics. This is deliberately a separate pair of functions from
-# poisson_tail_at_least/build_pitcher_ladder above, which use a
-# floor(line)+1 threshold for the existing pitcher K/BB/ER ladder — same
-# math family, different contract; ladder callers are untouched.
-# ---------------------------------------------------------------------------
-def sample_mean(values: list[float]) -> float:
-    n = len(values)
-    return sum(values) / n if n else 0.0
-
-
-def sample_variance(values: list[float]) -> float:
-    n = len(values)
-    if n < 2:
-        return 0.0
-    mu = sample_mean(values)
-    return sum((x - mu) ** 2 for x in values) / (n - 1)
-
-
-def poisson_pmf(expected: float, k: int) -> float:
-    if expected <= 0:
-        return 1.0 if k == 0 else 0.0
-    return math.exp(-expected) * (expected**k) / math.factorial(k)
-
-
-def poisson_over_prob(expected: float, line: float) -> float:
-    threshold = math.ceil(line)
-    cumulative = sum(poisson_pmf(expected, k) for k in range(threshold))
-    return clamp(1.0 - cumulative, 0.0, 1.0)
-
-
-def nbinom_pmf(k: int, r: float, p: float) -> float:
-    if not (0.0 < p < 1.0) or r <= 0:
-        raise ValueError("invalid negative-binomial parameters")
-    log_coef = math.lgamma(r + k) - math.lgamma(r) - math.lgamma(k + 1)
-    log_pmf = log_coef + r * math.log(p) + k * math.log(1.0 - p)
-    return math.exp(log_pmf)
-
-
-def nbinom_params(mu: float, var: float) -> tuple[float, float]:
-    if var <= mu:
-        raise ValueError("variance must exceed mean for NB2 (over-dispersion required)")
-    p = mu / var
-    r = (mu**2) / (var - mu)
-    if not (0.0 < p < 1.0) or r <= 0 or math.isinf(r):
-        raise ValueError("degenerate negative-binomial parameters")
-    return r, p
-
-
-def nbinom_over_prob(mu: float, var: float, line: float) -> float:
-    r, p = nbinom_params(mu, var)
-    threshold = math.ceil(line)
-    cumulative = sum(nbinom_pmf(k, r, p) for k in range(threshold))
-    return clamp(1.0 - cumulative, 0.0, 1.0)
-
-
-def kelly_stake_pct(model_prob: float) -> float:
-    edge = model_prob - MARKET_IMPLIED_PROB
-    if edge <= 0:
-        return 0.0
-    q = 1.0 - model_prob
-    f_star = (DECIMAL_B * model_prob - q) / DECIMAL_B
-    return round(max(0.0, f_star) * 100.0, 2)
-
-
-def market_sample_confidence(n: int) -> str:
-    if n >= 10:
-        return "high"
-    if n >= 6:
-        return "medium"
-    return "low"
-
-
-def calibrate_count_market(
-    history: list[float],
-    line: float,
-    anchor_mu: float | None = None,
-    anchor_k: float = 0.0,
-) -> dict:
-    """VMR-gated Poisson/NB2 calibration for a last-N-game count history
-    (pitcher K/ER/BB, team F5/full-game runs), with an OPTIONAL shrinkage
-    anchor for the distribution's mean.
-
-    sigma^2 / the VMR gate ITSELF are computed from the raw `history` only —
-    `observed_mu`/`var` below — untouched, exactly as in the original script.
-    That's the signal that decides Poisson vs NB2 and is not modified by
-    this consolidation.
-
-    `mu` — the number actually fed into whichever distribution the gate
-    picked — is optionally shrunk toward `anchor_mu` via the SAME shrink_rate()
-    used everywhere else in this module: shrink_rate(observed_mu, n,
-    anchor_mu, anchor_k). With anchor_mu=None (pitcher props — there is no
-    second projection model to reconcile with) this is a no-op and `mu ==
-    observed_mu`, i.e. byte-for-byte the pre-consolidation behavior.
-
-    For team runs markets, callers pass anchor_mu=<calculate_team_xruns_v2
-    output (or its 5/9 F5 share)> and anchor_k=K_TEAM_RUNS, so a thin/noisy
-    last-10-game sample gets pulled toward the same expected-runs number the
-    Moneylines tab's Pythagenpat win prob is already built from, without
-    ever overwriting the empirical variance that drives the NB2 gate.
-    """
-    n = len(history)
-    observed_mu = sample_mean(history)
-    var = sample_variance(history)
-    vmr = (var / observed_mu) if observed_mu > 0 else 0.0
-    use_nb2 = var > observed_mu and observed_mu > 0
-
-    if anchor_mu is not None and anchor_k > 0:
-        mu = shrink_rate(observed_mu, n, anchor_mu, anchor_k)
-    else:
-        mu = observed_mu
-
-    fallback = False
-    if use_nb2:
-        try:
-            over_prob = nbinom_over_prob(mu, var, line)
-            distribution = "negative_binomial"
-        except ValueError:
-            over_prob = poisson_over_prob(mu, line)
-            distribution = "poisson"
-            fallback = True
-    else:
-        over_prob = poisson_over_prob(mu, line)
-        distribution = "poisson"
-
-    edge_pct = round((over_prob - MARKET_IMPLIED_PROB) * 100.0, 2)
-
-    return {
-        "distribution": distribution,
-        "mu": round(mu, 3),
-        "observedMu": round(observed_mu, 3),
-        "variance": round(var, 3),
-        "vmr": round(vmr, 3),
-        "overProb": round(over_prob, 4),
-        "fairOdds": prob_to_american(over_prob),
-        "impliedProbMarket": round(MARKET_IMPLIED_PROB, 4),
-        "edgePct": edge_pct,
-        "kellyPct": kelly_stake_pct(over_prob),
-        "confidence": market_sample_confidence(n),
-        "sampleSize": n,
-        "fallback": fallback,
-        "anchorMu": round(anchor_mu, 3) if anchor_mu is not None else None,
-    }
-
-
-def build_count_market(
-    label: str,
-    history: list[int],
-    default_line: float,
-    anchor_mu: float | None = None,
-    anchor_k: float = 0.0,
-    pad: int = 2,
-) -> dict:
-    model = calibrate_count_market(history, default_line, anchor_mu=anchor_mu, anchor_k=anchor_k)
-    return {
-        "label": label,
-        "defaultLine": default_line,
-        "history": history,
-        "max": max(history + [int(default_line) + 3]) + pad,
-        "model": model,
-    }

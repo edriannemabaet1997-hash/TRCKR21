@@ -12,10 +12,9 @@
 
 from __future__ import annotations
 
-import time
 from datetime import date, timedelta
-from threading import Lock
-from typing import Any, Callable, Optional
+from functools import lru_cache
+from typing import Optional
 
 import requests
 
@@ -84,94 +83,11 @@ _IN_PLAY_DESCRIPTIONS = {"In play, out(s)", "In play, no out", "In play, run(s)"
 _STRIKEOUT_EVENT_TYPES = {"strikeout", "strikeout_double_play", "strikeout_triple_play"}
 
 
-# ---------------------------------------------------------------------------
-# FEATURE (2026-08-29) — bounded, thread-safe TTL cache. Replaces the plain
-# @lru_cache(maxsize=256) that used to sit on person(): lru_cache has no
-# expiry at all, so on a long-running server process a player's cached
-# batSide/pitchHand/fullName would never refresh — harmless for 99% of the
-# season, but wrong forever after the rare trade/callup/MLB-side data
-# correction, until the process restarts. This cache is bounded (like
-# lru_cache) AND time-based: an entry older than `ttl_seconds` is treated
-# as a miss and refetched, so the data self-heals on its own within one TTL
-# window instead of needing a manual cache-bust or a restart.
-# ---------------------------------------------------------------------------
-class _TTLCache:
-    def __init__(self, maxsize: int, ttl_seconds: float) -> None:
-        self._maxsize = maxsize
-        self._ttl = ttl_seconds
-        self._store: dict[Any, tuple[float, Any]] = {}
-        self._lock = Lock()
-
-    def get_or_set(self, key: Any, factory: Callable[[], Any]) -> Any:
-        now = time.monotonic()
-        with self._lock:
-            cached = self._store.get(key)
-            if cached is not None:
-                expires_at, value = cached
-                if now < expires_at:
-                    return value
-                # Expired — evict so a failed refetch below doesn't leave a
-                # stale entry sitting behind a since-passed TTL.
-                del self._store[key]
-
-        value = factory()
-
-        with self._lock:
-            if key not in self._store and len(self._store) >= self._maxsize:
-                # Bounded like lru_cache — drop the oldest-inserted entry
-                # (dicts preserve insertion order in Python 3.7+) rather
-                # than growing unbounded.
-                oldest_key = next(iter(self._store), None)
-                if oldest_key is not None:
-                    self._store.pop(oldest_key, None)
-            self._store[key] = (now + self._ttl, value)
-        return value
-
-    def invalidate(self, key: Any = None) -> None:
-        with self._lock:
-            if key is None:
-                self._store.clear()
-            else:
-                self._store.pop(key, None)
-
-
 class MLBClient:
     def __init__(self) -> None:
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "trckr21-mlb-quant/1.0"})
-        # FIX (2026-08-29): the default requests.Session() ships with an
-        # HTTPAdapter capped at pool_connections=10 / pool_maxsize=10 per
-        # host. prediction_service builds a slate with a ThreadPoolExecutor
-        # per game AND a nested ThreadPoolExecutor per hitter inside each
-        # game (settings.max_workers=12 at both levels) — on a normal
-        # ~15-game day that's up to ~100+ threads all hitting
-        # statsapi.mlb.com through this ONE shared session at once. With
-        # only 10 pooled connections, requests/urllib3 doesn't queue nicely;
-        # it opens throwaway connections outside the pool (full TCP+TLS
-        # handshake each time) and discards them, which is exactly the kind
-        # of silent, invisible slowdown that makes a cold build blow past a
-        # 20s client timeout on the first request of the day while looking
-        # totally fine in a one-off manual test. Sizing the pool to match
-        # the real concurrency, plus a small automatic retry/backoff for
-        # transient 429/5xx responses (MLB's API does rate-limit under
-        # bursts), fixes both the connection thrashing and the "one flaky
-        # call eats the full request_timeout" tail latency.
-        _retry = requests.adapters.Retry(
-            total=2,
-            backoff_factor=0.25,
-            status_forcelist=(429, 500, 502, 503, 504),
-            allowed_methods=frozenset({"GET"}),
-            raise_on_status=False,
-        )
-        _adapter = requests.adapters.HTTPAdapter(
-            pool_connections=100,
-            pool_maxsize=100,
-            max_retries=_retry,
-        )
-        self.session.mount("https://", _adapter)
-        self.session.mount("http://", _adapter)
         self._live_feed_cache: dict[int, dict] = {}
-        self._person_cache = _TTLCache(maxsize=256, ttl_seconds=settings.person_cache_ttl_seconds)
 
     def _get(self, path: str, params: dict | None = None) -> dict:
         base_url = settings.mlb_api_base.strip().rstrip("/")
@@ -208,19 +124,11 @@ class MLBClient:
         dates = payload.get("dates", [])
         return dates[0].get("games", []) if dates else []
 
+    @lru_cache(maxsize=256)
     def person(self, person_id: int) -> dict:
-        return self._person_cache.get_or_set(person_id, lambda: self._fetch_person(person_id))
-
-    def _fetch_person(self, person_id: int) -> dict:
         payload = self._get(f"/people/{person_id}")
         people = payload.get("people", [])
         return people[0] if people else {}
-
-    def invalidate_person_cache(self, person_id: int | None = None) -> None:
-        """Manual escape hatch alongside the TTL — e.g. a known trade/
-        callup you don't want to wait out the TTL for. Clears one player
-        when `person_id` is given, or the whole cache when omitted."""
-        self._person_cache.invalidate(person_id)
 
     def team_roster(self, team_id: int) -> list[dict]:
         payload = self._get(f"/teams/{team_id}/roster", {"rosterType": "active"})

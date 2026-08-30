@@ -16,6 +16,10 @@
   --batter:#33d6c0; --batter-dim:rgba(51,214,192,.12); --batter-border:rgba(51,214,192,.35);
   --pitcher:#8b7bff; --pitcher-dim:rgba(139,123,255,.12); --pitcher-border:rgba(139,123,255,.35);
   --green:#33c17a; --red:#e8495f; --amber:#f2a93b;
+  --power:#ff7a45; --power-dim:rgba(255,122,69,.10); --power-border:rgba(255,122,69,.4);
+  --clutch:#d4af6a; --clutch-dim:rgba(212,175,106,.10); --clutch-border:rgba(212,175,106,.4);
+  --speed:#4fa8ff; --speed-dim:rgba(79,168,255,.10); --speed-border:rgba(79,168,255,.4);
+  --contact:#33c17a; --contact-dim:rgba(51,193,122,.10); --contact-border:rgba(51,193,122,.4);
   --font-display:'Space Grotesk',sans-serif;
   --font-body:'Inter',sans-serif;
   --font-mono:'JetBrains Mono',monospace;
@@ -197,6 +201,36 @@ td{ padding:11px 14px; font-family:var(--font-mono); font-size:.82em; border-bot
 tr:last-child td{ border-bottom:none; }
 tr.data-row:nth-child(even) td{ background:rgba(255,255,255,.014); }
 tr.data-row:hover td{ background:var(--bg-raised) !important; }
+.signal-legend{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:.7em; color:var(--text-lo); padding:0 2px 10px; }
+.signal-legend .sw{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+tr.data-row.tier-power td{ background:var(--power-dim); }
+tr.data-row.tier-power:hover td{ background:rgba(255,122,69,.16) !important; }
+#props-table tr.data-row.tier-power td.name-cell{ border-left:3px solid var(--power); background:var(--power-dim); }
+tr.data-row.tier-clutch td{ background:var(--clutch-dim); }
+tr.data-row.tier-clutch:hover td{ background:rgba(212,175,106,.16) !important; }
+#props-table tr.data-row.tier-clutch td.name-cell{ border-left:3px solid var(--clutch); background:var(--clutch-dim); }
+tr.data-row.tier-speed td{ background:var(--speed-dim); }
+tr.data-row.tier-speed:hover td{ background:rgba(79,168,255,.16) !important; }
+#props-table tr.data-row.tier-speed td.name-cell{ border-left:3px solid var(--speed); background:var(--speed-dim); }
+tr.data-row.tier-contact td{ background:var(--contact-dim); }
+tr.data-row.tier-contact:hover td{ background:rgba(51,193,122,.16) !important; }
+#props-table tr.data-row.tier-contact td.name-cell{ border-left:3px solid var(--contact); background:var(--contact-dim); }
+.signal-chip{ display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:.62em; font-weight:700; letter-spacing:.02em; padding:2px 7px; border-radius:9px; margin-left:8px; vertical-align:middle; white-space:nowrap; }
+.signal-chip b{ font-weight:800; opacity:.85; }
+.signal-chip.power{ color:var(--power); background:var(--power-dim); border:1px solid var(--power-border); }
+.signal-chip.clutch{ color:var(--clutch); background:var(--clutch-dim); border:1px solid var(--clutch-border); }
+.signal-chip.speed{ color:var(--speed); background:var(--speed-dim); border:1px solid var(--speed-border); }
+.signal-chip.contact{ color:var(--contact); background:var(--contact-dim); border:1px solid var(--contact-border); }
+/* "Elite convergence" glow — proxy signal + high model conviction agree on this row. */
+tr.data-row.tier-power.elite td.name-cell{ box-shadow:inset 3px 0 0 var(--power), 0 0 16px -3px rgba(255,122,69,.55); }
+tr.data-row.tier-contact.elite td.name-cell{ box-shadow:inset 3px 0 0 var(--contact), 0 0 16px -3px rgba(51,193,122,.55); }
+tr.data-row.tier-speed.elite td.name-cell{ box-shadow:inset 3px 0 0 var(--speed), 0 0 16px -3px rgba(79,168,255,.55); }
+tr.data-row.tier-clutch.elite td.name-cell{ box-shadow:inset 3px 0 0 var(--clutch), 0 0 16px -3px rgba(212,175,106,.55); }
+/* Active prop tab tinted to match that tab's signal tier — tabs feel distinct even before you scroll the table. */
+.seg-btn.active.tier-power{ background:var(--power-dim); color:var(--power); }
+.seg-btn.active.tier-contact{ background:var(--contact-dim); color:var(--contact); }
+.seg-btn.active.tier-speed{ background:var(--speed-dim); color:var(--speed); }
+.seg-btn.active.tier-clutch{ background:var(--clutch-dim); color:var(--clutch); }
 td.name-cell{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.9em; }
 #props-table th:nth-child(n+4), #props-table td:nth-child(n+4){ text-align:right; }
 #props-table th:first-child, #props-table td:first-child,
@@ -219,6 +253,25 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .avatar-circle{ width:52px; height:52px; border-radius:50%; background:var(--bg-raised); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; color:var(--batter); flex-shrink:0; font-family:var(--font-mono); }
 .field-row{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
 .field-row .flabel{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.68em; color:var(--text-lo); }
+.calib-input-row{ display:flex; align-items:center; gap:10px; }
+.calib-slider{ flex:1; -webkit-appearance:none; appearance:none; height:4px; border-radius:2px; background:var(--bg-raised); outline:none; cursor:pointer; padding:0; border:none; }
+.calib-slider::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:var(--text-hi); border:2px solid var(--bg-card); cursor:pointer; box-shadow:0 0 0 1px var(--border); margin-top:-5px; }
+.calib-slider::-moz-range-track{ height:4px; border-radius:2px; background:var(--bg-raised); border:none; }
+.calib-slider::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:var(--text-hi); border:2px solid var(--bg-card); cursor:pointer; }
+.calib-number{ width:90px; flex-shrink:0; text-align:right; transition:border-color .15s var(--ease), color .15s var(--ease); }
+.calib-number.green{ border-color:var(--green); color:var(--green); }
+.calib-number.amber{ border-color:var(--amber); color:var(--amber); }
+.calib-number.red{ border-color:var(--red); color:var(--red); }
+.calib-range-track{ position:relative; height:5px; border-radius:3px; background:var(--bg-raised); margin-top:9px; overflow:visible; }
+.calib-range-fill{ position:absolute; left:0; top:0; height:100%; border-radius:3px; width:0%; background:var(--text-lo); transition:width .12s linear, background .15s var(--ease); }
+.calib-range-fill.green{ background:var(--green); } .calib-range-fill.amber{ background:var(--amber); } .calib-range-fill.red{ background:var(--red); }
+.calib-range-marker{ position:absolute; top:-3px; width:2px; height:11px; border-radius:1px; background:var(--text-lo); left:0%; transform:translateX(-1px); transition:left .12s linear, background .15s var(--ease); }
+.calib-range-marker.green{ background:var(--green); box-shadow:0 0 6px rgba(51,193,122,.7); }
+.calib-range-marker.amber{ background:var(--amber); box-shadow:0 0 6px rgba(242,169,59,.7); }
+.calib-range-marker.red{ background:var(--red); box-shadow:0 0 6px rgba(232,73,95,.7); }
+.calib-avg-tick{ position:absolute; top:-2px; width:1px; height:9px; background:var(--text-lo); opacity:.55; }
+.calib-status{ font-family:var(--font-mono); font-size:.62em; text-align:right; margin-top:5px; height:12px; color:var(--text-lo); font-weight:600; letter-spacing:.02em; }
+.calib-status.green{ color:var(--green); } .calib-status.amber{ color:var(--amber); } .calib-status.red{ color:var(--red); }
 .btn{ padding:8px 15px; border-radius:8px; border:1px solid var(--border); font-weight:600; font-size:.8em; background:var(--bg-raised); color:var(--text-mid); display:inline-flex; align-items:center; gap:6px; transition:all .15s var(--ease); }
 .btn:hover{ border-color:var(--border-focus); color:var(--text-hi); }
 .btn-primary{ color:var(--batter); border-color:var(--batter-border); background:var(--batter-dim); }
@@ -533,13 +586,14 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
       <div class="hud-grid" id="hud-container"></div>
       <div class="prop-toolbar">
         <div class="seg" id="prop-type-toggle">
-          <button class="seg-btn active" data-prop="hits">Hits</button>
+          <button class="seg-btn active tier-contact" data-prop="hits">Hits</button>
           <button class="seg-btn" data-prop="runs">Runs</button>
           <button class="seg-btn" data-prop="homeruns">Home Runs</button>
           <button class="seg-btn" data-prop="rbi">RBI</button>
         </div>
         <div class="filter-row" id="filters-container"></div>
       </div>
+      <div class="signal-legend" id="signal-legend"></div>
       <div class="table-wrap"><div class="table-scroll"><table id="props-table"><thead></thead><tbody></tbody></table></div></div>
     </div>
 
@@ -663,7 +717,7 @@ const State = {
   pitcher:{ pitchers:[], teams:[], matchups:[], loading:true, loaded:false, error:null },
   ui:{
     activeProp:'hits', filters:{team:'ALL', confidence:'ALL', search:''},
-    drawer:{playerId:null, calibrating:false, calibrationResult:null, view:'sandbox'},
+    drawer:{playerId:null, calibrating:false, calibrationResult:null, calibrationError:null, view:'sandbox'},
     gameDrawer:{gameId:null, side:'away'},
     ptEntity:null, ptMarketKey:null, ptLine:null, ptDrag:null,
     mxMatchup:null, mxSubTab:'pitchmix', mxTableView:'contact', h2hSort:{key:'blendedOps',dir:'desc'}, h2hFilter:'',
@@ -672,9 +726,14 @@ const State = {
 };
 const STAT_LABELS = {hits:'Hits', runs:'Runs', homeruns:'Home Runs', rbi:'RBI'};
 const API_BASE = 'http://127.0.0.1:8000';
-const PROJECTIONS_URL = 'projections.json';
 const MARKET_IMPLIED_PROB = 110/210;
 const MARKET_B = 100/110;
+// CONSOLIDATION (2026-08-29): projections.json + generate_projections.py are
+// retired — Pitcher Props / Team Matchups / Matchup Analyzer now come from
+// the live FastAPI backend via BatterAPI, same as everything else on this
+// page. K_TEAM_RUNS mirrors math_engine.K_TEAM_RUNS server-side; it's only
+// used when a market carries a non-null model.anchorMu (team run markets).
+const K_TEAM_RUNS = 6;
 
 function escapeHTML(v){ return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
 function formatAmerican(v){ if(v===null||v===undefined) return 'N/A'; return Number(v)>0?`+${v}`:String(v); }
@@ -745,18 +804,34 @@ function currentStreak(arr,line){
   for(let i=arr.length-1;i>=0;i--){ if(dirOf(arr[i])===lastDir) count++; else break; }
   return {count,dir:lastDir};
 }
-function calibrateMarket(history,line){
-  const n=history.length, mu=sampleMean(history), variance=sampleVariance(history);
-  const vmr=mu>0?variance/mu:0;
+function shrinkRate(observed,sampleSize,anchor,kFactor){
+  if(sampleSize<=0) return anchor;
+  return (observed*sampleSize + anchor*kFactor) / (sampleSize + kFactor);
+}
+// CONSOLIDATION (2026-08-29): anchorMu/anchorK are OPTIONAL and mirror
+// math_engine.calibrate_count_market() server-side — the VMR gate
+// (useNb2, below) is still decided from the RAW observedMu/variance only,
+// never touched by shrinkage. Only `mu`, the mean actually fed into
+// whichever distribution the gate picked, can be pulled toward an anchor.
+// Called with no anchor (pitcher props) this is byte-identical to the old
+// calibrateMarket(). Team run markets pass market.model.anchorMu / K_TEAM_RUNS
+// so a custom line the user drags client-side stays consistent with the
+// server's calculate_team_xruns_v2-anchored mean instead of silently
+// reverting to a raw, unshrunk average.
+function calibrateMarket(history,line,anchorMu,anchorK){
+  const n=history.length, observedMu=sampleMean(history), variance=sampleVariance(history);
+  const vmr=observedMu>0?variance/observedMu:0;
+  const useNb2 = variance>observedMu && observedMu>0;
+  const mu = (anchorMu!=null && anchorK>0) ? shrinkRate(observedMu, n, anchorMu, anchorK) : observedMu;
   let overProb, distribution, fallback=false;
-  if(variance>mu && mu>0){
+  if(useNb2){
     try{ overProb=nbinomOverProb(mu,variance,line); distribution='negative_binomial'; }
     catch(e){ overProb=poissonOverProb(mu,line); distribution='poisson'; fallback=true; }
   } else { overProb=poissonOverProb(mu,line); distribution='poisson'; }
   const edgePct=(overProb-MARKET_IMPLIED_PROB)*100, edge=overProb-MARKET_IMPLIED_PROB;
   let kellyPct=0;
   if(edge>0){ const q=1-overProb, fStar=(MARKET_B*overProb-q)/MARKET_B; kellyPct=Math.max(0,fStar)*100; }
-  return { distribution, mu, variance, vmr, overProb, fallback, fairOdds:probToAmerican(overProb), edgePct, kellyPct, confidence:confidenceTier(n), sampleSize:n };
+  return { distribution, mu, observedMu, variance, vmr, overProb, fallback, fairOdds:probToAmerican(overProb), edgePct, kellyPct, confidence:confidenceTier(n), sampleSize:n, anchorMu: anchorMu??null };
 }
 
 function tickClock(){ document.getElementById('global-clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}); }
@@ -960,15 +1035,39 @@ function toggleFocusMode(){
 }
 
 const BatterAPI = {
+  // FIX (2026-08-29): 20s was tuned for a WARM cache hit, not a cold
+  // /api/slate build (~270 players x several MLB API calls each — can
+  // legitimately take longer than that the first time it runs each day).
+  // The backend now pre-warms this cache on startup (see app.py), so in
+  // practice you should rarely hit this ceiling at all — this is just a
+  // safety net for a manual refresh=true or a build that starts before
+  // warm-up finishes, so it fails loudly with a real error instead of a
+  // false "offline" after 20s while the server is still working fine.
   async request(path, options={}){
-    const res = await fetch(`${API_BASE}${path}`, {...options, headers:{'Content-Type':'application/json',...(options.headers||{})}});
+    const { timeoutMs = 60000, ...fetchOptions } = options;
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), timeoutMs);
+    let res;
+    try{
+      res = await fetch(`${API_BASE}${path}`, {...fetchOptions, signal: controller.signal, headers:{'Content-Type':'application/json',...(fetchOptions.headers||{})}});
+    }catch(e){
+      if(e.name==='AbortError') throw new Error(`Request timed out after ${(timeoutMs/1000).toFixed(0)}s — the server may be slow or unreachable. Try again.`);
+      throw new Error('Network error — could not reach the server. Check your connection and try again.');
+    }finally{
+      clearTimeout(timer);
+    }
     if(!res.ok){ let msg=`Request failed (${res.status})`; try{ const p=await res.json(); msg=p.detail||msg; }catch(_e){} throw new Error(msg); }
     return res.json();
   },
-  fetchSlate(date,refresh=false){ const p=new URLSearchParams(); if(date) p.append('date',date); if(refresh) p.append('refresh','true'); const q=p.toString()?`?${p}`:''; return this.request(`/api/slate${q}`); },
+  fetchSlate(date,refresh=false){ const p=new URLSearchParams(); if(date) p.append('date',date); if(refresh) p.append('refresh','true'); const q=p.toString()?`?${p}`:''; return this.request(`/api/slate${q}`,{timeoutMs:90000}); },
   fetchPitcher(id){ return this.request(`/api/pitchers/${id}`); },
   fetchTrackRecord(limit=100){ return this.request(`/api/track-record?limit=${limit}`); },
-  calibrate(payload){ return this.request('/api/calibrate',{method:'POST', body:JSON.stringify(payload)}); }
+  calibrate(payload){ return this.request('/api/calibrate',{method:'POST', body:JSON.stringify(payload), timeoutMs:30000}); },
+  // CONSOLIDATION (2026-08-29): replaces the static projections.json fetch.
+  _dateQuery(date,refresh){ const p=new URLSearchParams(); if(date) p.append('date',date); if(refresh) p.append('refresh','true'); const q=p.toString()?`?${p}`:''; return q; },
+  fetchPitcherProps(date,refresh=false){ return this.request(`/api/pitcher-props${this._dateQuery(date,refresh)}`); },
+  fetchTeamMatchups(date,refresh=false){ return this.request(`/api/team-matchups${this._dateQuery(date,refresh)}`); },
+  fetchMatchupAnalyzer(date,refresh=false){ return this.request(`/api/matchup-analyzer${this._dateQuery(date,refresh)}`); }
 };
 
 function eastCoastToday(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date()); }
@@ -1031,9 +1130,32 @@ function getFilteredPlayers(){
   });
 }
 function edgeColor(edge){ if(edge>=.08) return 'var(--batter)'; if(edge>=.03) return 'var(--amber)'; return 'var(--red)'; }
+/* ---- Per-prop-tab "character": tier signal driven by the trait that actually predicts that outcome.
+   FIX (2026-08-29): this table used to point at stats.xba/barrel/xwoba/hardhit — real Statcast fields
+   that the backend hardcodes to null (proxy statsSource, no free-tier Statcast feed; see schemas.py
+   PlayerStats comment). Every row's signalVal was always undefined, isSignal was always false, so the
+   tier CSS/chips/legend below never actually fired for anyone, on any tab, ever. Repointed to the proxy
+   fields prediction_service DOES populate for every player (iso, whiff, babip14d) plus lineup order,
+   so each tab genuinely gets its own highlighted subset now instead of four identical plain tables. */
+const PROP_SIGNALS = {
+  homeruns:{ tier:'power',   chip:'💪 Power',        label:'ISO ≥ .200  (plus over-the-fence power)',           get:p=>p.stats?.iso,      test:v=>Number.isFinite(v) && v>=0.200, fmt:v=>'.'+String(Math.round(v*1000)).padStart(3,'0') },
+  hits:    { tier:'contact', chip:'🎯 Contact',      label:'Whiff% ≤ 20  (low swing-and-miss, plus contact)',    get:p=>p.stats?.whiff,    test:v=>Number.isFinite(v) && v<=20,     fmt:v=>v.toFixed(1)+'%' },
+  rbi:     { tier:'clutch',  chip:'🔥 Hot Streak',   label:'14-Day BABIP ≥ .320  (currently locked in)',        get:p=>p.stats?.babip14d, test:v=>Number.isFinite(v) && v>=0.320,  fmt:v=>'.'+String(Math.round(v*1000)).padStart(3,'0') },
+  runs:    { tier:'speed',   chip:'🏃 Table-Setter', label:'Batting 1st–3rd  (top-of-order run-scoring slot)',  get:p=>p.order,           test:v=>Number.isFinite(v) && v<=3,      fmt:v=>'#'+v+' spot' },
+};
+const TIER_CLASSES = ['tier-power','tier-contact','tier-speed','tier-clutch'];
+function renderSignalLegend(){
+  const legend = document.getElementById('signal-legend');
+  if(!legend) return;
+  const sig = PROP_SIGNALS[State.ui.activeProp];
+  if(!sig){ legend.innerHTML=''; return; }
+  legend.innerHTML = `<span class="sw" style="background:var(--${sig.tier});"></span><span>Highlighted rows: ${escapeHTML(sig.label)}</span>`;
+}
 function renderPropsTable(){
   const thead = document.querySelector('#props-table thead'), tbody = document.querySelector('#props-table tbody');
   const propTitle = STAT_LABELS[State.ui.activeProp];
+  renderSignalLegend();
+  const sig = PROP_SIGNALS[State.ui.activeProp];
   thead.innerHTML = `<tr><th>Player</th><th>Team</th><th>Opp Pitcher</th><th>${propTitle} Prob</th><th>Edge</th><th>Fair Odds</th><th>Conviction</th></tr>`;
   if(State.batter.error){ tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--red);">${escapeHTML(State.batter.error)}</td></tr>`; return; }
   if(State.batter.loading){ tbody.innerHTML = Array(6).fill('<tr><td colspan="7" style="padding:14px;"><div class="skel" style="height:16px;"></div></td></tr>').join(''); return; }
@@ -1049,8 +1171,17 @@ function renderPropsTable(){
     let flashClass = '';
     if(prevProb!==undefined && Math.abs(prevProb-propData.prob)>0.0005){ flashClass = propData.prob>prevProb ? ' flash-up' : ' flash-down'; }
     State.ui.prevProbs[cacheKey] = propData.prob;
-    return `<tr class="data-row" data-player-id="${p.id}" onclick="openDrawer('${p.id}')">
-      <td class="name-cell">${escapeHTML(p.name)}</td>
+    const signalVal = sig ? sig.get(p) : null;
+    const isSignal = sig ? sig.test(signalVal) : false;
+    // "Elite convergence" — the proxy signal AND the model's own conviction
+    // agree on this row, not just one or the other. Genuinely more useful
+    // than a plain highlight: it's telling you two independent reads on
+    // the player point the same direction.
+    const isElite = isSignal && propData.conf === 'high';
+    const tierClass = isSignal ? ` tier-${sig.tier}${isElite ? ' elite' : ''}` : '';
+    const chip = isSignal ? `<span class="signal-chip ${sig.tier}">${sig.chip} <b>${escapeHTML(sig.fmt(signalVal))}</b></span>` : '';
+    return `<tr class="data-row${tierClass}" data-player-id="${p.id}" onclick="openDrawer('${p.id}')">
+      <td class="name-cell">${escapeHTML(p.name)}${chip}</td>
       <td>${escapeHTML(p.team)}</td>
       <td>${escapeHTML(p.oppPitcher||'—')}</td>
       <td style="color:var(--batter);" class="${flashClass.trim()}">${(propData.prob*100).toFixed(1)}%</td>
@@ -1062,11 +1193,18 @@ function renderPropsTable(){
 }
 document.addEventListener('click', e=>{
   const seg = e.target.closest('#prop-type-toggle .seg-btn');
-  if(seg){ document.querySelectorAll('#prop-type-toggle .seg-btn').forEach(b=>b.classList.remove('active')); seg.classList.add('active'); State.ui.activeProp = seg.dataset.prop; renderHUD(); renderPropsTable(); }
+  if(seg){
+    document.querySelectorAll('#prop-type-toggle .seg-btn').forEach(b=>b.classList.remove('active', ...TIER_CLASSES));
+    const prop = seg.dataset.prop;
+    const tier = PROP_SIGNALS[prop]?.tier;
+    seg.classList.add('active');
+    if(tier) seg.classList.add(`tier-${tier}`);
+    State.ui.activeProp = prop; renderHUD(); renderPropsTable();
+  }
 });
 
 function openDrawer(playerId){
-  State.ui.drawer.playerId = playerId; State.ui.drawer.calibrationResult = null; State.ui.drawer.view = 'sandbox';
+  State.ui.drawer.playerId = playerId; State.ui.drawer.calibrationResult = null; State.ui.drawer.calibrationError = null; State.ui.drawer.calibrating = false; State.ui.drawer.view = 'sandbox';
   document.querySelectorAll('#drawer-toggle .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.view==='sandbox'));
   document.getElementById('drawer-overlay').classList.add('active');
   document.getElementById('drawer').classList.add('active');
@@ -1081,6 +1219,27 @@ function closeDrawer(){
   document.getElementById('drawer-overlay').classList.remove('active');
   document.getElementById('drawer').classList.remove('active');
 }
+function calibVerdictBlockHtml(){
+  const d = State.ui.drawer;
+  if(d.calibrating){
+    return `<div class="card verdict-card" style="border-left-color:var(--border-focus);">
+      <div><div class="eyebrow">Model Verdict</div><div style="font-weight:600;color:var(--text-mid);margin-top:2px;display:flex;align-items:center;gap:8px;"><span class="spinner"></span> Running calibration…</div></div>
+      <div class="mono" style="font-size:22px;color:var(--text-lo);">—</div>
+    </div>`;
+  }
+  if(d.calibrationError){
+    return `
+    <div class="card" style="padding:14px 16px;border-left:3px solid var(--red);display:flex;flex-direction:column;gap:8px;margin-bottom:${d.calibrationResult?'14px':'0'};">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span class="eyebrow" style="color:var(--red);">Calibration Failed</span>
+        <button class="btn" id="btn-calib-retry" style="padding:4px 12px;font-size:.74em;color:var(--red);border-color:rgba(232,73,95,.4);background:rgba(232,73,95,.08);">↻ Retry</button>
+      </div>
+      <div style="font-size:.82em;color:var(--text-mid);line-height:1.5;">${escapeHTML(d.calibrationError)}</div>
+    </div>
+    ${d.calibrationResult ? `<div class="card verdict-card"><div><div class="eyebrow">Model Verdict</div><div style="font-weight:600;color:var(--text-hi);margin-top:2px;">${d.calibrationResult.finalProb>=.72?'Strong Push':d.calibrationResult.finalProb>=.66?'Probable':'Avoid'}</div><div style="font-size:.62em;color:var(--text-lo);margin-top:2px;">Last successful result</div></div><div class="mono" style="font-size:22px;color:var(--batter);">${(d.calibrationResult.finalProb*100).toFixed(1)+'%'}</div></div>` : ''}`;
+  }
+  return `<div class="card verdict-card"><div><div class="eyebrow">Model Verdict</div><div style="font-weight:600;color:var(--text-hi);margin-top:2px;">${d.calibrationResult ? (d.calibrationResult.finalProb>=.72?'Strong Push':d.calibrationResult.finalProb>=.66?'Probable':'Avoid') : 'Run calibration'}</div></div><div class="mono" style="font-size:22px;color:var(--batter);">${d.calibrationResult ? (d.calibrationResult.finalProb*100).toFixed(1)+'%' : 'N/A'}</div></div>`;
+}
 function renderDrawerContent(){
   const content = document.getElementById('drawer-content');
   const p = State.batter.players.find(x=>String(x.id)===String(State.ui.drawer.playerId));
@@ -1091,12 +1250,39 @@ function renderDrawerContent(){
       <div style="margin-bottom:22px;"><h2 style="font-family:var(--font-display);color:var(--text-hi);margin:0 0 4px;">${escapeHTML(p.name)}</h2><div style="font-family:var(--font-mono);font-size:.8em;color:var(--text-lo);">${escapeHTML(p.team)} · Batting ${p.order??'—'} · vs ${escapeHTML(p.oppPitcher||'TBD')}</div></div>
       <div class="card" style="padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;"><span class="eyebrow">Statcast Baseline</span><button class="btn btn-primary" id="btn-calibrate" ${State.ui.drawer.calibrating?'disabled':''}>${State.ui.drawer.calibrating?'<span class=\\"spinner\\"></span> Calibrating':'Calibrate'}</button></div>
-        <div class="field-row"><div class="flabel"><span>xwOBA</span><span>.320 lg</span></div><input type="number" id="in-xwoba" value="${p.stats?.xwoba??''}" step="0.001" placeholder="Enter verified value"></div>
-        <div class="field-row"><div class="flabel"><span>xBA</span><span>.250 lg</span></div><input type="number" id="in-xba" value="${p.stats?.xba??''}" step="0.001" placeholder="Enter verified value"></div>
-        <div class="field-row" style="margin-bottom:0;"><div class="flabel"><span>Barrel %</span><span>8.0% lg</span></div><input type="number" id="in-barrel" value="${p.stats?.barrel??''}" step="0.1" placeholder="Enter verified value"></div>
+        <div class="field-row calib-field" data-stat="xwoba" data-avg="0.320" data-min="0.150" data-max="0.500">
+          <div class="flabel"><span>xwOBA</span><span>.320 lg</span></div>
+          <div class="calib-input-row">
+            <input type="range" class="calib-slider" min="0.150" max="0.500" step="0.001" value="${p.stats?.xwoba??0.320}" ${State.ui.drawer.calibrating?'disabled':''}>
+            <input type="number" class="calib-number" id="in-xwoba" value="${p.stats?.xwoba??''}" step="0.001" placeholder="Enter verified value" ${State.ui.drawer.calibrating?'disabled':''}>
+          </div>
+          <div class="calib-range-track"><div class="calib-range-fill"></div><div class="calib-avg-tick" style="left:48.57%;"></div><div class="calib-range-marker"></div></div>
+          <div class="calib-status"></div>
+        </div>
+        <div class="field-row calib-field" data-stat="xba" data-avg="0.250" data-min="0.100" data-max="0.400">
+          <div class="flabel"><span>xBA</span><span>.250 lg</span></div>
+          <div class="calib-input-row">
+            <input type="range" class="calib-slider" min="0.100" max="0.400" step="0.001" value="${p.stats?.xba??0.250}" ${State.ui.drawer.calibrating?'disabled':''}>
+            <input type="number" class="calib-number" id="in-xba" value="${p.stats?.xba??''}" step="0.001" placeholder="Enter verified value" ${State.ui.drawer.calibrating?'disabled':''}>
+          </div>
+          <div class="calib-range-track"><div class="calib-range-fill"></div><div class="calib-avg-tick" style="left:50%;"></div><div class="calib-range-marker"></div></div>
+          <div class="calib-status"></div>
+        </div>
+        <div class="field-row calib-field" data-stat="barrel" data-avg="8.0" data-min="0" data-max="25" style="margin-bottom:0;">
+          <div class="flabel"><span>Barrel %</span><span>8.0% lg</span></div>
+          <div class="calib-input-row">
+            <input type="range" class="calib-slider" min="0" max="25" step="0.1" value="${p.stats?.barrel??8.0}" ${State.ui.drawer.calibrating?'disabled':''}>
+            <input type="number" class="calib-number" id="in-barrel" value="${p.stats?.barrel??''}" step="0.1" placeholder="Enter verified value" ${State.ui.drawer.calibrating?'disabled':''}>
+          </div>
+          <div class="calib-range-track"><div class="calib-range-fill"></div><div class="calib-avg-tick" style="left:32%;"></div><div class="calib-range-marker"></div></div>
+          <div class="calib-status"></div>
+        </div>
       </div>
-      <div class="card verdict-card"><div><div class="eyebrow">Model Verdict</div><div style="font-weight:600;color:var(--text-hi);margin-top:2px;">${State.ui.drawer.calibrationResult ? (State.ui.drawer.calibrationResult.finalProb>=.72?'Strong Push':State.ui.drawer.calibrationResult.finalProb>=.66?'Probable':'Avoid') : 'Run calibration'}</div></div><div class="mono" style="font-size:22px;color:var(--batter);">${State.ui.drawer.calibrationResult ? (State.ui.drawer.calibrationResult.finalProb*100).toFixed(1)+'%' : 'N/A'}</div></div>`;
+      ${calibVerdictBlockHtml()}`;
     document.getElementById('btn-calibrate').onclick = ()=>runCalibration(p.id);
+    const retryBtn = document.getElementById('btn-calib-retry');
+    if(retryBtn) retryBtn.onclick = ()=>runCalibration(p.id);
+    initCalibFields();
   } else {
     content.innerHTML = `
       <div style="margin-bottom:22px;"><h2 style="font-family:var(--font-display);color:var(--text-hi);margin:0 0 4px;">Matchup Vector</h2><div style="font-family:var(--font-mono);font-size:.8em;color:var(--text-lo);">${escapeHTML(p.name)} vs ${escapeHTML(p.oppPitcher||'TBD')}</div></div>
@@ -1152,16 +1338,73 @@ async function loadMatchupVerifier(batterId, pitcherId){
     target.innerHTML = `<div class="card" style="padding:16px;color:var(--red);">${escapeHTML(e.message || 'Failed to load matchup data.')}</div>`;
   }
 }
+/* ---- Calibration input: color-coded range indicator + slider/number sync ---- */
+function calibTier(val, avg){
+  if(!Number.isFinite(val)) return 'neutral';
+  const diff = (val - avg) / avg;
+  if(diff >= 0.12) return 'green';
+  if(diff <= -0.12) return 'red';
+  return 'amber';
+}
+function updateCalibField(fieldEl){
+  const min = parseFloat(fieldEl.dataset.min), max = parseFloat(fieldEl.dataset.max), avg = parseFloat(fieldEl.dataset.avg);
+  const numInput = fieldEl.querySelector('.calib-number');
+  const slider = fieldEl.querySelector('.calib-slider');
+  const marker = fieldEl.querySelector('.calib-range-marker');
+  const fill = fieldEl.querySelector('.calib-range-fill');
+  const status = fieldEl.querySelector('.calib-status');
+  const raw = numInput.value;
+  const val = Number(raw);
+  const valid = raw !== '' && Number.isFinite(val);
+  const displayVal = valid ? val : avg;
+  const clamped = Math.min(max, Math.max(min, displayVal));
+  const pct = ((clamped - min) / (max - min)) * 100;
+  const tier = valid ? calibTier(val, avg) : 'neutral';
+
+  marker.style.left = pct + '%';
+  fill.style.width = pct + '%';
+  marker.className = 'calib-range-marker ' + (tier==='neutral'?'':tier);
+  fill.className = 'calib-range-fill ' + (tier==='neutral'?'':tier);
+  numInput.className = 'calib-number ' + (tier==='neutral'?'':tier);
+
+  if(!valid){
+    status.textContent = '';
+    status.className = 'calib-status';
+  } else {
+    const diffPct = (val - avg) / avg * 100;
+    const sign = diffPct >= 0 ? '+' : '';
+    const label = tier==='green' ? '▲ Elite' : tier==='red' ? '▼ Below Avg' : '● Average';
+    status.textContent = `${label} · ${sign}${diffPct.toFixed(1)}% vs lg`;
+    status.className = 'calib-status ' + tier;
+  }
+  if(String(slider.value) !== String(clamped)) slider.value = clamped;
+}
+function initCalibFields(){
+  document.querySelectorAll('.calib-field').forEach(fieldEl=>{
+    const numInput = fieldEl.querySelector('.calib-number');
+    const slider = fieldEl.querySelector('.calib-slider');
+    slider.addEventListener('input', ()=>{ numInput.value = slider.value; updateCalibField(fieldEl); });
+    numInput.addEventListener('input', ()=> updateCalibField(fieldEl));
+    updateCalibField(fieldEl);
+  });
+}
 async function runCalibration(playerId){
   const p = State.batter.players.find(x=>String(x.id)===String(playerId));
   if(!p) return;
   const xwoba=Number(document.getElementById('in-xwoba').value), xba=Number(document.getElementById('in-xba').value), barrel=Number(document.getElementById('in-barrel').value);
   if(!Number.isFinite(xwoba)||!Number.isFinite(xba)||!Number.isFinite(barrel)){ showToast('Enter verified xwOBA, xBA, and Barrel values.','error'); return; }
-  State.ui.drawer.calibrating = true; renderDrawerContent();
+  State.ui.drawer.calibrating = true;
+  State.ui.drawer.calibrationError = null;
+  renderDrawerContent();
   try{
     State.ui.drawer.calibrationResult = await BatterAPI.calibrate({ player_id:p.mlbId, prop_type:State.ui.activeProp, xwoba, xba, barrel, hardhit:p.stats?.hardhit??40, whiff:p.stats?.whiff??25 });
+    State.ui.drawer.calibrationError = null;
     showToast(`Calibration complete for ${p.name}.`);
-  }catch(e){ showToast(e.message||'Calibration failed.','error'); }
+  }catch(e){
+    const msg = e.message || 'Calibration failed. Please try again.';
+    State.ui.drawer.calibrationError = msg;
+    showToast(msg,'error');
+  }
   finally{ State.ui.drawer.calibrating=false; renderDrawerContent(); }
 }
 
@@ -1369,16 +1612,19 @@ function renderTrackRecord(){
   body.innerHTML = State.batter.trackRecord.map(r=>`<tr><td>${escapeHTML(r.date)}</td><td style="font-family:var(--font-body);color:var(--text-hi);">${escapeHTML(r.player)}</td><td>${escapeHTML(r.stat)}</td><td>${(r.predicted*100).toFixed(0)}%</td><td>${r.actual===1?'Hit':'No Hit'}</td><td style="color:${r.correct?'var(--green)':'var(--red)'};">${r.correct?'✓ Correct':'✗ Miss'}</td></tr>`).join('');
 }
 
-async function loadPitcherModel(){
+async function loadPitcherModel(refresh=false){
   State.pitcher.loading = true; State.pitcher.error = null;
   try{
-    const res = await fetch(PROJECTIONS_URL, {cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const json = await res.json();
-    State.pitcher.pitchers = json.pitchers||[]; State.pitcher.teams = json.teams||[]; State.pitcher.matchups = json.matchups||[];
+    const today = eastCoastToday();
+    const [pitchers, teams, matchups] = await Promise.all([
+      BatterAPI.fetchPitcherProps(today, refresh),
+      BatterAPI.fetchTeamMatchups(today, refresh),
+      BatterAPI.fetchMatchupAnalyzer(today, refresh)
+    ]);
+    State.pitcher.pitchers = pitchers||[]; State.pitcher.teams = teams||[]; State.pitcher.matchups = matchups||[];
     State.pitcher.loaded = true;
   }catch(e){
-    State.pitcher.error = (e.message||'Could not load projections.json') + ' — run generate_projections.py so projections.json sits next to this file.';
+    State.pitcher.error = e.message || 'Pitcher model unreachable.';
   }finally{
     State.pitcher.loading = false;
     if(['pitcherprops','teammatchups','matchupanalyzer'].includes(State.section)){
@@ -1446,7 +1692,7 @@ function renderPtHeaderStats(market,line){
   flashNumber(hrEl, 'odds-val '+(hitRate>=50?'val-green':'val-red'), hitRate, State.ui.prevPt.hitRate, 0.5);
   hrEl.textContent = hitRate+'%';
   State.ui.prevPt.hitRate = hitRate;
-  const calc = calibrateMarket(market.history, line);
+  const calc = calibrateMarket(market.history, line, market.model && market.model.anchorMu, K_TEAM_RUNS);
   document.getElementById('pt-dist-label').textContent = calc.distribution==='negative_binomial'?'NB2 Fair Odds':'Poisson Fair Odds';
   const fairEl = document.getElementById('pt-fair-odds'); fairEl.textContent = calc.fairOdds; fairEl.className = 'odds-val val-cyan';
   const edgeEl = document.getElementById('pt-edge');
@@ -1456,9 +1702,10 @@ function renderPtHeaderStats(market,line){
   document.getElementById('pt-model-status').innerHTML = `MODEL &middot; ${calc.distribution==='negative_binomial'?'Negative Binomial (NB2)':'Poisson'}${calc.fallback?' (fallback)':''} &middot; L${calc.sampleSize} sample<span class="dist-badge ${calc.distribution==='negative_binomial'?'nb2':'poi'}">${calc.distribution==='negative_binomial'?'NB2':'POI'}</span><span class="conf-badge ${calc.confidence}" data-tip="High = 10+ sample, Medium = 6-9, Low = under 6">${calc.confidence}</span>`;
 }
 function renderPtMetrics(market,line){
-  const calc = calibrateMarket(market.history,line), grid = document.getElementById('pt-metrics-grid'), sd = stdDev(market.history), streak = currentStreak(market.history,line);
+  const calc = calibrateMarket(market.history,line, market.model && market.model.anchorMu, K_TEAM_RUNS), grid = document.getElementById('pt-metrics-grid'), sd = stdDev(market.history), streak = currentStreak(market.history,line);
+  const muCaption = calc.anchorMu!=null ? `L${calc.sampleSize} avg ${calc.observedMu.toFixed(2)} &rarr; shrunk to xRuns anchor` : `L${calc.sampleSize} average`;
   grid.innerHTML = `
-    <div class="card metric-card"><span class="metric-label">Mean (&mu;)</span><span class="metric-value">${calc.mu.toFixed(2)}</span><span class="metric-caption">L${calc.sampleSize} average</span></div>
+    <div class="card metric-card"><span class="metric-label">Mean (&mu;)</span><span class="metric-value">${calc.mu.toFixed(2)}</span><span class="metric-caption">${muCaption}</span></div>
     <div class="card metric-card"><span class="metric-label">Std Dev (&sigma;)</span><span class="metric-value">${sd.toFixed(2)}</span><span class="metric-caption">Variance: ${calc.variance.toFixed(2)}</span></div>
     <div class="card metric-card"><span class="metric-label">VMR</span><span class="metric-value">${calc.vmr.toFixed(2)}</span><span class="metric-caption">${calc.vmr>1?'Over-dispersed &rarr; NB2':'Poisson-shaped'}</span></div>
     <div class="card metric-card"><span class="metric-label">Current Streak</span><span class="metric-value">${streak.count||'—'}${streak.dir?' '+streak.dir:''}</span><span class="metric-caption">consecutive results</span></div>

@@ -632,23 +632,6 @@ def pythagenpat_win_prob(runs_a: float, runs_b: float) -> tuple[float, float]:
 # off the same sims array — this is exactly the "total runs" number the
 # F5/full-game over/under lines care about, so no separate simulation is
 # needed if/when that gets wired into the Team Matchups totals market.
-#
-# TASK 3 (2026-08-30) — the function no longer takes a bare runs_a/runs_b
-# mean. It now takes the SAME quality-factor inputs calculate_team_xruns_v2
-# already accepts (matchup strength, park factor, weather multiplier,
-# opposing bullpen ERA, bullpen fatigue) for each side, and calls
-# calculate_team_xruns_v2() ITSELF to derive each side's lambda before
-# drawing a single sample. Two consequences, both intentional:
-#   1. The simulation is provably sampling off the park/weather/bullpen-
-#      adjusted mean, not a static league-average number — the adjustment
-#      happens inside this function, immediately before the numpy call.
-#   2. calculate_team_xruns_v2() now only runs ONCE per side per game
-#      (inside here) instead of once in prediction_service.py and then
-#      being handed in — mean_a/mean_b come back on the result object so
-#      callers that need the point-estimate xRuns (e.g. the awayXRuns/
-#      homeXRuns fields on GameResponse) read it off the same number the
-#      simulation actually used, with zero chance of the displayed mean
-#      drifting from the simulated one.
 # ---------------------------------------------------------------------------
 
 MC_DEFAULT_SIMS = 30_000
@@ -662,12 +645,6 @@ MC_MAX_TOTAL_RUNS_BUCKET = 24
 class MonteCarloWinResult:
     prob_a: float
     prob_b: float
-    # Quality-factor-adjusted Poisson lambda actually sampled from for each
-    # side (calculate_team_xruns_v2 output) — same numbers previously
-    # computed separately in prediction_service.py and handed in as
-    # runs_a/runs_b; now derived here so display and simulation can't drift.
-    mean_a: float
-    mean_b: float
     n_sims: int
     # Empirical PMF of (runs_a + runs_b) across the simulation, keyed by
     # total-runs bucket -> probability. Last key is an overflow bucket for
@@ -678,45 +655,19 @@ class MonteCarloWinResult:
 
 
 def poisson_monte_carlo_win_prob(
-    matchup_mult_a: float,
-    matchup_mult_b: float,
-    park_factor: float,
-    weather_mult: float,
-    bullpen_era_a: float,
-    bullpen_era_b: float,
-    bullpen_fatigue_mult_a: float = 1.0,
-    bullpen_fatigue_mult_b: float = 1.0,
+    runs_a: float,
+    runs_b: float,
     n_sims: int = MC_DEFAULT_SIMS,
     rng: np.random.Generator | None = None,
 ) -> MonteCarloWinResult:
-    # Side "a"/"b" mirror runs_a/runs_b from the pre-TASK-3 signature (and
-    # pythagenpat_win_prob's convention) — callers keep whichever side they
-    # call "a" mapped to home vs away themselves; this function doesn't
-    # care which is which, only that bullpen_era_a is the ERA of the
-    # bullpen side "a" is BATTING AGAINST (i.e. the opposing team's pen),
-    # same contract calculate_team_xruns_v2 already has.
-    mean_a = calculate_team_xruns_v2(
-        matchup_mult=matchup_mult_a, park_factor=park_factor, weather_mult=weather_mult,
-        bullpen_era=bullpen_era_a, bullpen_fatigue_mult=bullpen_fatigue_mult_a,
-    )
-    mean_b = calculate_team_xruns_v2(
-        matchup_mult=matchup_mult_b, park_factor=park_factor, weather_mult=weather_mult,
-        bullpen_era=bullpen_era_b, bullpen_fatigue_mult=bullpen_fatigue_mult_b,
-    )
-
-    # calculate_team_xruns_v2 clamps to [1.5, 10.0] so this floor is never
-    # actually hit in practice — kept as a defensive fallback (matches the
-    # runs_a<=0/runs_b<=0 guard the pre-TASK-3 version had) in case that
-    # clamp range ever changes.
-    if mean_a <= 0 or mean_b <= 0:
+    if runs_a <= 0 or runs_b <= 0:
         return MonteCarloWinResult(
-            prob_a=0.5, prob_b=0.5, mean_a=mean_a, mean_b=mean_b,
-            n_sims=0, total_runs_dist={}, mean_total_runs=0.0,
+            prob_a=0.5, prob_b=0.5, n_sims=0, total_runs_dist={}, mean_total_runs=0.0
         )
 
     generator = rng if rng is not None else np.random.default_rng()
-    sims_a = generator.poisson(lam=mean_a, size=n_sims)
-    sims_b = generator.poisson(lam=mean_b, size=n_sims)
+    sims_a = generator.poisson(lam=runs_a, size=n_sims)
+    sims_b = generator.poisson(lam=runs_b, size=n_sims)
 
     a_wins = sims_a > sims_b
     b_wins = sims_b > sims_a
@@ -746,8 +697,6 @@ def poisson_monte_carlo_win_prob(
     return MonteCarloWinResult(
         prob_a=round(prob_a, 4),
         prob_b=round(prob_b, 4),
-        mean_a=round(mean_a, 3),
-        mean_b=round(mean_b, 3),
         n_sims=n_sims,
         total_runs_dist=total_runs_dist,
         mean_total_runs=round(float(total_runs.mean()), 3),

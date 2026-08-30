@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import logging
-import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -56,42 +54,6 @@ prediction_service = PredictionService(
 
 def eastern_today() -> str:
     return datetime.now(ZoneInfo(settings.timezone_name)).date().isoformat()
-
-
-# FIX (2026-08-29): the root cause of "BATTER MODEL OFFLINE" / 20s timeouts
-# on a fresh run. build_slate() for ~270 players across a full slate makes
-# hundreds of MLB Stats API calls; that cold build only ever used to happen
-# on whichever request hit /api/slate FIRST — in practice, the frontend's
-# own page load, whose fetch() aborts itself after a hardcoded 20s
-# (index.html BatterAPI.request). The backend kept working past 20s and
-# finished fine (that's why a manual GET a few minutes later returned
-# instantly — from the now-warm cache), but the frontend had already given
-# up and shown the offline banner. This kicks the same builds off in a
-# background thread the moment uvicorn finishes booting, so the cache is
-# warm — or already warming — before anyone opens the page, instead of
-# being built on-demand against a request with a hard client-side deadline.
-# Runs once per process start (and once per --reload restart); daemon=True
-# so it never blocks server shutdown.
-@app.on_event("startup")
-def _warm_cache_on_startup() -> None:
-    logger = logging.getLogger("trckr21.app")
-
-    def _warm() -> None:
-        target_date = eastern_today()
-        jobs = (
-            ("slate", lambda: prediction_service.build_slate(target_date)),
-            ("pitcher-props", lambda: prediction_service.build_pitcher_props(target_date)),
-            ("team-matchups", lambda: prediction_service.build_team_matchups(target_date)),
-            ("matchup-analyzer", lambda: prediction_service.build_matchup_analyzer(target_date)),
-        )
-        for label, builder in jobs:
-            try:
-                builder()
-                logger.info("Startup cache warm: %s ready for %s.", label, target_date)
-            except Exception:
-                logger.exception("Startup cache warm failed for %s (%s) — first request will build it instead.", label, target_date)
-
-    threading.Thread(target=_warm, daemon=True, name="cache-warmup").start()
 
 
 @app.get("/", include_in_schema=False)

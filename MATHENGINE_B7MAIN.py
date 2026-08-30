@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from typing import Callable
-
-import numpy as np
 
 LEAGUE_AVG_XWOBA = 0.320
 LEAGUE_AVG_XBA = 0.250
@@ -596,162 +593,12 @@ def confidence_from_edge(edge: float | None, probability: float, sample_size: in
 
 
 def pythagenpat_win_prob(runs_a: float, runs_b: float) -> tuple[float, float]:
-    # Closed-form fallback / reference implementation. Superseded as the
-    # live Moneylines source by poisson_monte_carlo_win_prob() below (see
-    # prediction_service.py), kept here for parity checks and in case
-    # anything else in the codebase still imports it directly.
     if runs_a <= 0 or runs_b <= 0:
         return 0.5, 0.5
     exponent = (runs_a + runs_b) ** 0.285
     prob_a = (runs_a**exponent) / (runs_a**exponent + runs_b**exponent)
     prob_a = clamp(prob_a, MIN_PROB, MAX_PROB)
     return round(prob_a, 4), round(1.0 - prob_a, 4)
-
-
-# ---------------------------------------------------------------------------
-# TASK 1 (2026-08-30) — Poisson Monte Carlo moneyline win%, replacing
-# pythagenpat_win_prob() as the live source for the Moneylines tab.
-#
-# Same Poisson scoring model already used by poisson_tail_at_least() below —
-# each team's calculate_team_xruns_v2() output is treated as a Poisson
-# lambda — but instead of a closed-form Pythagenpat exponent, we draw
-# n_sims independent samples per team (vectorized via numpy.random.poisson,
-# runs in low-single-digit milliseconds even at 50k sims) and derive win%
-# from the share of simulations where one side out-scores the other.
-#
-# Baseball can't end in a regulation tie (extra innings), but independent
-# Poisson draws for two teams absolutely can land on the same integer — at
-# these run-environments that happens on a non-trivial share of sims. Ties
-# are broken with a fair coin flip per tied simulation. This is a
-# simplification (it doesn't model extra-inning run environment separately
-# from regulation), but it doesn't systematically favor either side over a
-# large n_sims run, and it's the same shortcut most public Poisson-based
-# MLB win-prob models use.
-#
-# Bonus: the combined (home+away) runs distribution comes back for free
-# off the same sims array — this is exactly the "total runs" number the
-# F5/full-game over/under lines care about, so no separate simulation is
-# needed if/when that gets wired into the Team Matchups totals market.
-#
-# TASK 3 (2026-08-30) — the function no longer takes a bare runs_a/runs_b
-# mean. It now takes the SAME quality-factor inputs calculate_team_xruns_v2
-# already accepts (matchup strength, park factor, weather multiplier,
-# opposing bullpen ERA, bullpen fatigue) for each side, and calls
-# calculate_team_xruns_v2() ITSELF to derive each side's lambda before
-# drawing a single sample. Two consequences, both intentional:
-#   1. The simulation is provably sampling off the park/weather/bullpen-
-#      adjusted mean, not a static league-average number — the adjustment
-#      happens inside this function, immediately before the numpy call.
-#   2. calculate_team_xruns_v2() now only runs ONCE per side per game
-#      (inside here) instead of once in prediction_service.py and then
-#      being handed in — mean_a/mean_b come back on the result object so
-#      callers that need the point-estimate xRuns (e.g. the awayXRuns/
-#      homeXRuns fields on GameResponse) read it off the same number the
-#      simulation actually used, with zero chance of the displayed mean
-#      drifting from the simulated one.
-# ---------------------------------------------------------------------------
-
-MC_DEFAULT_SIMS = 30_000
-# Runs above this per side get folded into a single tail bucket in the
-# returned total-runs PMF, so the dict stays small regardless of n_sims or
-# a freak high-lambda matchup (e.g. Coors Field).
-MC_MAX_TOTAL_RUNS_BUCKET = 24
-
-
-@dataclass(frozen=True)
-class MonteCarloWinResult:
-    prob_a: float
-    prob_b: float
-    # Quality-factor-adjusted Poisson lambda actually sampled from for each
-    # side (calculate_team_xruns_v2 output) — same numbers previously
-    # computed separately in prediction_service.py and handed in as
-    # runs_a/runs_b; now derived here so display and simulation can't drift.
-    mean_a: float
-    mean_b: float
-    n_sims: int
-    # Empirical PMF of (runs_a + runs_b) across the simulation, keyed by
-    # total-runs bucket -> probability. Last key is an overflow bucket for
-    # anything >= MC_MAX_TOTAL_RUNS_BUCKET. Bonus output — not yet wired
-    # into any response schema (see prediction_service.py TASK 1 note).
-    total_runs_dist: dict[int, float]
-    mean_total_runs: float
-
-
-def poisson_monte_carlo_win_prob(
-    matchup_mult_a: float,
-    matchup_mult_b: float,
-    park_factor: float,
-    weather_mult: float,
-    bullpen_era_a: float,
-    bullpen_era_b: float,
-    bullpen_fatigue_mult_a: float = 1.0,
-    bullpen_fatigue_mult_b: float = 1.0,
-    n_sims: int = MC_DEFAULT_SIMS,
-    rng: np.random.Generator | None = None,
-) -> MonteCarloWinResult:
-    # Side "a"/"b" mirror runs_a/runs_b from the pre-TASK-3 signature (and
-    # pythagenpat_win_prob's convention) — callers keep whichever side they
-    # call "a" mapped to home vs away themselves; this function doesn't
-    # care which is which, only that bullpen_era_a is the ERA of the
-    # bullpen side "a" is BATTING AGAINST (i.e. the opposing team's pen),
-    # same contract calculate_team_xruns_v2 already has.
-    mean_a = calculate_team_xruns_v2(
-        matchup_mult=matchup_mult_a, park_factor=park_factor, weather_mult=weather_mult,
-        bullpen_era=bullpen_era_a, bullpen_fatigue_mult=bullpen_fatigue_mult_a,
-    )
-    mean_b = calculate_team_xruns_v2(
-        matchup_mult=matchup_mult_b, park_factor=park_factor, weather_mult=weather_mult,
-        bullpen_era=bullpen_era_b, bullpen_fatigue_mult=bullpen_fatigue_mult_b,
-    )
-
-    # calculate_team_xruns_v2 clamps to [1.5, 10.0] so this floor is never
-    # actually hit in practice — kept as a defensive fallback (matches the
-    # runs_a<=0/runs_b<=0 guard the pre-TASK-3 version had) in case that
-    # clamp range ever changes.
-    if mean_a <= 0 or mean_b <= 0:
-        return MonteCarloWinResult(
-            prob_a=0.5, prob_b=0.5, mean_a=mean_a, mean_b=mean_b,
-            n_sims=0, total_runs_dist={}, mean_total_runs=0.0,
-        )
-
-    generator = rng if rng is not None else np.random.default_rng()
-    sims_a = generator.poisson(lam=mean_a, size=n_sims)
-    sims_b = generator.poisson(lam=mean_b, size=n_sims)
-
-    a_wins = sims_a > sims_b
-    b_wins = sims_b > sims_a
-    tie_mask = sims_a == sims_b
-
-    tie_count = int(tie_mask.sum())
-    if tie_count:
-        a_wins = a_wins.copy()
-        b_wins = b_wins.copy()
-        tie_idx = np.flatnonzero(tie_mask)
-        coin = generator.random(tie_count) < 0.5
-        a_wins[tie_idx[coin]] = True
-        b_wins[tie_idx[~coin]] = True
-
-    prob_a = clamp(float(a_wins.mean()), MIN_PROB, MAX_PROB)
-    prob_b = clamp(1.0 - prob_a, MIN_PROB, MAX_PROB)
-
-    total_runs = sims_a + sims_b
-    capped = np.minimum(total_runs, MC_MAX_TOTAL_RUNS_BUCKET)
-    counts = np.bincount(capped, minlength=MC_MAX_TOTAL_RUNS_BUCKET + 1)
-    total_runs_dist = {
-        int(bucket): round(float(count) / n_sims, 5)
-        for bucket, count in enumerate(counts)
-        if count > 0
-    }
-
-    return MonteCarloWinResult(
-        prob_a=round(prob_a, 4),
-        prob_b=round(prob_b, 4),
-        mean_a=round(mean_a, 3),
-        mean_b=round(mean_b, 3),
-        n_sims=n_sims,
-        total_runs_dist=total_runs_dist,
-        mean_total_runs=round(float(total_runs.mean()), 3),
-    )
 
 
 def calculate_team_xruns_v2(

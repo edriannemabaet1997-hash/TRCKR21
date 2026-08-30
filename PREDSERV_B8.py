@@ -89,12 +89,12 @@ from math_engine import (
     home_away_scoring_factor,
     lineup_order_bonus_mult,
     pitcher_velocity_mod,
-    poisson_monte_carlo_win_prob,
     prob_to_american,
     process_hr_prob,
     process_rbi_prob,
     process_run_prob,
     projected_pa_from_order,
+    pythagenpat_win_prob,
     remove_vig,
     safe_float,
     shrink_rate,
@@ -504,38 +504,15 @@ class PredictionService:
         away_matchup_mult = _matchup_multiplier(away_team_obp, away_team_slg, home_pitcher.get("era", LEAGUE_AVG_ERA))
         home_matchup_mult = _matchup_multiplier(home_team_obp, home_team_slg, away_pitcher.get("era", LEAGUE_AVG_ERA))
 
-        # TASK 1 (2026-08-30) — Poisson Monte Carlo win% instead of the
-        # closed-form Pythagenpat formula. This call happens once per game
-        # inside _build_game(), which itself only runs once per game per
-        # build_slate() call — build_slate()'s existing self._slate_cache
-        # (see build_slate() above) already makes this per-slate, not
-        # per-request, with zero extra caching plumbing needed here: a cache
-        # hit in build_slate() short-circuits before _build_game() (and
-        # therefore this simulation) ever runs again for that date.
-        #
-        # TASK 3 (2026-08-30) — calculate_team_xruns_v2() is no longer
-        # called out here first and handed in as a plain mean; the quality
-        # factors (matchup strength, park factor, weather multiplier,
-        # opposing bullpen ERA) go straight into
-        # poisson_monte_carlo_win_prob(), which now derives each side's
-        # lambda internally right before sampling. weather_mult and
-        # bullpen_fatigue_mult stay at 1.0 here — same placeholder values
-        # the pre-TASK-3 code used — since no real weather/fatigue feed is
-        # wired into this pipeline yet; swap them for real inputs here the
-        # moment one is.
-        #
-        # Side "a" = home, side "b" = away (matches the pre-TASK-3
-        # home_xruns/away_xruns convention below exactly): bullpen_era_a is
-        # the AWAY bullpen's ERA because the HOME team is the one batting
-        # against it, and vice versa for bullpen_era_b.
-        mc_result = poisson_monte_carlo_win_prob(
-            matchup_mult_a=home_matchup_mult, matchup_mult_b=away_matchup_mult,
-            park_factor=park_factor, weather_mult=1.0,
-            bullpen_era_a=away_bullpen_era, bullpen_era_b=home_bullpen_era,
-            bullpen_fatigue_mult_a=1.0, bullpen_fatigue_mult_b=1.0,
+        away_xruns = calculate_team_xruns_v2(
+            matchup_mult=away_matchup_mult, park_factor=park_factor, weather_mult=1.0,
+            bullpen_era=home_bullpen_era, bullpen_fatigue_mult=1.0,
         )
-        home_win_prob, away_win_prob = mc_result.prob_a, mc_result.prob_b
-        home_xruns, away_xruns = mc_result.mean_a, mc_result.mean_b
+        home_xruns = calculate_team_xruns_v2(
+            matchup_mult=home_matchup_mult, park_factor=park_factor, weather_mult=1.0,
+            bullpen_era=away_bullpen_era, bullpen_fatigue_mult=1.0,
+        )
+        home_win_prob, away_win_prob = pythagenpat_win_prob(home_xruns, away_xruns)
 
         ml_odds = self.odds.find_moneyline_game(moneyline_events, away_name, home_name)
         away_book, home_book = ml_odds.get("away"), ml_odds.get("home")
@@ -549,12 +526,6 @@ class PredictionService:
         home_lineup_list = lineups.get("homePlayers", [])
 
         players: list[dict] = []
-        # PERF (2026-08-29): collected here and flushed ONCE at the end of
-        # this game via repository.upsert_predictions_batch(), instead of
-        # calling repository.upsert_prediction() (its own sqlite3 connect
-        # + commit) for every single prop of every single hitter. See the
-        # docstring on upsert_predictions_batch for why that mattered.
-        prediction_rows: list[tuple] = []
 
         team_iter = [
             (away_id, away_abbr, away_name, away_team_obp, away_team_slg, home_pitcher, home_bullpen_era, away_lineup_list, away_home_away_scalar),
@@ -749,38 +720,35 @@ class PredictionService:
                 },
             })
 
-            # Queue each prop so /api/track-record and sync_results() have
+            # Persist each prop so /api/track-record and sync_results() have
             # something to grade against once games finish (see FIX 2 note
-            # at the top of this file) — upsert so re-building the same
+            # at the top of this file). upsert so re-building the same
             # slate before first pitch just refreshes the line, not a dupe.
-            # Actual DB write happens once for the whole game, below.
             for prop_type, prob_value, quote in (
                 ("hits", hit_prob, hit_quote),
                 ("homeruns", hr_prob, hr_quote),
                 ("rbi", rbi_prob, rbi_quote),
                 ("runs", run_prob, run_quote),
             ):
-                prediction_rows.append((
-                    game_pk,
-                    target_date,
-                    pid,
-                    pname,
-                    prop_type,
-                    prob_value,
-                    prob_to_american(prob_value),
-                    (quote or {}).get("over"),
-                ))
-
-        try:
-            self.repository.upsert_predictions_batch(prediction_rows)
-        except Exception:
-            # Never let a persistence hiccup break slate building — the
-            # live quotes already went into `players` above regardless.
-            logger.warning(
-                "Failed to persist %d predictions for game_pk=%s — the live quotes still went out in this "
-                "response, but these rows won't show up in /api/track-record.",
-                len(prediction_rows), game_pk, exc_info=True,
-            )
+                try:
+                    self.repository.upsert_prediction(
+                        game_pk=game_pk,
+                        game_date=target_date,
+                        player_id=pid,
+                        player_name=pname,
+                        prop_type=prop_type,
+                        probability=prob_value,
+                        fair_odds=prob_to_american(prob_value),
+                        book_odds=(quote or {}).get("over"),
+                    )
+                except Exception:
+                    # Never let a persistence hiccup break slate building —
+                    # the live quote already went into `players` above.
+                    logger.warning(
+                        "Failed to persist prediction (game_pk=%s, player_id=%s, prop_type=%s) — the live quote "
+                        "still went out in this response, but this row won't show up in /api/track-record.",
+                        game_pk, pid, prop_type, exc_info=True,
+                    )
 
         pitchers_out: dict[int, dict] = {}
         for pitcher, team_abbr in ((away_pitcher, away_abbr), (home_pitcher, home_abbr)):

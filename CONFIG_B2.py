@@ -72,14 +72,6 @@ class Settings:
     
     request_timeout: float = _get_float("REQUEST_TIMEOUT", 10.0)
     max_workers: int = _get_int("MAX_WORKERS", 12)
-    # FEATURE (2026-08-29): TTL for MLBClient's in-memory person() cache —
-    # replaces a plain @lru_cache (no expiry) with a bounded, time-based
-    # cache so player bio fields (batSide/pitchHand/fullName) don't stay
-    # stale forever on a long-running server process. Default 6h: long
-    # enough that a normal slate build's repeat lookups for the same
-    # player still hit cache, short enough that a trade/callup/correction
-    # on MLB's side surfaces within the same day without a restart.
-    person_cache_ttl_seconds: int = _get_int("PERSON_CACHE_TTL_SECONDS", 21600)
     cors_origins: tuple[str, ...] = tuple(
         item.strip()
         for item in os.getenv("CORS_ORIGINS", "*").split(",")

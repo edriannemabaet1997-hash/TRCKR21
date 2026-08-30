@@ -28,6 +28,11 @@ class PlayerStats(BaseModel):
     xba: float | None = None
     barrel: float | None = None
     hardhit: float | None = None
+    # "proxy" = estimated from box-score fields (no free-tier Statcast feed
+    # for xwoba/xba/barrel%/hardhit%); "manual" reserved for a future
+    # user-entered override path. Frontend should badge non-"proxy" sources
+    # differently once/if a real Statcast feed is wired in.
+    statsSource: str = "proxy"
     whiff: float | None = None
     babip14d: float | None = None
     iso: float | None = None
@@ -108,6 +113,14 @@ class GameResponse(BaseModel):
     homePitcherId: int | None = None
     awayXRuns: float
     homeXRuns: float
+    # NEW: season-series / recent head-to-head context for the Moneylines
+    # sidebar subtitle (replaces the redundant pitcher-vs-pitcher line that
+    # already appears on the main game card). All optional — populate from
+    # prediction_service/mlb_client once wired; the frontend degrades
+    # gracefully when these are absent.
+    awaySeasonSeriesWins: int | None = None
+    awaySeasonSeriesLosses: int | None = None
+    recentH2H: str | None = None
 
 
 class SlateMeta(BaseModel):

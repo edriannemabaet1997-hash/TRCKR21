@@ -48,7 +48,6 @@
 
 from __future__ import annotations
 
-import logging
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -89,12 +88,12 @@ from math_engine import (
     home_away_scoring_factor,
     lineup_order_bonus_mult,
     pitcher_velocity_mod,
-    poisson_monte_carlo_win_prob,
     prob_to_american,
     process_hr_prob,
     process_rbi_prob,
     process_run_prob,
     projected_pa_from_order,
+    pythagenpat_win_prob,
     remove_vig,
     safe_float,
     shrink_rate,
@@ -103,15 +102,6 @@ from math_engine import (
 from mlb_client import MLBClient
 from odds_client import OddsClient
 from repository import PredictionRepository
-
-# LOGGING (2026-08-29): every previously-silent `except: continue` / `except:
-# pass` in this file now logs before swallowing — see each site below.
-# Deliberately just logging.getLogger(__name__), no basicConfig() here: this
-# is a library module, not the process entrypoint, so it shouldn't clobber
-# whatever handler/format app.py (or uvicorn) configures at startup. Python's
-# default "handler of last resort" still prints WARNING+ to stderr even with
-# zero configuration, so these are visible out of the box either way.
-logger = logging.getLogger("trckr21.prediction_service")
 
 # ---------------------------------------------------------------------------
 # CONSOLIDATION (2026-08-29) — Pitcher Props / Team Matchups / Matchup
@@ -153,8 +143,7 @@ def _format_date_label(date_str: str, is_home: bool, opp_name: str | None) -> st
             return f"{formatted_date} {location} OPP"
         abbr = _TEAM_ABBR_BY_NAME.get(opp_name) or opp_name.split()[0][:3].upper()
         return f"{formatted_date} {location} {abbr}"
-    except (ValueError, TypeError) as exc:
-        logger.debug("Could not format date label for date_str=%r opp_name=%r: %s", date_str, opp_name, exc)
+    except (ValueError, TypeError):
         return str(date_str) or "—"
 
 
@@ -266,72 +255,6 @@ class PredictionService:
         self._matchup_analyzer_cache: dict[str, list[dict]] = {}
         self._lock = Lock()
 
-        # PERF (2026-08-29) — team/pitcher-season-level fetch cache, scoped
-        # to a single build_slate() call (cleared at the top of build_slate,
-        # see below). Before this, team_stats/team_home_away_runs_hits/
-        # team_roster/pitcher_profile were re-fetched fresh inside every
-        # _build_game() call — harmless for a normal single-game-per-team
-        # day, but a real duplicate-fetch bug on doubleheaders (same team_id
-        # showing up in two different game threads the same slate build).
-        # Separate lock from self._lock so team-cache reads/writes never
-        # contend with the slate/player/pitcher-index lock above.
-        self._team_hitting_cache: dict[int, dict] = {}
-        self._team_pitching_cache: dict[int, dict] = {}
-        self._team_home_away_cache: dict[tuple[int, bool], tuple[float, float]] = {}
-        self._team_roster_cache: dict[int, list[dict]] = {}
-        self._pitcher_profile_cache: dict[int, dict] = {}
-        self._team_cache_lock = Lock()
-
-    # ------------------------------------------------------------------
-    # PERF — team/pitcher-season-level cache helpers (see __init__ note).
-    # Each memoizes exactly the MLBClient call it wraps; nothing here
-    # changes what data is fetched or how it's used downstream.
-    # ------------------------------------------------------------------
-
-    def _cached_team_stats(self, team_id: int, group: str) -> dict:
-        cache = self._team_hitting_cache if group == "hitting" else self._team_pitching_cache
-        with self._team_cache_lock:
-            cached = cache.get(team_id)
-        if cached is not None:
-            return cached
-        data = self.mlb.team_stats(team_id, group)
-        with self._team_cache_lock:
-            cache[team_id] = data
-        return data
-
-    def _cached_team_home_away(self, team_id: int, is_home: bool) -> tuple[float, float]:
-        key = (team_id, is_home)
-        with self._team_cache_lock:
-            cached = self._team_home_away_cache.get(key)
-        if cached is not None:
-            return cached
-        data = self.mlb.team_home_away_runs_hits(team_id, is_home=is_home)
-        with self._team_cache_lock:
-            self._team_home_away_cache[key] = data
-        return data
-
-    def _cached_team_roster(self, team_id: int) -> list[dict]:
-        with self._team_cache_lock:
-            cached = self._team_roster_cache.get(team_id)
-        if cached is not None:
-            return cached
-        data = self.mlb.team_roster(team_id)
-        with self._team_cache_lock:
-            self._team_roster_cache[team_id] = data
-        return data
-
-    def _cached_pitcher_profile(self, pitcher_id: int | None) -> dict:
-        if not pitcher_id:
-            return self.mlb.default_pitcher()
-        with self._team_cache_lock:
-            cached = self._pitcher_profile_cache.get(pitcher_id)
-        if cached is not None:
-            return cached
-        data = self.mlb.pitcher_profile(pitcher_id)
-        with self._team_cache_lock:
-            self._pitcher_profile_cache[pitcher_id] = data
-        return data
-
     # ------------------------------------------------------------------
     # SLATE BUILD
     # ------------------------------------------------------------------
@@ -340,17 +263,6 @@ class PredictionService:
         with self._lock:
             if not force and target_date in self._slate_cache:
                 return self._slate_cache[target_date]
-
-        # Fresh team/pitcher cache scope for THIS build: shared by every
-        # game thread below (fixes the doubleheader double-fetch), never
-        # stale across a later build_slate() call for a new date or an
-        # explicit refresh=True.
-        with self._team_cache_lock:
-            self._team_hitting_cache.clear()
-            self._team_pitching_cache.clear()
-            self._team_home_away_cache.clear()
-            self._team_roster_cache.clear()
-            self._pitcher_profile_cache.clear()
 
         games = self.mlb.schedule(target_date)
         prop_odds = self.odds.player_prop_index()
@@ -361,19 +273,14 @@ class PredictionService:
         pitcher_rows: dict[int, dict] = {}
 
         with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-            future_to_game = {
-                executor.submit(self._build_game, game, target_date, prop_odds, moneyline_odds): game
+            futures = [
+                executor.submit(self._build_game, game, target_date, prop_odds, moneyline_odds)
                 for game in games
-            }
-            for future in as_completed(future_to_game):
+            ]
+            for future in as_completed(futures):
                 try:
                     packet = future.result()
                 except Exception:
-                    game_pk = future_to_game[future].get("gamePk", "unknown")
-                    logger.exception(
-                        "Failed to build game packet for gamePk=%s on %s — this game will be missing from the slate.",
-                        game_pk, target_date,
-                    )
                     continue
                 player_rows.extend(packet["players"])
                 game_rows.append(packet["game"])
@@ -413,7 +320,7 @@ class PredictionService:
         return None
 
     def _resolve_hitters(self, team_id: int, lineup_list: list[dict]) -> list[dict]:
-        roster = self._cached_team_roster(team_id)
+        roster = self.mlb.team_roster(team_id)
         non_pitchers = {
             p.get("person", {}).get("id"): p.get("person", {})
             for p in roster
@@ -430,30 +337,6 @@ class PredictionService:
                 hitters.append(person)
             return hitters
         return list(non_pitchers.values())[:9]
-
-    # ------------------------------------------------------------------
-    # PERF — per-player raw data fetch, split out so it can be submitted to
-    # a ThreadPoolExecutor per-hitter (see _build_game PASS 2). Still ~5-6
-    # sequential MLB API calls for ONE player (person/season/platoon/
-    # game_log/recent/ahead-in-count can't be meaningfully deduped — each
-    # is genuinely player-specific), but now many hitters' bundles run
-    # concurrently instead of one hitter fully blocking the next.
-    # ------------------------------------------------------------------
-
-    def _fetch_hitter_bundle(self, pid: int, opp_pitcher_hand: str, target_date: str) -> dict:
-        bat_side = "R"
-        try:
-            bat_side = self.mlb.person(pid).get("batSide", {}).get("code") or "R"
-        except Exception:
-            logger.warning("Could not fetch batSide for player_id=%s — defaulting to 'R'.", pid, exc_info=True)
-        return {
-            "bat_side": bat_side,
-            "hitting_stats": self.mlb.player_season_hitting(pid),
-            "platoon_stats": self.mlb.hitter_platoon_split(pid, opp_pitcher_hand),
-            "game_log": self.mlb.player_game_log(pid, target_date, days=50),
-            "recent_14d": self.mlb.player_recent_hitting(pid, target_date, days=14),
-            "ahead_avg": self.mlb.hitter_ahead_in_count_avg(pid),
-        }
 
     def _build_game(
         self,
@@ -479,13 +362,13 @@ class PredictionService:
 
         away_pitcher_id = away_node.get("probablePitcher", {}).get("id")
         home_pitcher_id = home_node.get("probablePitcher", {}).get("id")
-        away_pitcher = self._cached_pitcher_profile(away_pitcher_id)
-        home_pitcher = self._cached_pitcher_profile(home_pitcher_id)
+        away_pitcher = self.mlb.pitcher_profile(away_pitcher_id)
+        home_pitcher = self.mlb.pitcher_profile(home_pitcher_id)
 
-        away_team_hitting = self._cached_team_stats(away_id, "hitting")
-        home_team_hitting = self._cached_team_stats(home_id, "hitting")
-        away_team_pitching = self._cached_team_stats(away_id, "pitching")
-        home_team_pitching = self._cached_team_stats(home_id, "pitching")
+        away_team_hitting = self.mlb.team_stats(away_id, "hitting")
+        home_team_hitting = self.mlb.team_stats(home_id, "hitting")
+        away_team_pitching = self.mlb.team_stats(away_id, "pitching")
+        home_team_pitching = self.mlb.team_stats(home_id, "pitching")
 
         away_team_obp = safe_float(away_team_hitting.get("obp"), LEAGUE_AVG_OBP)
         home_team_obp = safe_float(home_team_hitting.get("obp"), LEAGUE_AVG_OBP)
@@ -494,48 +377,24 @@ class PredictionService:
         away_bullpen_era = safe_float(away_team_pitching.get("era"), LEAGUE_AVG_ERA)
         home_bullpen_era = safe_float(home_team_pitching.get("era"), LEAGUE_AVG_ERA)
 
-        # Home/away scoring factor — fetched (now cached) once per team per
-        # slate build, not per hitter.
-        away_runs, away_hits = self._cached_team_home_away(away_id, is_home=False)
-        home_runs, home_hits = self._cached_team_home_away(home_id, is_home=True)
+        # Home/away scoring factor — fetched once per team per game, not per hitter.
+        away_runs, away_hits = self.mlb.team_home_away_runs_hits(away_id, is_home=False)
+        home_runs, home_hits = self.mlb.team_home_away_runs_hits(home_id, is_home=True)
         away_home_away_scalar = home_away_scoring_factor(away_runs, away_hits)
         home_home_away_scalar = home_away_scoring_factor(home_runs, home_hits)
 
         away_matchup_mult = _matchup_multiplier(away_team_obp, away_team_slg, home_pitcher.get("era", LEAGUE_AVG_ERA))
         home_matchup_mult = _matchup_multiplier(home_team_obp, home_team_slg, away_pitcher.get("era", LEAGUE_AVG_ERA))
 
-        # TASK 1 (2026-08-30) — Poisson Monte Carlo win% instead of the
-        # closed-form Pythagenpat formula. This call happens once per game
-        # inside _build_game(), which itself only runs once per game per
-        # build_slate() call — build_slate()'s existing self._slate_cache
-        # (see build_slate() above) already makes this per-slate, not
-        # per-request, with zero extra caching plumbing needed here: a cache
-        # hit in build_slate() short-circuits before _build_game() (and
-        # therefore this simulation) ever runs again for that date.
-        #
-        # TASK 3 (2026-08-30) — calculate_team_xruns_v2() is no longer
-        # called out here first and handed in as a plain mean; the quality
-        # factors (matchup strength, park factor, weather multiplier,
-        # opposing bullpen ERA) go straight into
-        # poisson_monte_carlo_win_prob(), which now derives each side's
-        # lambda internally right before sampling. weather_mult and
-        # bullpen_fatigue_mult stay at 1.0 here — same placeholder values
-        # the pre-TASK-3 code used — since no real weather/fatigue feed is
-        # wired into this pipeline yet; swap them for real inputs here the
-        # moment one is.
-        #
-        # Side "a" = home, side "b" = away (matches the pre-TASK-3
-        # home_xruns/away_xruns convention below exactly): bullpen_era_a is
-        # the AWAY bullpen's ERA because the HOME team is the one batting
-        # against it, and vice versa for bullpen_era_b.
-        mc_result = poisson_monte_carlo_win_prob(
-            matchup_mult_a=home_matchup_mult, matchup_mult_b=away_matchup_mult,
-            park_factor=park_factor, weather_mult=1.0,
-            bullpen_era_a=away_bullpen_era, bullpen_era_b=home_bullpen_era,
-            bullpen_fatigue_mult_a=1.0, bullpen_fatigue_mult_b=1.0,
+        away_xruns = calculate_team_xruns_v2(
+            matchup_mult=away_matchup_mult, park_factor=park_factor, weather_mult=1.0,
+            bullpen_era=home_bullpen_era, bullpen_fatigue_mult=1.0,
         )
-        home_win_prob, away_win_prob = mc_result.prob_a, mc_result.prob_b
-        home_xruns, away_xruns = mc_result.mean_a, mc_result.mean_b
+        home_xruns = calculate_team_xruns_v2(
+            matchup_mult=home_matchup_mult, park_factor=park_factor, weather_mult=1.0,
+            bullpen_era=away_bullpen_era, bullpen_fatigue_mult=1.0,
+        )
+        home_win_prob, away_win_prob = pythagenpat_win_prob(home_xruns, away_xruns)
 
         ml_odds = self.odds.find_moneyline_game(moneyline_events, away_name, home_name)
         away_book, home_book = ml_odds.get("away"), ml_odds.get("home")
@@ -549,22 +408,12 @@ class PredictionService:
         home_lineup_list = lineups.get("homePlayers", [])
 
         players: list[dict] = []
-        # PERF (2026-08-29): collected here and flushed ONCE at the end of
-        # this game via repository.upsert_predictions_batch(), instead of
-        # calling repository.upsert_prediction() (its own sqlite3 connect
-        # + commit) for every single prop of every single hitter. See the
-        # docstring on upsert_predictions_batch for why that mattered.
-        prediction_rows: list[tuple] = []
 
         team_iter = [
             (away_id, away_abbr, away_name, away_team_obp, away_team_slg, home_pitcher, home_bullpen_era, away_lineup_list, away_home_away_scalar),
             (home_id, home_abbr, home_name, home_team_obp, home_team_slg, away_pitcher, away_bullpen_era, home_lineup_list, home_home_away_scalar),
         ]
 
-        # --- PASS 1: resolve hitters + per-team opposing-pitcher context for
-        # BOTH teams into one flat job list. No new I/O here beyond what
-        # _resolve_hitters already needed (team roster, now cached).
-        hitter_jobs: list[dict] = []
         for team_id, team_abbr, team_name, team_obp, team_slg, opp_pitcher, opp_bullpen_era, lineup_list, home_away_scalar in team_iter:
             hitters = self._resolve_hitters(team_id, lineup_list)
             opp_pitcher_hand = opp_pitcher.get("hand", "R")
@@ -581,206 +430,147 @@ class PredictionService:
                 pname = person.get("fullName")
                 if not pid or not pname:
                     continue
+
                 order = self._lineup_batting_order(pid, lineup_list) or idx
-                hitter_jobs.append({
-                    "pid": pid, "pname": pname, "order": order,
-                    "team_abbr": team_abbr, "team_name": team_name,
-                    "team_obp": team_obp, "team_slg": team_slg,
-                    "opp_pitcher": opp_pitcher, "opp_pitcher_hand": opp_pitcher_hand,
-                    "opp_pitcher_era": opp_pitcher_era, "opp_pitcher_velo": opp_pitcher_velo,
-                    "opp_bullpen_era": opp_bullpen_era, "split_type": split_type,
-                    "is_high_fatigue": is_high_fatigue, "fatigue_factor": fatigue_factor,
-                    "home_away_scalar": home_away_scalar,
+
+                bat_side = "R"
+                try:
+                    bat_side = self.mlb.person(pid).get("batSide", {}).get("code") or "R"
+                except Exception:
+                    pass
+
+                hitting_stats = self.mlb.player_season_hitting(pid)
+                platoon_stats = self.mlb.hitter_platoon_split(pid, opp_pitcher_hand)
+                game_log = self.mlb.player_game_log(pid, target_date, days=50)
+                recent_14d = self.mlb.player_recent_hitting(pid, target_date, days=14)
+                ahead_avg = self.mlb.hitter_ahead_in_count_avg(pid)
+
+                at_bats = int(hitting_stats.get("atBats", 0) or 0)
+                pa_sample = int(hitting_stats.get("plateAppearances", 0) or at_bats)
+                season_so = int(hitting_stats.get("strikeOuts", 0) or 0)
+                hitter_whiff_proxy = fastball_whiff_proxy(season_so, pa_sample)
+
+                platoon_mult = apply_split_effect(1.0, bat_side, opp_pitcher_hand, split_type)
+
+                stage_a_prob, iso_val, babip_14d, gen_ba = self._compute_hit_probability_stage_a(
+                    season_stats=hitting_stats,
+                    platoon_stats=platoon_stats,
+                    game_log=game_log,
+                    recent_14d=recent_14d,
+                    ahead_in_count_avg=ahead_avg,
+                    batting_order=order,
+                    park_factor=park_factor,
+                    home_away_scalar=home_away_scalar,
+                    is_high_fatigue=is_high_fatigue,
+                    fatigue_factor=fatigue_factor,
+                    opp_bullpen_era=opp_bullpen_era,
+                    opp_pitcher_era=opp_pitcher_era,
+                    opp_pitcher_k_rate=opp_pitcher.get("k_rate", 0.22),
+                    opp_pitcher_whip=opp_pitcher.get("whip", 1.32),
+                    platoon_mult=platoon_mult,
+                )
+
+                hit_prob = self._apply_hit_stage_b(
+                    stage_a_prob=stage_a_prob,
+                    batting_order=order,
+                    iso_val=iso_val,
+                    babip_14d=babip_14d,
+                    pitcher_velo=opp_pitcher_velo,
+                    hitter_whiff_pct=hitter_whiff_proxy,
+                )
+
+                pa_proj = projected_pa_from_order(order)
+
+                obs_hr_rate = int(hitting_stats.get("homeRuns", 0) or 0) / at_bats if at_bats else LEAGUE_AVG_HR_RATE
+                obs_run_rate = int(hitting_stats.get("runs", 0) or 0) / pa_sample if pa_sample else LEAGUE_AVG_RUN_RATE
+                obs_rbi_rate = int(hitting_stats.get("rbi", 0) or 0) / pa_sample if pa_sample else LEAGUE_AVG_RBI_RATE
+                hr_rate = shrink_rate(obs_hr_rate, at_bats, LEAGUE_AVG_HR_RATE, K_HR)
+                run_rate = shrink_rate(obs_run_rate, pa_sample, LEAGUE_AVG_RUN_RATE, K_RUNS)
+                rbi_rate = shrink_rate(obs_rbi_rate, pa_sample, LEAGUE_AVG_RBI_RATE, K_RBI)
+                iso_mult = clamp(iso_val / LEAGUE_AVG_ISO if LEAGUE_AVG_ISO else 1.0, 0.75, 1.35)
+
+                # --- HR pipeline: fatigue decay + ahead-in-count boost ---
+                # Same triggers as Stage A's Pillar 6 (late-inning fatigue) and
+                # Pillar 4 (ahead-in-count bias). Previously only the Hits
+                # pipeline saw these; platoon DNA (platoon_mult, below) was
+                # already shared across Hits/HR since both draw from the same
+                # apply_split_effect() call earlier in this loop.
+                hr_fatigue_mult = fatigue_factor if (is_high_fatigue and order in (5, 6, 7, 8, 9)) else 1.0
+                hr_count_boost_mult = 1.0 + ahead_in_count_boost(ahead_avg, gen_ba)
+
+                # hr_prob/run_prob/rbi_prob are already the full-game P(>=1 event)
+                # across pa_proj plate appearances (see FIX 1 note at the top of
+                # this file) — use them directly, exactly like hit_prob above.
+                # Do NOT re-wrap these in another `1 - (1-p)**pa_proj`.
+                hr_prob = process_hr_prob(
+                    hr_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_val, obs_hr_rate,
+                    fatigue_mult=hr_fatigue_mult, count_boost_mult=hr_count_boost_mult,
+                )
+                run_prob = process_run_prob(
+                    run_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp, order
+                )
+                rbi_prob = process_rbi_prob(
+                    rbi_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp, order, team_slg
+                )
+
+                hit_quote = self.odds.find_player_prop(prop_odds, pname, "hits")
+                hr_quote = self.odds.find_player_prop(prop_odds, pname, "homeruns")
+                rbi_quote = self.odds.find_player_prop(prop_odds, pname, "rbi")
+                run_quote = self.odds.find_player_prop(prop_odds, pname, "runs")
+
+                players.append({
+                    "id": f"{game_pk}-{pid}",
+                    "mlbId": pid,
+                    "name": pname,
+                    "team": team_abbr,
+                    "teamName": team_name,
+                    "gameId": game_id,
+                    "oppPitcher": opp_pitcher.get("name"),
+                    "oppPitcherId": opp_pitcher.get("id"),
+                    "order": order,
+                    "bats": bat_side,
+                    "projectedPA": pa_proj,
+                    "props": {
+                        "hits": _quote_from_market(hit_prob, pa_sample, hit_quote),
+                        "homeruns": _quote_from_market(hr_prob, pa_sample, hr_quote),
+                        "rbi": _quote_from_market(rbi_prob, pa_sample, rbi_quote),
+                        "runs": _quote_from_market(run_prob, pa_sample, run_quote),
+                    },
+                    "stats": {
+                        "xwoba": None, "xba": None, "barrel": None, "hardhit": None,
+                        "whiff": hitter_whiff_proxy,
+                        "babip14d": round(babip_14d, 3),
+                        "iso": round(iso_val, 3),
+                        "plateAppearances": pa_sample,
+                        "atBats": at_bats,
+                    },
                 })
 
-        # --- PASS 2: fetch every hitter's raw per-player data CONCURRENTLY
-        # across the WHOLE GAME (both teams' lineups together), instead of
-        # one hitter fully sequential (person -> season -> platoon ->
-        # game_log -> recent_14d -> ahead_avg, ~5-6 calls) before starting
-        # the next. This is the actual fix for "5+ sequential calls per
-        # hitter inside a per-game thread" — per-player fetches now run in
-        # parallel, not just per-game. See _fetch_hitter_bundle.
-        bundles: dict[int, dict | None] = {}
-        if hitter_jobs:
-            with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-                future_to_pid = {
-                    executor.submit(self._fetch_hitter_bundle, job["pid"], job["opp_pitcher_hand"], target_date): job["pid"]
-                    for job in hitter_jobs
-                }
-                for future in as_completed(future_to_pid):
-                    pid = future_to_pid[future]
+                # Persist each prop so /api/track-record and sync_results() have
+                # something to grade against once games finish (see FIX 2 note
+                # at the top of this file). upsert so re-building the same
+                # slate before first pitch just refreshes the line, not a dupe.
+                for prop_type, prob_value, quote in (
+                    ("hits", hit_prob, hit_quote),
+                    ("homeruns", hr_prob, hr_quote),
+                    ("rbi", rbi_prob, rbi_quote),
+                    ("runs", run_prob, run_quote),
+                ):
                     try:
-                        bundles[pid] = future.result()
-                    except Exception:
-                        logger.exception(
-                            "Failed to fetch hitter bundle for player_id=%s in game_id=%s — this player will be "
-                            "skipped from the slate.",
-                            pid, game_id,
+                        self.repository.upsert_prediction(
+                            game_pk=game_pk,
+                            game_date=target_date,
+                            player_id=pid,
+                            player_name=pname,
+                            prop_type=prop_type,
+                            probability=prob_value,
+                            fair_odds=prob_to_american(prob_value),
+                            book_odds=(quote or {}).get("over"),
                         )
-                        bundles[pid] = None
-
-        # --- PASS 3: pure CPU compute (Stage A/B, HR/Run/RBI) + persistence,
-        # sequential — cheap now that all I/O already happened in PASS 2.
-        # Formulas below are byte-for-byte unchanged from before this
-        # refactor; only the fetch orchestration around them moved.
-        for job in hitter_jobs:
-            pid, pname, order = job["pid"], job["pname"], job["order"]
-            bundle = bundles.get(pid)
-            if not bundle:
-                continue
-
-            team_abbr, team_name = job["team_abbr"], job["team_name"]
-            team_obp, team_slg = job["team_obp"], job["team_slg"]
-            opp_pitcher = job["opp_pitcher"]
-            opp_pitcher_hand = job["opp_pitcher_hand"]
-            opp_pitcher_era = job["opp_pitcher_era"]
-            opp_pitcher_velo = job["opp_pitcher_velo"]
-            opp_bullpen_era = job["opp_bullpen_era"]
-            split_type = job["split_type"]
-            is_high_fatigue = job["is_high_fatigue"]
-            fatigue_factor = job["fatigue_factor"]
-            home_away_scalar = job["home_away_scalar"]
-
-            bat_side = bundle["bat_side"]
-            hitting_stats = bundle["hitting_stats"]
-            platoon_stats = bundle["platoon_stats"]
-            game_log = bundle["game_log"]
-            recent_14d = bundle["recent_14d"]
-            ahead_avg = bundle["ahead_avg"]
-
-            at_bats = int(hitting_stats.get("atBats", 0) or 0)
-            pa_sample = int(hitting_stats.get("plateAppearances", 0) or at_bats)
-            season_so = int(hitting_stats.get("strikeOuts", 0) or 0)
-            hitter_whiff_proxy = fastball_whiff_proxy(season_so, pa_sample)
-
-            platoon_mult = apply_split_effect(1.0, bat_side, opp_pitcher_hand, split_type)
-
-            stage_a_prob, iso_val, babip_14d, gen_ba = self._compute_hit_probability_stage_a(
-                season_stats=hitting_stats,
-                platoon_stats=platoon_stats,
-                game_log=game_log,
-                recent_14d=recent_14d,
-                ahead_in_count_avg=ahead_avg,
-                batting_order=order,
-                park_factor=park_factor,
-                home_away_scalar=home_away_scalar,
-                is_high_fatigue=is_high_fatigue,
-                fatigue_factor=fatigue_factor,
-                opp_bullpen_era=opp_bullpen_era,
-                opp_pitcher_era=opp_pitcher_era,
-                opp_pitcher_k_rate=opp_pitcher.get("k_rate", 0.22),
-                opp_pitcher_whip=opp_pitcher.get("whip", 1.32),
-                platoon_mult=platoon_mult,
-            )
-
-            hit_prob = self._apply_hit_stage_b(
-                stage_a_prob=stage_a_prob,
-                batting_order=order,
-                iso_val=iso_val,
-                babip_14d=babip_14d,
-                pitcher_velo=opp_pitcher_velo,
-                hitter_whiff_pct=hitter_whiff_proxy,
-            )
-
-            pa_proj = projected_pa_from_order(order)
-
-            obs_hr_rate = int(hitting_stats.get("homeRuns", 0) or 0) / at_bats if at_bats else LEAGUE_AVG_HR_RATE
-            obs_run_rate = int(hitting_stats.get("runs", 0) or 0) / pa_sample if pa_sample else LEAGUE_AVG_RUN_RATE
-            obs_rbi_rate = int(hitting_stats.get("rbi", 0) or 0) / pa_sample if pa_sample else LEAGUE_AVG_RBI_RATE
-            hr_rate = shrink_rate(obs_hr_rate, at_bats, LEAGUE_AVG_HR_RATE, K_HR)
-            run_rate = shrink_rate(obs_run_rate, pa_sample, LEAGUE_AVG_RUN_RATE, K_RUNS)
-            rbi_rate = shrink_rate(obs_rbi_rate, pa_sample, LEAGUE_AVG_RBI_RATE, K_RBI)
-            iso_mult = clamp(iso_val / LEAGUE_AVG_ISO if LEAGUE_AVG_ISO else 1.0, 0.75, 1.35)
-
-            # --- HR pipeline: fatigue decay + ahead-in-count boost ---
-            # Same triggers as Stage A's Pillar 6 (late-inning fatigue) and
-            # Pillar 4 (ahead-in-count bias). Previously only the Hits
-            # pipeline saw these; platoon DNA (platoon_mult, below) was
-            # already shared across Hits/HR since both draw from the same
-            # apply_split_effect() call earlier in this loop.
-            hr_fatigue_mult = fatigue_factor if (is_high_fatigue and order in (5, 6, 7, 8, 9)) else 1.0
-            hr_count_boost_mult = 1.0 + ahead_in_count_boost(ahead_avg, gen_ba)
-
-            # hr_prob/run_prob/rbi_prob are already the full-game P(>=1 event)
-            # across pa_proj plate appearances (see FIX 1 note at the top of
-            # this file) — use them directly, exactly like hit_prob above.
-            # Do NOT re-wrap these in another `1 - (1-p)**pa_proj`.
-            hr_prob = process_hr_prob(
-                hr_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_val, obs_hr_rate,
-                fatigue_mult=hr_fatigue_mult, count_boost_mult=hr_count_boost_mult,
-            )
-            run_prob = process_run_prob(
-                run_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp, order
-            )
-            rbi_prob = process_rbi_prob(
-                rbi_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp, order, team_slg
-            )
-
-            hit_quote = self.odds.find_player_prop(prop_odds, pname, "hits")
-            hr_quote = self.odds.find_player_prop(prop_odds, pname, "homeruns")
-            rbi_quote = self.odds.find_player_prop(prop_odds, pname, "rbi")
-            run_quote = self.odds.find_player_prop(prop_odds, pname, "runs")
-
-            players.append({
-                "id": f"{game_pk}-{pid}",
-                "mlbId": pid,
-                "name": pname,
-                "team": team_abbr,
-                "teamName": team_name,
-                "gameId": game_id,
-                "oppPitcher": opp_pitcher.get("name"),
-                "oppPitcherId": opp_pitcher.get("id"),
-                "order": order,
-                "bats": bat_side,
-                "projectedPA": pa_proj,
-                "props": {
-                    "hits": _quote_from_market(hit_prob, pa_sample, hit_quote),
-                    "homeruns": _quote_from_market(hr_prob, pa_sample, hr_quote),
-                    "rbi": _quote_from_market(rbi_prob, pa_sample, rbi_quote),
-                    "runs": _quote_from_market(run_prob, pa_sample, run_quote),
-                },
-                "stats": {
-                    "xwoba": None, "xba": None, "barrel": None, "hardhit": None,
-                    "whiff": hitter_whiff_proxy,
-                    "babip14d": round(babip_14d, 3),
-                    "iso": round(iso_val, 3),
-                    "plateAppearances": pa_sample,
-                    "atBats": at_bats,
-                },
-            })
-
-            # Queue each prop so /api/track-record and sync_results() have
-            # something to grade against once games finish (see FIX 2 note
-            # at the top of this file) — upsert so re-building the same
-            # slate before first pitch just refreshes the line, not a dupe.
-            # Actual DB write happens once for the whole game, below.
-            for prop_type, prob_value, quote in (
-                ("hits", hit_prob, hit_quote),
-                ("homeruns", hr_prob, hr_quote),
-                ("rbi", rbi_prob, rbi_quote),
-                ("runs", run_prob, run_quote),
-            ):
-                prediction_rows.append((
-                    game_pk,
-                    target_date,
-                    pid,
-                    pname,
-                    prop_type,
-                    prob_value,
-                    prob_to_american(prob_value),
-                    (quote or {}).get("over"),
-                ))
-
-        try:
-            self.repository.upsert_predictions_batch(prediction_rows)
-        except Exception:
-            # Never let a persistence hiccup break slate building — the
-            # live quotes already went into `players` above regardless.
-            logger.warning(
-                "Failed to persist %d predictions for game_pk=%s — the live quotes still went out in this "
-                "response, but these rows won't show up in /api/track-record.",
-                len(prediction_rows), game_pk, exc_info=True,
-            )
+                    except Exception:
+                        # Never let a persistence hiccup break slate building —
+                        # the live quote already went into `players` above.
+                        pass
 
         pitchers_out: dict[int, dict] = {}
         for pitcher, team_abbr in ((away_pitcher, away_abbr), (home_pitcher, home_abbr)):
@@ -1038,16 +828,11 @@ class PredictionService:
         results: list[dict] = []
         if jobs:
             with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-                futures = {executor.submit(self._build_pitcher_props_entry, *job): job for job in jobs}
+                futures = [executor.submit(self._build_pitcher_props_entry, *job) for job in jobs]
                 for future in as_completed(futures):
                     try:
                         entry = future.result()
                     except Exception:
-                        job = futures[future]
-                        logger.exception(
-                            "Failed to build pitcher-props entry for pitcher_id=%s (%s) on %s — skipping.",
-                            job[0], job[1], target_date,
-                        )
                         continue
                     if entry:
                         results.append(entry)
@@ -1145,16 +930,11 @@ class PredictionService:
         results: list[dict] = []
         if jobs:
             with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-                futures = {executor.submit(self._build_team_matchup_entry, *job): job for job in jobs}
+                futures = [executor.submit(self._build_team_matchup_entry, *job) for job in jobs]
                 for future in as_completed(futures):
                     try:
                         entry = future.result()
                     except Exception:
-                        job = futures[future]
-                        logger.exception(
-                            "Failed to build team-matchup entry for team_id=%s (%s) on %s — skipping.",
-                            job[0], job[1], target_date,
-                        )
                         continue
                     if entry:
                         results.append(entry)
@@ -1271,16 +1051,11 @@ class PredictionService:
         results: list[dict] = []
         if jobs:
             with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-                futures = {executor.submit(self._build_matchup_analyzer_entry, *job): job for job in jobs}
+                futures = [executor.submit(self._build_matchup_analyzer_entry, *job) for job in jobs]
                 for future in as_completed(futures):
                     try:
                         entry = future.result()
                     except Exception:
-                        job = futures[future]
-                        logger.exception(
-                            "Failed to build matchup-analyzer entry for pitcher_id=%s (%s) on %s — skipping.",
-                            job[0], job[1], target_date,
-                        )
                         continue
                     if entry:
                         results.append(entry)
@@ -1532,32 +1307,17 @@ class PredictionService:
     def sync_results(self) -> dict:
         pending = self.repository.unresolved()
         resolved_count = 0
-        failed_count = 0
         for row in pending:
             try:
                 boxscore = self.mlb._get(f"/game/{row['game_pk']}/boxscore")
                 actual = self._extract_actual_stat(boxscore, row["player_id"], row["prop_type"])
                 if actual is None:
-                    # Not an error — just means the game hasn't finished yet
-                    # (or this prop_type/player never appeared in the box
-                    # score), so it stays unresolved for the next sync pass.
-                    logger.debug(
-                        "sync_results: no actual stat yet for game_pk=%s player_id=%s prop_type=%s — "
-                        "leaving unresolved.",
-                        row.get("game_pk"), row.get("player_id"), row.get("prop_type"),
-                    )
                     continue
                 self.repository.set_actual(row["game_pk"], row["player_id"], row["prop_type"], actual)
                 resolved_count += 1
             except Exception:
-                failed_count += 1
-                logger.exception(
-                    "sync_results failed to resolve game_pk=%s player_id=%s prop_type=%s — will retry on the "
-                    "next sync.",
-                    row.get("game_pk"), row.get("player_id"), row.get("prop_type"),
-                )
                 continue
-        return {"checked": len(pending), "resolved": resolved_count, "failed": failed_count}
+        return {"checked": len(pending), "resolved": resolved_count}
 
     @staticmethod
     def _extract_actual_stat(boxscore: dict, player_id: int, prop_type: str) -> int | None:

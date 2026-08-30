@@ -115,57 +115,6 @@ class PredictionRepository:
                 ),
             )
 
-    def upsert_predictions_batch(self, rows: list[tuple]) -> None:
-        """
-        PERF (2026-08-29): a cold slate build calls the single-row
-        upsert_prediction() up to ~4 times per hitter (hits/homeruns/rbi/
-        runs) — on a ~270-player slate that's 1,000+ individual
-        sqlite3.connect() calls, each taking its own WAL/synchronous PRAGMA
-        round-trip AND the file's write lock, done sequentially inside
-        every per-game thread. With up to settings.max_workers games
-        writing to the same .sqlite3 file concurrently, that's real lock
-        contention stacked on top of the MLB API fetch time — part of why
-        a cold /api/slate build can run long enough to blow past the
-        frontend's 20s timeout. This batches one game's worth of rows into
-        a single connection + single transaction via executemany, same
-        ON CONFLICT upsert semantics as upsert_prediction. Call this once
-        per game (or once per slate) instead of once per row.
-        rows: (game_pk, game_date, player_id, player_name, prop_type,
-        probability, fair_odds, book_odds)
-        """
-        if not rows:
-            return
-        now = datetime.now(timezone.utc).isoformat()
-        with self.connection() as connection:
-            connection.executemany(
-                """
-                INSERT INTO predictions (
-                    game_pk,
-                    game_date,
-                    player_id,
-                    player_name,
-                    prop_type,
-                    probability,
-                    fair_odds,
-                    book_odds,
-                    actual,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)
-                ON CONFLICT (
-                    game_pk,
-                    player_id,
-                    prop_type
-                )
-                DO UPDATE SET
-                    probability = excluded.probability,
-                    fair_odds = excluded.fair_odds,
-                    book_odds = excluded.book_odds,
-                    created_at = excluded.created_at
-                """,
-                [tuple(row) + (now,) for row in rows],
-            )
-
     def unresolved(self) -> list[dict]:
         with self.connection() as connection:
             rows = connection.execute(

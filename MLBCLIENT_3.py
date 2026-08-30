@@ -139,37 +139,6 @@ class MLBClient:
     def __init__(self) -> None:
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "trckr21-mlb-quant/1.0"})
-        # FIX (2026-08-29): the default requests.Session() ships with an
-        # HTTPAdapter capped at pool_connections=10 / pool_maxsize=10 per
-        # host. prediction_service builds a slate with a ThreadPoolExecutor
-        # per game AND a nested ThreadPoolExecutor per hitter inside each
-        # game (settings.max_workers=12 at both levels) — on a normal
-        # ~15-game day that's up to ~100+ threads all hitting
-        # statsapi.mlb.com through this ONE shared session at once. With
-        # only 10 pooled connections, requests/urllib3 doesn't queue nicely;
-        # it opens throwaway connections outside the pool (full TCP+TLS
-        # handshake each time) and discards them, which is exactly the kind
-        # of silent, invisible slowdown that makes a cold build blow past a
-        # 20s client timeout on the first request of the day while looking
-        # totally fine in a one-off manual test. Sizing the pool to match
-        # the real concurrency, plus a small automatic retry/backoff for
-        # transient 429/5xx responses (MLB's API does rate-limit under
-        # bursts), fixes both the connection thrashing and the "one flaky
-        # call eats the full request_timeout" tail latency.
-        _retry = requests.adapters.Retry(
-            total=2,
-            backoff_factor=0.25,
-            status_forcelist=(429, 500, 502, 503, 504),
-            allowed_methods=frozenset({"GET"}),
-            raise_on_status=False,
-        )
-        _adapter = requests.adapters.HTTPAdapter(
-            pool_connections=100,
-            pool_maxsize=100,
-            max_retries=_retry,
-        )
-        self.session.mount("https://", _adapter)
-        self.session.mount("http://", _adapter)
         self._live_feed_cache: dict[int, dict] = {}
         self._person_cache = _TTLCache(maxsize=256, ttl_seconds=settings.person_cache_ttl_seconds)
 

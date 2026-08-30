@@ -48,7 +48,6 @@
 
 from __future__ import annotations
 
-import logging
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -89,12 +88,12 @@ from math_engine import (
     home_away_scoring_factor,
     lineup_order_bonus_mult,
     pitcher_velocity_mod,
-    poisson_monte_carlo_win_prob,
     prob_to_american,
     process_hr_prob,
     process_rbi_prob,
     process_run_prob,
     projected_pa_from_order,
+    pythagenpat_win_prob,
     remove_vig,
     safe_float,
     shrink_rate,
@@ -103,15 +102,6 @@ from math_engine import (
 from mlb_client import MLBClient
 from odds_client import OddsClient
 from repository import PredictionRepository
-
-# LOGGING (2026-08-29): every previously-silent `except: continue` / `except:
-# pass` in this file now logs before swallowing — see each site below.
-# Deliberately just logging.getLogger(__name__), no basicConfig() here: this
-# is a library module, not the process entrypoint, so it shouldn't clobber
-# whatever handler/format app.py (or uvicorn) configures at startup. Python's
-# default "handler of last resort" still prints WARNING+ to stderr even with
-# zero configuration, so these are visible out of the box either way.
-logger = logging.getLogger("trckr21.prediction_service")
 
 # ---------------------------------------------------------------------------
 # CONSOLIDATION (2026-08-29) — Pitcher Props / Team Matchups / Matchup
@@ -153,8 +143,7 @@ def _format_date_label(date_str: str, is_home: bool, opp_name: str | None) -> st
             return f"{formatted_date} {location} OPP"
         abbr = _TEAM_ABBR_BY_NAME.get(opp_name) or opp_name.split()[0][:3].upper()
         return f"{formatted_date} {location} {abbr}"
-    except (ValueError, TypeError) as exc:
-        logger.debug("Could not format date label for date_str=%r opp_name=%r: %s", date_str, opp_name, exc)
+    except (ValueError, TypeError):
         return str(date_str) or "—"
 
 
@@ -361,19 +350,14 @@ class PredictionService:
         pitcher_rows: dict[int, dict] = {}
 
         with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-            future_to_game = {
-                executor.submit(self._build_game, game, target_date, prop_odds, moneyline_odds): game
+            futures = [
+                executor.submit(self._build_game, game, target_date, prop_odds, moneyline_odds)
                 for game in games
-            }
-            for future in as_completed(future_to_game):
+            ]
+            for future in as_completed(futures):
                 try:
                     packet = future.result()
                 except Exception:
-                    game_pk = future_to_game[future].get("gamePk", "unknown")
-                    logger.exception(
-                        "Failed to build game packet for gamePk=%s on %s — this game will be missing from the slate.",
-                        game_pk, target_date,
-                    )
                     continue
                 player_rows.extend(packet["players"])
                 game_rows.append(packet["game"])
@@ -445,7 +429,7 @@ class PredictionService:
         try:
             bat_side = self.mlb.person(pid).get("batSide", {}).get("code") or "R"
         except Exception:
-            logger.warning("Could not fetch batSide for player_id=%s — defaulting to 'R'.", pid, exc_info=True)
+            pass
         return {
             "bat_side": bat_side,
             "hitting_stats": self.mlb.player_season_hitting(pid),
@@ -504,38 +488,15 @@ class PredictionService:
         away_matchup_mult = _matchup_multiplier(away_team_obp, away_team_slg, home_pitcher.get("era", LEAGUE_AVG_ERA))
         home_matchup_mult = _matchup_multiplier(home_team_obp, home_team_slg, away_pitcher.get("era", LEAGUE_AVG_ERA))
 
-        # TASK 1 (2026-08-30) — Poisson Monte Carlo win% instead of the
-        # closed-form Pythagenpat formula. This call happens once per game
-        # inside _build_game(), which itself only runs once per game per
-        # build_slate() call — build_slate()'s existing self._slate_cache
-        # (see build_slate() above) already makes this per-slate, not
-        # per-request, with zero extra caching plumbing needed here: a cache
-        # hit in build_slate() short-circuits before _build_game() (and
-        # therefore this simulation) ever runs again for that date.
-        #
-        # TASK 3 (2026-08-30) — calculate_team_xruns_v2() is no longer
-        # called out here first and handed in as a plain mean; the quality
-        # factors (matchup strength, park factor, weather multiplier,
-        # opposing bullpen ERA) go straight into
-        # poisson_monte_carlo_win_prob(), which now derives each side's
-        # lambda internally right before sampling. weather_mult and
-        # bullpen_fatigue_mult stay at 1.0 here — same placeholder values
-        # the pre-TASK-3 code used — since no real weather/fatigue feed is
-        # wired into this pipeline yet; swap them for real inputs here the
-        # moment one is.
-        #
-        # Side "a" = home, side "b" = away (matches the pre-TASK-3
-        # home_xruns/away_xruns convention below exactly): bullpen_era_a is
-        # the AWAY bullpen's ERA because the HOME team is the one batting
-        # against it, and vice versa for bullpen_era_b.
-        mc_result = poisson_monte_carlo_win_prob(
-            matchup_mult_a=home_matchup_mult, matchup_mult_b=away_matchup_mult,
-            park_factor=park_factor, weather_mult=1.0,
-            bullpen_era_a=away_bullpen_era, bullpen_era_b=home_bullpen_era,
-            bullpen_fatigue_mult_a=1.0, bullpen_fatigue_mult_b=1.0,
+        away_xruns = calculate_team_xruns_v2(
+            matchup_mult=away_matchup_mult, park_factor=park_factor, weather_mult=1.0,
+            bullpen_era=home_bullpen_era, bullpen_fatigue_mult=1.0,
         )
-        home_win_prob, away_win_prob = mc_result.prob_a, mc_result.prob_b
-        home_xruns, away_xruns = mc_result.mean_a, mc_result.mean_b
+        home_xruns = calculate_team_xruns_v2(
+            matchup_mult=home_matchup_mult, park_factor=park_factor, weather_mult=1.0,
+            bullpen_era=away_bullpen_era, bullpen_fatigue_mult=1.0,
+        )
+        home_win_prob, away_win_prob = pythagenpat_win_prob(home_xruns, away_xruns)
 
         ml_odds = self.odds.find_moneyline_game(moneyline_events, away_name, home_name)
         away_book, home_book = ml_odds.get("away"), ml_odds.get("home")
@@ -549,12 +510,6 @@ class PredictionService:
         home_lineup_list = lineups.get("homePlayers", [])
 
         players: list[dict] = []
-        # PERF (2026-08-29): collected here and flushed ONCE at the end of
-        # this game via repository.upsert_predictions_batch(), instead of
-        # calling repository.upsert_prediction() (its own sqlite3 connect
-        # + commit) for every single prop of every single hitter. See the
-        # docstring on upsert_predictions_batch for why that mattered.
-        prediction_rows: list[tuple] = []
 
         team_iter = [
             (away_id, away_abbr, away_name, away_team_obp, away_team_slg, home_pitcher, home_bullpen_era, away_lineup_list, away_home_away_scalar),
@@ -612,11 +567,6 @@ class PredictionService:
                     try:
                         bundles[pid] = future.result()
                     except Exception:
-                        logger.exception(
-                            "Failed to fetch hitter bundle for player_id=%s in game_id=%s — this player will be "
-                            "skipped from the slate.",
-                            pid, game_id,
-                        )
                         bundles[pid] = None
 
         # --- PASS 3: pure CPU compute (Stage A/B, HR/Run/RBI) + persistence,
@@ -749,38 +699,31 @@ class PredictionService:
                 },
             })
 
-            # Queue each prop so /api/track-record and sync_results() have
+            # Persist each prop so /api/track-record and sync_results() have
             # something to grade against once games finish (see FIX 2 note
-            # at the top of this file) — upsert so re-building the same
+            # at the top of this file). upsert so re-building the same
             # slate before first pitch just refreshes the line, not a dupe.
-            # Actual DB write happens once for the whole game, below.
             for prop_type, prob_value, quote in (
                 ("hits", hit_prob, hit_quote),
                 ("homeruns", hr_prob, hr_quote),
                 ("rbi", rbi_prob, rbi_quote),
                 ("runs", run_prob, run_quote),
             ):
-                prediction_rows.append((
-                    game_pk,
-                    target_date,
-                    pid,
-                    pname,
-                    prop_type,
-                    prob_value,
-                    prob_to_american(prob_value),
-                    (quote or {}).get("over"),
-                ))
-
-        try:
-            self.repository.upsert_predictions_batch(prediction_rows)
-        except Exception:
-            # Never let a persistence hiccup break slate building — the
-            # live quotes already went into `players` above regardless.
-            logger.warning(
-                "Failed to persist %d predictions for game_pk=%s — the live quotes still went out in this "
-                "response, but these rows won't show up in /api/track-record.",
-                len(prediction_rows), game_pk, exc_info=True,
-            )
+                try:
+                    self.repository.upsert_prediction(
+                        game_pk=game_pk,
+                        game_date=target_date,
+                        player_id=pid,
+                        player_name=pname,
+                        prop_type=prop_type,
+                        probability=prob_value,
+                        fair_odds=prob_to_american(prob_value),
+                        book_odds=(quote or {}).get("over"),
+                    )
+                except Exception:
+                    # Never let a persistence hiccup break slate building —
+                    # the live quote already went into `players` above.
+                    pass
 
         pitchers_out: dict[int, dict] = {}
         for pitcher, team_abbr in ((away_pitcher, away_abbr), (home_pitcher, home_abbr)):
@@ -1038,16 +981,11 @@ class PredictionService:
         results: list[dict] = []
         if jobs:
             with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-                futures = {executor.submit(self._build_pitcher_props_entry, *job): job for job in jobs}
+                futures = [executor.submit(self._build_pitcher_props_entry, *job) for job in jobs]
                 for future in as_completed(futures):
                     try:
                         entry = future.result()
                     except Exception:
-                        job = futures[future]
-                        logger.exception(
-                            "Failed to build pitcher-props entry for pitcher_id=%s (%s) on %s — skipping.",
-                            job[0], job[1], target_date,
-                        )
                         continue
                     if entry:
                         results.append(entry)
@@ -1145,16 +1083,11 @@ class PredictionService:
         results: list[dict] = []
         if jobs:
             with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-                futures = {executor.submit(self._build_team_matchup_entry, *job): job for job in jobs}
+                futures = [executor.submit(self._build_team_matchup_entry, *job) for job in jobs]
                 for future in as_completed(futures):
                     try:
                         entry = future.result()
                     except Exception:
-                        job = futures[future]
-                        logger.exception(
-                            "Failed to build team-matchup entry for team_id=%s (%s) on %s — skipping.",
-                            job[0], job[1], target_date,
-                        )
                         continue
                     if entry:
                         results.append(entry)
@@ -1271,16 +1204,11 @@ class PredictionService:
         results: list[dict] = []
         if jobs:
             with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
-                futures = {executor.submit(self._build_matchup_analyzer_entry, *job): job for job in jobs}
+                futures = [executor.submit(self._build_matchup_analyzer_entry, *job) for job in jobs]
                 for future in as_completed(futures):
                     try:
                         entry = future.result()
                     except Exception:
-                        job = futures[future]
-                        logger.exception(
-                            "Failed to build matchup-analyzer entry for pitcher_id=%s (%s) on %s — skipping.",
-                            job[0], job[1], target_date,
-                        )
                         continue
                     if entry:
                         results.append(entry)
@@ -1532,32 +1460,17 @@ class PredictionService:
     def sync_results(self) -> dict:
         pending = self.repository.unresolved()
         resolved_count = 0
-        failed_count = 0
         for row in pending:
             try:
                 boxscore = self.mlb._get(f"/game/{row['game_pk']}/boxscore")
                 actual = self._extract_actual_stat(boxscore, row["player_id"], row["prop_type"])
                 if actual is None:
-                    # Not an error — just means the game hasn't finished yet
-                    # (or this prop_type/player never appeared in the box
-                    # score), so it stays unresolved for the next sync pass.
-                    logger.debug(
-                        "sync_results: no actual stat yet for game_pk=%s player_id=%s prop_type=%s — "
-                        "leaving unresolved.",
-                        row.get("game_pk"), row.get("player_id"), row.get("prop_type"),
-                    )
                     continue
                 self.repository.set_actual(row["game_pk"], row["player_id"], row["prop_type"], actual)
                 resolved_count += 1
             except Exception:
-                failed_count += 1
-                logger.exception(
-                    "sync_results failed to resolve game_pk=%s player_id=%s prop_type=%s — will retry on the "
-                    "next sync.",
-                    row.get("game_pk"), row.get("player_id"), row.get("prop_type"),
-                )
                 continue
-        return {"checked": len(pending), "resolved": resolved_count, "failed": failed_count}
+        return {"checked": len(pending), "resolved": resolved_count}
 
     @staticmethod
     def _extract_actual_stat(boxscore: dict, player_id: int, prop_type: str) -> int | None:

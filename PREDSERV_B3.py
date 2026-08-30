@@ -1,8 +1,26 @@
-# prediction_service.py — full rewrite covering:
-#   Issue #1: real batting-order lineups, hitters-only (no pitchers in props)
-#   Issue #2: get_matchup() for the Matchup Verifier
-#   Issue #4: ported ABI hit-probability calibration + capped modifiers,
-#             plus the missing PA-compounding step for runs/HR/RBI
+# prediction_service.py — full ABI hit-probability port from the original
+# 2000+ line Streamlit backend. Two-stage pipeline, matching the original
+# exactly:
+#
+#   STAGE A (ported from process_abi_single_hitter): Bayesian PA-weighted
+#   baseline -> platoon blend -> ahead-in-count boost -> home/away scalar ->
+#   wOBA-weighted 5/10/15-game form buckets -> fatigue decay -> weather/park
+#   cap -> PA-scaled binomial core -> K/WHIP modifier -> bullpen cap ->
+#   platoon DNA -> Poisson decay -> hard clamp [0.02, 0.80].
+#
+#   STAGE B (ported from the tab_hit post-processing block, "BATAS 1/2/3" +
+#   the V8.9 quality modifier): velocity control penalty -> BABIP regression
+#   penalty -> lineup order bonus -> quality modifier + pitcher velocity mod
+#   -> final clamp [0.0, 1.0].
+#
+# Two things were deliberately NOT ported (see chat) because they were dead
+# code in the original itself, not because they were dropped by accident:
+#   - OFC modifier: opposite_pct was a hardcoded 0.26 constant compared
+#     against a >=0.28 threshold — always false, so it never fired.
+#   - pitcher_avg_fb_velo (BATAS 1's input) was never actually populated
+#     anywhere in the original pipeline (always read as 0.0), so the
+#     velocity-control penalty never fired either. Here it's wired to a
+#     real fetch (pitchArsenal avg fastball velocity) so it actually works.
 
 from __future__ import annotations
 
@@ -14,9 +32,12 @@ from threading import Lock
 from config import settings
 from math_engine import (
     LEAGUE_AVG_BA,
+    LEAGUE_AVG_BABIP,
     LEAGUE_AVG_ERA,
     LEAGUE_AVG_HR_RATE,
+    LEAGUE_AVG_ISO,
     LEAGUE_AVG_OBP,
+    LEAGUE_AVG_XWOBA,
     LEAGUE_AVG_RBI_RATE,
     LEAGUE_AVG_RUN_RATE,
     LEAGUE_AVG_SLG,
@@ -26,12 +47,23 @@ from math_engine import (
     K_RUNS,
     MAX_PROB,
     MIN_PROB,
+    ahead_in_count_boost,
     analyze_pitcher_split,
     apply_split_effect,
+    babip_regression_penalty_points,
+    barrel_pct_proxy,
+    batted_ball_air_rate,
     build_pitcher_ladder,
     calculate_team_xruns_v2,
+    calculate_woba_from_stats,
     clamp,
     confidence_from_edge,
+    fastball_whiff_proxy,
+    hardhit_pct_proxy,
+    hit_quality_modifier,
+    home_away_scoring_factor,
+    lineup_order_bonus_mult,
+    pitcher_velocity_mod,
     prob_to_american,
     process_hr_prob,
     process_rbi_prob,
@@ -41,13 +73,13 @@ from math_engine import (
     remove_vig,
     safe_float,
     shrink_rate,
+    velocity_control_penalty,
+    xba_proxy,
+    xwoba_proxy,
 )
 from mlb_client import MLBClient
 from odds_client import OddsClient
 from repository import PredictionRepository
-
-LEAGUE_AVG_ISO = LEAGUE_AVG_SLG - LEAGUE_AVG_BA
-LEAGUE_AVG_BABIP = 0.295
 
 STADIUM_INDICES = {
     "Coors Field": {"elevation_factor": 1.12, "base_park_factor": 1.15},
@@ -163,7 +195,7 @@ class PredictionService:
         return slate
 
     # ------------------------------------------------------------------
-    # ISSUE #1: real lineup extraction, hitters-only roster filtering
+    # Lineup extraction, hitters-only roster filtering
     # ------------------------------------------------------------------
 
     @staticmethod
@@ -174,23 +206,13 @@ class PredictionService:
         return None
 
     def _resolve_hitters(self, team_id: int, lineup_list: list[dict]) -> list[dict]:
-        """
-        Ports the original's hitter resolution: prefer the confirmed roster
-        filtered to non-pitchers, but if today's actual lineup card is
-        available, use it as the authoritative list (and source of batting
-        order) — this is what was missing before, causing pitchers to leak
-        into the Hits table and real lineup regulars (e.g. Ohtani) to be
-        dropped when they weren't in the first 9 roster entries.
-        """
         roster = self.mlb.team_roster(team_id)
         non_pitchers = {
             p.get("person", {}).get("id"): p.get("person", {})
             for p in roster
             if p.get("position", {}).get("code") != "1" and p.get("person", {}).get("id")
         }
-
         if lineup_list:
-            # Real posted lineup — this IS the batting order, 1-9.
             hitters = []
             for node in lineup_list[:9]:
                 pid = node.get("id")
@@ -200,9 +222,6 @@ class PredictionService:
                 person = non_pitchers.get(pid, {"id": pid, "fullName": fallback_name})
                 hitters.append(person)
             return hitters
-
-        # No lineup posted yet (early in the day) — fall back to the
-        # roster's non-pitchers, capped at 9, in roster order.
         return list(non_pitchers.values())[:9]
 
     def _build_game(
@@ -244,13 +263,15 @@ class PredictionService:
         away_bullpen_era = safe_float(away_team_pitching.get("era"), LEAGUE_AVG_ERA)
         home_bullpen_era = safe_float(home_team_pitching.get("era"), LEAGUE_AVG_ERA)
 
+        # Home/away scoring factor — fetched once per team per game, not per hitter.
+        away_runs, away_hits = self.mlb.team_home_away_runs_hits(away_id, is_home=False)
+        home_runs, home_hits = self.mlb.team_home_away_runs_hits(home_id, is_home=True)
+        away_home_away_scalar = home_away_scoring_factor(away_runs, away_hits)
+        home_home_away_scalar = home_away_scoring_factor(home_runs, home_hits)
+
         def _matchup_mult(team_obp, team_slg, opp_starter_era):
-            offense_index = clamp(
-                ((team_obp / LEAGUE_AVG_OBP) + (team_slg / LEAGUE_AVG_SLG)) / 2.0, 0.80, 1.25
-            )
-            pitching_index = clamp(
-                LEAGUE_AVG_ERA / opp_starter_era if opp_starter_era > 0 else 1.0, 0.75, 1.30
-            )
+            offense_index = clamp(((team_obp / LEAGUE_AVG_OBP) + (team_slg / LEAGUE_AVG_SLG)) / 2.0, 0.80, 1.25)
+            pitching_index = clamp(LEAGUE_AVG_ERA / opp_starter_era if opp_starter_era > 0 else 1.0, 0.75, 1.30)
             return offense_index * pitching_index
 
         away_matchup_mult = _matchup_mult(away_team_obp, away_team_slg, home_pitcher.get("era", LEAGUE_AVG_ERA))
@@ -279,16 +300,21 @@ class PredictionService:
 
         players: list[dict] = []
 
-        for team_id, team_abbr, team_name, team_obp, opp_pitcher, opp_bullpen_era, lineup_list in [
-            (away_id, away_abbr, away_name, away_team_obp, home_pitcher, home_bullpen_era, away_lineup_list),
-            (home_id, home_abbr, home_name, home_team_obp, away_pitcher, away_bullpen_era, home_lineup_list),
-        ]:
+        team_iter = [
+            (away_id, away_abbr, away_name, away_team_obp, away_team_slg, home_pitcher, home_bullpen_era, away_lineup_list, away_home_away_scalar),
+            (home_id, home_abbr, home_name, home_team_obp, home_team_slg, away_pitcher, away_bullpen_era, home_lineup_list, home_home_away_scalar),
+        ]
+
+        for team_id, team_abbr, team_name, team_obp, team_slg, opp_pitcher, opp_bullpen_era, lineup_list, home_away_scalar in team_iter:
             hitters = self._resolve_hitters(team_id, lineup_list)
             opp_pitcher_hand = opp_pitcher.get("hand", "R")
             opp_pitcher_era = opp_pitcher.get("era", LEAGUE_AVG_ERA)
+            opp_pitcher_velo = opp_pitcher.get("avg_fastball_velo", 0.0)
             split_type = analyze_pitcher_split(
                 opp_pitcher_hand, opp_pitcher.get("avg_vs_left", 0.250), opp_pitcher.get("avg_vs_right", 0.250)
             )
+            is_high_fatigue = opp_pitcher.get("is_high_fatigue", False)
+            fatigue_factor = opp_pitcher.get("fatigue_factor", 1.0)
 
             for idx, person in enumerate(hitters, start=1):
                 pid = person.get("id")
@@ -308,26 +334,43 @@ class PredictionService:
                 platoon_stats = self.mlb.hitter_platoon_split(pid, opp_pitcher_hand)
                 game_log = self.mlb.player_game_log(pid, target_date, days=50)
                 recent_14d = self.mlb.player_recent_hitting(pid, target_date, days=14)
+                ahead_avg = self.mlb.hitter_ahead_in_count_avg(pid)
 
                 at_bats = int(hitting_stats.get("atBats", 0) or 0)
                 pa_sample = int(hitting_stats.get("plateAppearances", 0) or at_bats)
-                pa_proj = projected_pa_from_order(order)
+                season_so = int(hitting_stats.get("strikeOuts", 0) or 0)
+                hitter_whiff_proxy = fastball_whiff_proxy(season_so, pa_sample)
 
                 platoon_mult = apply_split_effect(1.0, bat_side, opp_pitcher_hand, split_type)
 
-                hit_prob, iso_val, babip_14d = self._compute_hit_probability(
+                stage_a_prob, iso_val, babip_14d = self._compute_hit_probability_stage_a(
                     season_stats=hitting_stats,
                     platoon_stats=platoon_stats,
                     game_log=game_log,
                     recent_14d=recent_14d,
+                    ahead_in_count_avg=ahead_avg,
                     batting_order=order,
                     park_factor=park_factor,
+                    home_away_scalar=home_away_scalar,
+                    is_high_fatigue=is_high_fatigue,
+                    fatigue_factor=fatigue_factor,
                     opp_bullpen_era=opp_bullpen_era,
                     opp_pitcher_era=opp_pitcher_era,
                     opp_pitcher_k_rate=opp_pitcher.get("k_rate", 0.22),
                     opp_pitcher_whip=opp_pitcher.get("whip", 1.32),
                     platoon_mult=platoon_mult,
                 )
+
+                hit_prob = self._apply_hit_stage_b(
+                    stage_a_prob=stage_a_prob,
+                    batting_order=order,
+                    iso_val=iso_val,
+                    babip_14d=babip_14d,
+                    pitcher_velo=opp_pitcher_velo,
+                    hitter_whiff_pct=hitter_whiff_proxy,
+                )
+
+                pa_proj = projected_pa_from_order(order)
 
                 obs_hr_rate = int(hitting_stats.get("homeRuns", 0) or 0) / at_bats if at_bats else LEAGUE_AVG_HR_RATE
                 obs_run_rate = int(hitting_stats.get("runs", 0) or 0) / pa_sample if pa_sample else LEAGUE_AVG_RUN_RATE
@@ -337,18 +380,23 @@ class PredictionService:
                 rbi_rate = shrink_rate(obs_rbi_rate, pa_sample, LEAGUE_AVG_RBI_RATE, K_RBI)
                 iso_mult = clamp(iso_val / LEAGUE_AVG_ISO if LEAGUE_AVG_ISO else 1.0, 0.75, 1.35)
 
-                # --- Issue #4b: single-PA rate -> full-game probability via
-                # binomial compounding, matching your original Runs/HR/RBI
-                # tabs (they compounded process_*_prob's output across PA
-                # rather than treating it as already a full-game number).
+                ground_outs = safe_float(hitting_stats.get("groundOuts"), 0)
+                air_outs = safe_float(hitting_stats.get("airOuts"), 0)
+                air_rate = batted_ball_air_rate(ground_outs, air_outs)
+                season_woba = calculate_woba_from_stats(hitting_stats, LEAGUE_AVG_XWOBA)
+                xwoba_val = xwoba_proxy(season_woba, pa_sample)
+                xba_val = xba_proxy(safe_float(hitting_stats.get("avg"), LEAGUE_AVG_BA), at_bats)
+                barrel_val = barrel_pct_proxy(iso_val, obs_hr_rate)
+                hardhit_val = hardhit_pct_proxy(iso_val, air_rate)
+
                 hr_single = process_hr_prob(
-                    hr_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult
+                    hr_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_val, obs_hr_rate
                 )
                 run_single = process_run_prob(
-                    run_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp
+                    run_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp, order
                 )
                 rbi_single = process_rbi_prob(
-                    rbi_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp
+                    rbi_rate, pa_proj, opp_pitcher_era, opp_bullpen_era, park_factor, platoon_mult, iso_mult, team_obp, order, team_slg
                 )
                 hr_prob = round(clamp(1.0 - (1.0 - hr_single) ** pa_proj, MIN_PROB, MAX_PROB), 4)
                 run_prob = round(clamp(1.0 - (1.0 - run_single) ** pa_proj, MIN_PROB, MAX_PROB), 4)
@@ -378,7 +426,9 @@ class PredictionService:
                         "runs": _quote_from_market(run_prob, pa_sample, run_quote),
                     },
                     "stats": {
-                        "xwoba": None, "xba": None, "barrel": None, "hardhit": None, "whiff": None,
+                        "xwoba": xwoba_val, "xba": xba_val, "barrel": barrel_val, "hardhit": hardhit_val,
+                        "statsSource": "proxy",
+                        "whiff": hitter_whiff_proxy,
                         "babip14d": round(babip_14d, 3),
                         "iso": round(iso_val, 3),
                         "plateAppearances": pa_sample,
@@ -421,21 +471,23 @@ class PredictionService:
         return {"game": game_row, "players": players, "pitchers": pitchers_out}
 
     # ------------------------------------------------------------------
-    # ISSUE #4a: ported ABI hit-probability calibration (ports
-    # process_abi_single_hitter's core math: Bayesian PA-weighted base,
-    # platoon blending, 5/10/15-game recent-form buckets, weather/bullpen
-    # caps, BABIP regression penalty, and the hard 0.02-0.80 clamp that
-    # was missing and caused the 85%+ readings.
+    # STAGE A — ported from process_abi_single_hitter. Returns a probability
+    # already hard-clamped to [0.02, 0.80], matching the original's `prob =
+    # round(max(0.02, min(0.80, prob)), 4)` at the end of that function.
     # ------------------------------------------------------------------
 
-    def _compute_hit_probability(
+    def _compute_hit_probability_stage_a(
         self,
         season_stats: dict,
         platoon_stats: dict,
         game_log: list[dict],
         recent_14d: dict,
+        ahead_in_count_avg: float | None,
         batting_order: int,
         park_factor: float,
+        home_away_scalar: float,
+        is_high_fatigue: bool,
+        fatigue_factor: float,
         opp_bullpen_era: float,
         opp_pitcher_era: float,
         opp_pitcher_k_rate: float,
@@ -456,6 +508,7 @@ class PredictionService:
         else:
             gen_ba, gen_obp = raw_gen_ba, raw_gen_obp
 
+        # --- Platoon blend (Pillars 2 & 3) ---
         plat_ab = int(platoon_stats.get("atBats", 0) or 0)
         if plat_ab <= 10:
             adj_ba, adj_obp, matchup_boost_ratio = gen_ba, gen_obp, 1.0
@@ -469,47 +522,77 @@ class PredictionService:
 
         base_score = adj_ba * (1.0 + ((adj_obp - adj_ba) / 2.0)) * matchup_boost_ratio
 
-        # Recent-form: 5/10/15-game weighted buckets from game log
+        # --- Pillar 4: ahead-in-count bias overlay ---
+        count_boost = ahead_in_count_boost(ahead_in_count_avg, gen_ba)
+        base_score *= (1.0 + count_boost)
+
+        # --- Pillar 5 (OFC) intentionally skipped — dead code in the
+        # original (hardcoded opposite_pct=0.26 never clears the >=0.28
+        # gate), see module docstring.
+
+        # --- Home/away scoring factor ---
+        base_score *= home_away_scalar
+
+        # --- Recent-form: 5/10/15-game wOBA-weighted buckets ---
         valid_games = [g for g in game_log if safe_float(g.get("stat", {}).get("atBats", 0)) > 0]
         recent_15 = valid_games[-15:]
 
-        def _bucket_avg(games: list[dict]) -> float:
+        def _bucket_woba(games: list[dict]) -> float:
             if not games:
                 return base_score
-            hits = sum(safe_float(g.get("stat", {}).get("hits", 0)) for g in games)
-            abs_ = sum(safe_float(g.get("stat", {}).get("atBats", 0)) for g in games)
-            return hits / abs_ if abs_ > 0 else base_score
+            combined = {
+                key: sum(safe_float(g.get("stat", {}).get(key, 0)) for g in games)
+                for key in ("atBats", "baseOnBalls", "sacFlies", "hits", "doubles", "triples", "homeRuns")
+            }
+            return min(0.420, calculate_woba_from_stats(combined, base_score))
 
         if recent_15:
             recent_15 = list(reversed(recent_15))
-            b1 = _bucket_avg(recent_15[0:5])
-            b2 = _bucket_avg(recent_15[5:10])
-            b3 = _bucket_avg(recent_15[10:15])
+            b1 = _bucket_woba(recent_15[0:5])
+            b2 = _bucket_woba(recent_15[5:10])
+            b3 = _bucket_woba(recent_15[10:15])
             form_value = (b1 * 0.55) + (b2 * 0.325) + (b3 * 0.125)
             raw_score = (base_score * 0.60) + (form_value * 0.40)
         else:
             raw_score = base_score
 
-        # BABIP (14-day) regression penalty
-        babip_14d = LEAGUE_AVG_BABIP
-        ab_14d = safe_float(recent_14d.get("atBats", 0))
-        hits_14d = safe_float(recent_14d.get("hits", 0))
-        hr_14d = safe_float(recent_14d.get("homeRuns", 0))
-        so_14d = safe_float(recent_14d.get("strikeOuts", 0))
-        sf_14d = safe_float(recent_14d.get("sacFlies", 0))
-        bip = ab_14d - so_14d - hr_14d + sf_14d
-        if bip >= 10:
-            babip_14d = clamp((hits_14d - hr_14d) / bip, 0.0, 0.6)
+        # --- Pillar 6: late-inning fatigue decay ---
+        if is_high_fatigue and batting_order in (5, 6, 7, 8, 9):
+            raw_score *= fatigue_factor
 
-        babip_penalty = 0.0
-        if 0.300 <= babip_14d <= 0.349:
-            babip_penalty = -0.02
-        elif 0.350 <= babip_14d <= 0.379:
-            babip_penalty = -0.12
-        elif babip_14d >= 0.380:
-            babip_penalty = -0.20
+        # --- Weather/park cap (±8%) ---
+        weather_mult = clamp(park_factor, 0.92, 1.08)
+        raw_score *= weather_mult
 
-        # ISO (season, for quality modifier + reporting)
+        # --- Lineup-position PA scaling (the CORE table — see
+        # projected_pa_from_order's docstring for why this one, not the
+        # tab_hit display table) ---
+        projected_pa = projected_pa_from_order(batting_order)
+
+        if projected_pa < 2.0:
+            return round(MIN_PROB, 4), 0.0, LEAGUE_AVG_BABIP
+
+        # --- Binomial core ---
+        hit_rate_per_ab = raw_score * 0.85
+        raw_hit_prob = 1.0 - math.pow(max(0.0, 1.0 - hit_rate_per_ab), projected_pa)
+
+        prob = raw_hit_prob * (1.0 - (opp_pitcher_k_rate * 0.22)) * (1.0 + ((1.20 - opp_pitcher_whip) * 0.05))
+
+        # Bullpen cap — approximated from opposing bullpen ERA vs league avg
+        # (the original's calculate_team_bullpen_fatigue_multiplier also
+        # factors in innings/games workload ratio, which isn't cheaply
+        # available from the free MLB Stats API; ERA is the dominant term).
+        bullpen_mult = clamp(1.0 + ((LEAGUE_AVG_ERA - opp_bullpen_era) / 25.0), 0.95, 1.06)
+        prob *= bullpen_mult
+
+        # --- Platoon DNA accelerator ---
+        prob *= platoon_mult
+
+        # --- Poisson decay for short PA projections ---
+        if projected_pa < 3.5:
+            prob *= math.exp(projected_pa - 3.5)
+
+        # --- ISO (season) for quality-modifier + reporting ---
         at_bats = safe_float(season_stats.get("atBats", 0))
         hits = safe_float(season_stats.get("hits", 0))
         doubles = safe_float(season_stats.get("doubles", 0))
@@ -521,42 +604,62 @@ class PredictionService:
             slugging = (singles + 2 * doubles + 3 * triples + 4 * hr) / at_bats
             iso_val = slugging - (hits / at_bats)
 
-        # Weather/park cap (±8%), bullpen cap via ERA->multiplier (±6% band)
-        weather_mult = clamp(park_factor, 0.92, 1.08)
-        raw_score *= weather_mult
+        # --- 14-day BABIP (for stage B's regression penalty + quality mod) ---
+        babip_14d = LEAGUE_AVG_BABIP
+        ab_14d = safe_float(recent_14d.get("atBats", 0))
+        hits_14d = safe_float(recent_14d.get("hits", 0))
+        hr_14d = safe_float(recent_14d.get("homeRuns", 0))
+        so_14d = safe_float(recent_14d.get("strikeOuts", 0))
+        sf_14d = safe_float(recent_14d.get("sacFlies", 0))
+        bip = ab_14d - so_14d - hr_14d + sf_14d
+        if bip >= 10:
+            babip_14d = clamp((hits_14d - hr_14d) / bip, 0.0, 0.6)
 
-        bullpen_mult = clamp(1.0 + ((LEAGUE_AVG_ERA - opp_bullpen_era) / 25.0), 0.95, 1.06)
-
-        # Lineup-position PA scaling
-        pa_by_order = {1: 4.6, 2: 4.5, 3: 4.4, 4: 4.3, 5: 3.9, 6: 3.6, 7: 3.2, 8: 3.2, 9: 3.2}
-        projected_pa = pa_by_order.get(batting_order, 3.8)
-
-        if projected_pa < 2.0:
-            return round(MIN_PROB, 4), iso_val, babip_14d
-
-        # Binomial core
-        hit_rate_per_ab = raw_score * 0.85
-        raw_hit_prob = 1.0 - math.pow(max(0.0, 1.0 - hit_rate_per_ab), projected_pa)
-
-        prob = raw_hit_prob * (1.0 - (opp_pitcher_k_rate * 0.22)) * (1.0 + ((1.20 - opp_pitcher_whip) * 0.05))
-        prob *= bullpen_mult
-        prob *= platoon_mult
-        prob = (prob * 100.0) + (babip_penalty * 100.0)
-        prob = prob / 100.0
-
-        if projected_pa < 3.5:
-            prob *= math.exp(projected_pa - 3.5)
-
-        # THE CLAMP — this is what your original enforced and mine was
-        # missing. Without it, stacked multipliers push elite matchups
-        # toward the probability ceiling (0.95), which is what produced
-        # the 85%+ / -588 readings you flagged.
+        # --- THE STAGE-A CLAMP — matches the original's final hard clamp
+        # inside process_abi_single_hitter, BEFORE the tab_hit post-
+        # processing block ever sees the number. ---
         prob = round(clamp(prob, 0.02, 0.80), 4)
 
         return prob, iso_val, babip_14d
 
     # ------------------------------------------------------------------
-    # ISSUE #2: Matchup Verifier
+    # STAGE B — ported from the tab_hit post-processing block ("BATAS
+    # 1/2/3" + V8.9 quality modifier). Takes Stage A's clamped [0.02, 0.80]
+    # output as its starting point (same as the original: tab_hit read
+    # `Hit 1+ %` — Stage A's output — as `base_prob_raw` and built on it),
+    # and produces the final [0.0, 1.0] probability.
+    # ------------------------------------------------------------------
+
+    def _apply_hit_stage_b(
+        self,
+        stage_a_prob: float,
+        batting_order: int,
+        iso_val: float,
+        babip_14d: float,
+        pitcher_velo: float,
+        hitter_whiff_pct: float,
+    ) -> float:
+        prob = stage_a_prob * 100.0  # original operates in 0-100 space here
+
+        # BATAS 1 — velocity control
+        velocity_penalty_pts, _triggered = velocity_control_penalty(pitcher_velo, hitter_whiff_pct)
+        prob += velocity_penalty_pts
+
+        # BATAS 2 — BABIP regression
+        prob += babip_regression_penalty_points(babip_14d)
+
+        # BATAS 3 — lineup order bonus
+        prob *= lineup_order_bonus_mult(batting_order)
+
+        # V8.9 quality modifier + the second (multiplicative) velocity mod
+        quality_mod = hit_quality_modifier(babip_14d, iso_val)
+        velo_mod = pitcher_velocity_mod(pitcher_velo)
+        final_calibrated_prob = prob * (1.0 + quality_mod + velo_mod)
+
+        return round(clamp(final_calibrated_prob / 100.0, 0.0, 1.0), 4)
+
+    # ------------------------------------------------------------------
+    # Matchup Verifier
     # ------------------------------------------------------------------
 
     def get_matchup(self, batter_id: int, pitcher_id: int) -> dict:
@@ -599,7 +702,6 @@ class PredictionService:
         h2h_denom = total_ab + total_bb + total_hbp + total_sf
         h2h_obp = ((total_hits + total_bb + total_hbp) / h2h_denom) if h2h_denom > 0 else h2h_avg
 
-        # Advantage-score gauge — ports your original sabermetric formula
         split_advantage = (batter_avg - 0.250) * 400 + (pitcher_baa - 0.240) * 400
         k_penalty = (pitcher_k_rate - 22.0) * 4.0 + (batter_k_rate - 22.0) * 2.0
         raw_advantage = split_advantage - k_penalty
