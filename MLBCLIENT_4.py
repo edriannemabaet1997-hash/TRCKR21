@@ -20,7 +20,7 @@ from typing import Any, Callable, Optional
 import requests
 
 from config import settings
-from math_engine import parse_innings_pitched, safe_float
+from math_engine import safe_float
 
 # ---------------------------------------------------------------------------
 # CONSOLIDATION (2026-08-29) — pitch-code map + resolver, ported verbatim
@@ -303,67 +303,6 @@ class MLBClient:
         except Exception:
             pass
         return default
-
-    # ------------------------------------------------------------------
-    # TASK 2 (2026-08-30) — bullpen fatigue. Rolling team-level relief-
-    # innings workload over the trailing 2-3 days, built entirely from
-    # endpoints this client already calls (`/schedule`, `/game/{pk}/
-    # boxscore`) — no new paid data source, just wiring. Pure HTTP-shape
-    # fetches only; the innings -> multiplier conversion lives in
-    # math_engine.bullpen_fatigue_multiplier(), not here.
-    # ------------------------------------------------------------------
-
-    def team_recent_game_pks(self, team_id: int, target_date: str, days: int = 3) -> list[int]:
-        """gamePks for this team's COMPLETED games in the `days` days before
-        `target_date` (today's slate date is excluded — a game that hasn't
-        been played yet has no bullpen usage to count)."""
-        try:
-            anchor = date.fromisoformat(str(target_date))
-        except (ValueError, TypeError):
-            anchor = date.today()
-        end_date = anchor - timedelta(days=1)
-        start_date = end_date - timedelta(days=days - 1)
-        payload = self._get(
-            "/schedule",
-            {
-                "sportId": 1,
-                "teamId": team_id,
-                "startDate": start_date.isoformat(),
-                "endDate": end_date.isoformat(),
-            },
-        )
-        game_pks: list[int] = []
-        for day_node in payload.get("dates", []):
-            for g in day_node.get("games", []):
-                if g.get("status", {}).get("abstractGameState") == "Final" and g.get("gamePk"):
-                    game_pks.append(g["gamePk"])
-        return game_pks
-
-    def team_bullpen_relief_innings(self, team_id: int, target_date: str, days: int = 3) -> float:
-        """Total relief innings pitched by `team_id` across its last `days`
-        completed games. A boxscore team node's `pitchers` list is in
-        appearance order — index 0 is that game's starter, everything after
-        is relief — so this sums every reliever's `inningsPitched` (parsed
-        via parse_innings_pitched, not raw float, since IP uses baseball's
-        thirds notation) across every game in the window."""
-        total_relief_ip = 0.0
-        for game_pk in self.team_recent_game_pks(team_id, target_date, days=days):
-            try:
-                box = self.boxscore(game_pk)
-            except Exception:
-                continue
-            for side in ("home", "away"):
-                team_box = box.get("teams", {}).get(side, {})
-                if team_box.get("team", {}).get("id") != team_id:
-                    continue
-                pitcher_ids = team_box.get("pitchers", [])
-                if len(pitcher_ids) <= 1:
-                    continue  # no relief appearance recorded (or a data gap) this game
-                players = team_box.get("players", {})
-                for pid in pitcher_ids[1:]:
-                    p_stats = players.get(f"ID{pid}", {}).get("stats", {}).get("pitching", {})
-                    total_relief_ip += parse_innings_pitched(p_stats.get("inningsPitched"))
-        return round(total_relief_ip, 2)
 
     # ------------------------------------------------------------------
     # CONSOLIDATION (2026-08-29) — fetch methods ported from
@@ -828,12 +767,7 @@ class MLBClient:
     def venue(self, venue_id: int | None) -> dict:
         if not venue_id:
             return {}
-        # hydrate=location,fieldInfo (2026-08-30, TASK 1): the bare
-        # endpoint returns just id/name/link. `location` is what carries
-        # `defaultCoordinates` (lat/lon, needed for the Open-Meteo forecast
-        # fetch) and `azimuthAngle` (home-plate -> center-field bearing,
-        # needed to sign the wind term of weather_scoring_multiplier).
-        payload = self._get(f"/venues/{venue_id}", {"hydrate": "location,fieldInfo"})
+        payload = self._get(f"/venues/{venue_id}")
         venues = payload.get("venues", [])
         return venues[0] if venues else {}
 

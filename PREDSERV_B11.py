@@ -80,7 +80,6 @@ from math_engine import (
     babip_regression_penalty_points,
     build_count_market,
     build_pitcher_ladder,
-    bullpen_fatigue_multiplier,
     calculate_team_xruns_v2,
     calculate_woba_from_stats,
     clamp,
@@ -100,12 +99,10 @@ from math_engine import (
     safe_float,
     shrink_rate,
     velocity_control_penalty,
-    weather_scoring_multiplier,
 )
 from mlb_client import MLBClient
 from odds_client import OddsClient
 from repository import PredictionRepository
-from weather_client import WeatherClient
 
 # LOGGING (2026-08-29): every previously-silent `except: continue` / `except:
 # pass` in this file now logs before swallowing — see each site below.
@@ -255,20 +252,10 @@ def _quote_from_market(model_prob: float, sample_size: int, quote: dict | None) 
 
 
 class PredictionService:
-    def __init__(
-        self,
-        mlb: MLBClient,
-        odds: OddsClient,
-        repository: PredictionRepository,
-        weather: WeatherClient | None = None,
-    ) -> None:
+    def __init__(self, mlb: MLBClient, odds: OddsClient, repository: PredictionRepository) -> None:
         self.mlb = mlb
         self.odds = odds
         self.repository = repository
-        # TASK 1 (2026-08-30) — optional constructor param (defaults to a
-        # plain WeatherClient()) so existing PredictionService(mlb, odds,
-        # repository) call sites keep working unchanged.
-        self.weather = weather or WeatherClient()
         self._slate_cache: dict[str, dict] = {}
         self._player_index: dict[int, dict] = {}
         self._pitcher_index: dict[int, dict] = {}
@@ -293,12 +280,6 @@ class PredictionService:
         self._team_home_away_cache: dict[tuple[int, bool], tuple[float, float]] = {}
         self._team_roster_cache: dict[int, list[dict]] = {}
         self._pitcher_profile_cache: dict[int, dict] = {}
-        # TASK 1 & 2 (2026-08-30) — same per-slate-build cache pattern as
-        # the team caches above. Weather is keyed by (venue_id, game_time)
-        # since it's a per-GAME signal, not per-team; bullpen fatigue is
-        # keyed by team_id alone, same shape as the other team-level caches.
-        self._weather_mult_cache: dict[tuple[int, str], float] = {}
-        self._bullpen_fatigue_cache: dict[int, float] = {}
         self._team_cache_lock = Lock()
 
     # ------------------------------------------------------------------
@@ -352,80 +333,6 @@ class PredictionService:
         return data
 
     # ------------------------------------------------------------------
-    # TASK 1 (2026-08-30) — weather_mult. venue() gives us lat/lon + park
-    # azimuth (already fetched via MLBClient, no new dependency there);
-    # WeatherClient.forecast_at_game_time() is the only new I/O. Falls back
-    # to a neutral 1.0 on any missing venue/coordinate/forecast data — this
-    # is a nice-to-have signal, not something that should ever take a game
-    # off the slate.
-    # ------------------------------------------------------------------
-
-    def _cached_weather_mult(self, venue_id: int | None, game_time_utc: str | None) -> float:
-        if not venue_id or not game_time_utc:
-            return 1.0
-        key = (venue_id, game_time_utc)
-        with self._team_cache_lock:
-            cached = self._weather_mult_cache.get(key)
-        if cached is not None:
-            return cached
-
-        mult = 1.0
-        try:
-            venue_data = self.mlb.venue(venue_id)
-            location = venue_data.get("location", {}) if venue_data else {}
-            coords = location.get("defaultCoordinates", {})
-            lat, lon = coords.get("latitude"), coords.get("longitude")
-            if lat is not None and lon is not None:
-                forecast = self.weather.forecast_at_game_time(lat, lon, game_time_utc)
-                if forecast:
-                    mult = weather_scoring_multiplier(
-                        temperature_f=forecast["temperature_f"],
-                        wind_speed_mph=forecast["wind_speed_mph"],
-                        wind_direction_deg=forecast["wind_direction_deg"],
-                        park_azimuth_deg=location.get("azimuthAngle"),
-                    )
-        except Exception:
-            logger.warning(
-                "Could not compute weather_mult for venue_id=%s game_time=%s — using neutral 1.0.",
-                venue_id, game_time_utc, exc_info=True,
-            )
-            mult = 1.0
-
-        with self._team_cache_lock:
-            self._weather_mult_cache[key] = mult
-        return mult
-
-    # ------------------------------------------------------------------
-    # TASK 2 (2026-08-30) — bullpen_fatigue_mult. Rolling 2-3 day relief-
-    # innings workload from MLB Stats API only (see mlb_client.
-    # team_bullpen_relief_innings). Falls back to a neutral 1.0 on any
-    # fetch failure, same convention as _cached_weather_mult above.
-    # ------------------------------------------------------------------
-
-    def _cached_bullpen_fatigue_mult(self, team_id: int | None, target_date: str) -> float:
-        if not team_id:
-            return 1.0
-        with self._team_cache_lock:
-            cached = self._bullpen_fatigue_cache.get(team_id)
-        if cached is not None:
-            return cached
-
-        mult = 1.0
-        try:
-            relief_ip = self.mlb.team_bullpen_relief_innings(team_id, target_date, days=3)
-            mult = bullpen_fatigue_multiplier(relief_ip)
-        except Exception:
-            logger.warning(
-                "Could not compute bullpen_fatigue_mult for team_id=%s on %s — using neutral 1.0.",
-                team_id, target_date, exc_info=True,
-            )
-            mult = 1.0
-
-        with self._team_cache_lock:
-            self._bullpen_fatigue_cache[team_id] = mult
-        return mult
-
-    # ------------------------------------------------------------------
     # SLATE BUILD
     # ------------------------------------------------------------------
 
@@ -444,8 +351,6 @@ class PredictionService:
             self._team_home_away_cache.clear()
             self._team_roster_cache.clear()
             self._pitcher_profile_cache.clear()
-            self._weather_mult_cache.clear()
-            self._bullpen_fatigue_cache.clear()
 
         games = self.mlb.schedule(target_date)
         prop_odds = self.odds.player_prop_index()
@@ -570,8 +475,6 @@ class PredictionService:
         home_abbr = TEAM_ABBREVIATIONS.get(home_id, "MLB")
 
         venue_name = game.get("venue", {}).get("name", "")
-        venue_id = game.get("venue", {}).get("id")
-        game_date_utc = game.get("gameDate")
         park_factor = STADIUM_INDICES.get(venue_name, {"base_park_factor": 1.00})["base_park_factor"]
 
         away_pitcher_id = away_node.get("probablePitcher", {}).get("id")
@@ -615,34 +518,21 @@ class PredictionService:
         # factors (matchup strength, park factor, weather multiplier,
         # opposing bullpen ERA) go straight into
         # poisson_monte_carlo_win_prob(), which now derives each side's
-        # lambda internally right before sampling.
-        #
-        # TASK 1 (2026-08-30) — weather_mult is now real: venue coordinates
-        # (via mlb.venue()) + Open-Meteo forecast at game time, converted
-        # to a multiplier by weather_scoring_multiplier(). It's a single
-        # per-GAME number (not per-side), same as park_factor.
-        #
-        # TASK 2 (2026-08-30) — bullpen_fatigue_mult_a/b are now real:
-        # rolling 2-3 day relief-innings workload (MLB Stats API only, see
-        # mlb.team_bullpen_relief_innings()), converted via
-        # bullpen_fatigue_multiplier(). Each side's fatigue mult reflects
-        # the BULLPEN THAT SIDE'S OFFENSE IS FACING — same "a/b tracks
-        # whichever bullpen the side is batting against" contract
-        # bullpen_era_a/b already has below.
+        # lambda internally right before sampling. weather_mult and
+        # bullpen_fatigue_mult stay at 1.0 here — same placeholder values
+        # the pre-TASK-3 code used — since no real weather/fatigue feed is
+        # wired into this pipeline yet; swap them for real inputs here the
+        # moment one is.
         #
         # Side "a" = home, side "b" = away (matches the pre-TASK-3
         # home_xruns/away_xruns convention below exactly): bullpen_era_a is
         # the AWAY bullpen's ERA because the HOME team is the one batting
-        # against it, and vice versa for bullpen_era_b — bullpen_fatigue_
-        # mult_a/b follow the same away/home pairing.
-        weather_mult = self._cached_weather_mult(venue_id, game_date_utc)
-        away_bullpen_fatigue_mult = self._cached_bullpen_fatigue_mult(away_id, target_date)
-        home_bullpen_fatigue_mult = self._cached_bullpen_fatigue_mult(home_id, target_date)
+        # against it, and vice versa for bullpen_era_b.
         mc_result = poisson_monte_carlo_win_prob(
             matchup_mult_a=home_matchup_mult, matchup_mult_b=away_matchup_mult,
-            park_factor=park_factor, weather_mult=weather_mult,
+            park_factor=park_factor, weather_mult=1.0,
             bullpen_era_a=away_bullpen_era, bullpen_era_b=home_bullpen_era,
-            bullpen_fatigue_mult_a=away_bullpen_fatigue_mult, bullpen_fatigue_mult_b=home_bullpen_fatigue_mult,
+            bullpen_fatigue_mult_a=1.0, bullpen_fatigue_mult_b=1.0,
         )
         home_win_prob, away_win_prob = mc_result.prob_a, mc_result.prob_b
         home_xruns, away_xruns = mc_result.mean_a, mc_result.mean_b
@@ -1234,7 +1124,6 @@ class PredictionService:
         for game in games:
             teams = game.get("teams", {})
             venue_name = game.get("venue", {}).get("name", "")
-            venue_id = game.get("venue", {}).get("id")
             park_factor = STADIUM_INDICES.get(venue_name, {"base_park_factor": 1.00})["base_park_factor"]
             game_date_utc = game.get("gameDate")
             for side in ("away", "home"):
@@ -1250,7 +1139,7 @@ class PredictionService:
                     seen_team_ids.add(team_id)
                     jobs.append((
                         team_id, team_name, opponent_id, opponent_name, is_home,
-                        opp_pitcher_id, park_factor, venue_name, venue_id, game_date_utc, target_date,
+                        opp_pitcher_id, park_factor, venue_name, game_date_utc,
                     ))
 
         results: list[dict] = []
@@ -1284,9 +1173,7 @@ class PredictionService:
         opp_pitcher_id: int | None,
         park_factor: float,
         venue_name: str,
-        venue_id: int | None,
         game_date_utc: str | None,
-        target_date: str,
     ) -> dict | None:
         games = self.mlb.team_recent_hitting_log(team_id, limit=10)
         if not games:
@@ -1318,18 +1205,10 @@ class PredictionService:
         opp_team_pitching = self.mlb.team_stats(opponent_id, "pitching") if opponent_id else {}
         opp_bullpen_era = safe_float(opp_team_pitching.get("era"), LEAGUE_AVG_ERA)
 
-        # TASK 1 & 2 (2026-08-30) — same real weather_mult / bullpen_fatigue_
-        # mult as _build_game's Monte Carlo path (see the caches + notes
-        # there). bullpen_fatigue_mult here tracks `opponent_id` specifically
-        # because opp_bullpen_era above is already the OPPONENT's bullpen —
-        # the one this team's offense is actually facing today.
-        weather_mult = self._cached_weather_mult(venue_id, game_date_utc)
-        opp_bullpen_fatigue_mult = self._cached_bullpen_fatigue_mult(opponent_id, target_date)
-
         matchup_mult = _matchup_multiplier(team_obp, team_slg, opp_pitcher_era)
         full_game_anchor = calculate_team_xruns_v2(
-            matchup_mult=matchup_mult, park_factor=park_factor, weather_mult=weather_mult,
-            bullpen_era=opp_bullpen_era, bullpen_fatigue_mult=opp_bullpen_fatigue_mult,
+            matchup_mult=matchup_mult, park_factor=park_factor, weather_mult=1.0,
+            bullpen_era=opp_bullpen_era, bullpen_fatigue_mult=1.0,
         )
         # F5 anchor = full_game_xruns * (5/9) — uniform per-inning run
         # distribution, same assumption already made throughout this
