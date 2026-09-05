@@ -150,9 +150,8 @@ body.focus-mode .main-content{ padding:26px clamp(24px,6vw,80px); }
 .sidebar{ width:272px; background:var(--bg); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; }
 .sidebar-label{ font-family:var(--font-mono); font-size:.66em; color:var(--text-lo); letter-spacing:1.5px; padding:15px 20px 9px; display:flex; justify-content:space-between; }
 .sidebar-count{ color:var(--text-ghost); }
-.list-item{ padding:13px 20px; border-bottom:1px solid var(--border-soft); cursor:pointer; transition:background-color .15s var(--ease), border-left-color .15s var(--ease); display:flex; align-items:center; gap:12px; border-left:2px solid transparent; }
-.list-item:hover{ background:var(--bg-raised); border-left-color:var(--border-focus); }
-.list-item.active{ border-left-color:var(--batter); }
+.list-item{ padding:13px 20px; border-bottom:1px solid var(--border-soft); cursor:pointer; transition:background-color .15s var(--ease); display:flex; align-items:center; gap:12px; }
+.list-item:hover{ background:var(--bg-raised); }
 .list-item.active{ background:var(--bg-raised); border-left:3px solid var(--mlb); padding-left:17px; }
 .list-item.active.batter-line{ border-left-color:var(--batter); }
 .list-item.active.pitcher-line{ border-left-color:var(--pitcher); }
@@ -167,7 +166,6 @@ body.focus-mode .main-content{ padding:26px clamp(24px,6vw,80px); }
 .entity-flag{ font-family:var(--font-mono); font-size:.56em; font-weight:700; letter-spacing:.4px; padding:1px 5px; border-radius:3px; margin-top:5px; display:inline-block; }
 .entity-flag.confirmed{ color:var(--green); background:rgba(51,193,122,.12); }
 .entity-flag.projected{ color:var(--amber); background:rgba(242,169,59,.12); }
-.entity-flag.soft{ color:var(--red); background:rgba(232,73,95,.12); }
 .list-empty{ padding:26px 20px; font-size:.82em; color:var(--text-lo); line-height:1.6; }
 .main-content{ flex:1; padding:26px 32px; display:flex; flex-direction:column; overflow-y:auto; min-height:0; }
 .card{ background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--glass-edge), 0 1px 2px rgba(0,0,0,.35); }
@@ -251,13 +249,11 @@ tr.data-row.edge-strong td.name-cell{ box-shadow:inset 3px 0 0 var(--speed); }
 tr.data-row.edge-average td.name-cell{ box-shadow:inset 3px 0 0 var(--amber); }
 tr.data-row.edge-soft td.name-cell{ box-shadow:inset 3px 0 0 var(--power); }
 .lineup-provisional-banner{ grid-column:1/-1; padding:9px 14px; margin-bottom:10px; border:1px solid var(--amber); background:rgba(242,169,59,.10); color:var(--amber); font-size:.82em; border-radius:8px; }
-.hand-tag{ display:inline-block; margin-left:6px; padding:1px 5px; font-family:var(--font-mono); font-size:.68em; font-weight:700; letter-spacing:.3px; color:var(--text-lo); border:1px solid var(--border-soft); border-radius:4px; vertical-align:middle; }
-.pos-tag{ display:inline-block; padding:2px 7px; font-family:var(--font-mono); font-size:.72em; font-weight:700; letter-spacing:.3px; color:var(--text-mid); background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:5px; }
 td.name-cell{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.9em; }
-/* TASK (2026-09-04) — updated for the simplified 4-column Props table
-   (Player / Prob% / Fair Odds / Conviction); previously tuned for 7 columns. */
-#props-table th:nth-child(n+2), #props-table td:nth-child(n+2){ text-align:right; }
-#props-table th:first-child, #props-table td:first-child{ text-align:left; }
+#props-table th:nth-child(n+4), #props-table td:nth-child(n+4){ text-align:right; }
+#props-table th:first-child, #props-table td:first-child,
+#props-table th:nth-child(2), #props-table td:nth-child(2),
+#props-table th:nth-child(3), #props-table td:nth-child(3){ text-align:left; }
 #props-table td.name-cell, #props-table th:first-child{ position:sticky; left:0; z-index:4; background:var(--bg-card); }
 tr.data-row:nth-child(even) td.name-cell{ background:#131519; }
 tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
@@ -477,40 +473,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .intel-stat{ flex:1; min-width:120px; background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; padding:12px 14px; }
 .intel-stat-label{ font-family:var(--font-mono); font-size:.6em; text-transform:uppercase; color:var(--text-lo); font-weight:700; }
 .intel-stat-value{ font-family:var(--font-mono); font-size:1.1em; font-weight:700; color:var(--text-hi); margin-top:4px; }
-.intel-divider{ height:1px; margin:20px 0; background:linear-gradient(90deg, var(--border) 0%, transparent 85%); }
-/* TASK (2026-09-05, diagnostic pass) — Plate Discipline & Exploit Profile,
-   restyled with real depth/motion instead of flat single-tone bars:
-   gradient fills with a soft matching glow, an animated fill-in transition
-   (0 -> target width on first paint), and a "hero" treatment on the
-   exploit callout so it reads as the panel's headline finding rather than
-   another list row. */
-.disc-row{ display:grid; grid-template-columns:78px 1fr 56px; align-items:center; gap:14px; margin-bottom:14px; }
-.disc-row:last-child{ margin-bottom:0; }
-.disc-label{ font-family:var(--font-mono); font-size:.7em; color:var(--text-mid); font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
-.disc-track{ height:8px; border-radius:5px; background:var(--bg-raised); box-shadow:inset 0 1px 2px rgba(0,0,0,.4); position:relative; overflow:visible; }
-.disc-fill{ height:100%; width:0; border-radius:5px; transition:width 1.1s var(--ease); position:relative; }
-.disc-fill::after{ content:''; position:absolute; inset:0; border-radius:5px; background:linear-gradient(180deg, rgba(255,255,255,.22), transparent 60%); }
-.disc-avg-tick{ position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--text-hi); opacity:.5; border-radius:1px; }
-.disc-value{ font-family:var(--font-mono); font-size:.86em; font-weight:800; text-align:right; }
-.disc-footnote{ font-family:var(--font-mono); font-size:.64em; color:var(--text-ghost); margin-top:14px; line-height:1.5; }
-.exploit-callout{
-  display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:18px;
-  padding:16px 18px; border-radius:12px;
-  background:linear-gradient(135deg, rgba(255,122,69,.10), rgba(255,122,69,.02) 60%), var(--bg-raised);
-  border:1px solid rgba(255,122,69,.28);
-  box-shadow:0 8px 24px -12px rgba(255,122,69,.35), var(--glass-edge);
-  position:relative; overflow:hidden;
-}
-.exploit-callout::before{ content:''; position:absolute; top:-40%; right:-10%; width:140px; height:140px; background:radial-gradient(circle, rgba(255,122,69,.16), transparent 70%); pointer-events:none; }
-.exploit-callout-label{ font-family:var(--font-mono); font-size:.64em; text-transform:uppercase; color:var(--text-lo); font-weight:700; letter-spacing:.6px; }
-.exploit-callout-value{ font-family:var(--font-display); font-size:1.4em; font-weight:700; color:var(--text-hi); margin-top:4px; background:linear-gradient(90deg, var(--text-hi), var(--power)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-.exploit-callout-badge{ font-family:var(--font-mono); font-size:.66em; font-weight:800; letter-spacing:.4px; color:var(--power); background:rgba(255,122,69,.14); border:1px solid rgba(255,122,69,.4); padding:5px 11px; border-radius:20px; white-space:nowrap; }
-.form-pulse{ display:flex; gap:10px; margin-top:18px; }
-.form-pulse-seg{ flex:1; text-align:center; padding:13px 6px; border-radius:11px; background:var(--bg-raised); border:1px solid var(--border-soft); transition:transform .2s var(--ease), border-color .2s var(--ease); position:relative; overflow:hidden; }
-.form-pulse-seg::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px; background:currentColor; opacity:.55; }
-.form-pulse-seg:hover{ transform:translateY(-2px); border-color:var(--border-focus); }
-.form-pulse-count{ font-family:var(--font-mono); font-size:1.3em; font-weight:800; line-height:1.2; }
-.form-pulse-label{ font-family:var(--font-mono); font-size:.6em; text-transform:uppercase; color:var(--text-lo); font-weight:700; margin-top:3px; letter-spacing:.4px; }
 .threat-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-soft); }
 .threat-row:last-child{ border-bottom:none; }
 .threat-row-hover{ cursor:help; border-radius:8px; margin:0 -8px; padding:10px 8px; transition:background-color .12s var(--ease); }
@@ -552,7 +514,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 .gc-topline .gc-sep{ color:var(--text-ghost); }
 .gc-fairline{ font-family:var(--font-mono); font-size:.66em; color:var(--text-ghost); letter-spacing:.6px; flex-shrink:0; }
 .gc-matchup{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
-.gc-lineup-status{ margin:8px 0 2px; }
 .gc-team-block{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 4px; border-radius:10px; cursor:pointer; transition:background .15s var(--ease); text-align:center; min-width:0; }
 .gc-team-block:hover{ background:var(--bg-raised); }
 .gc-team-code{ font-family:var(--font-display); font-weight:700; font-size:1.05em; color:var(--text-hi); letter-spacing:.3px; }
@@ -620,7 +581,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 <div class="section-nav" id="mlb-section-nav">
   <div class="cluster">
     <span class="cluster-tag batter"><span class="dot"></span>Batter Model</span>
-    <button class="sec-tab batter-active active" data-sec="hitprops" onclick="switchSection('hitprops')">Props</button>
+    <button class="sec-tab batter-active active" data-sec="hitprops" onclick="switchSection('hitprops')">Hit Props</button>
     <button class="sec-tab" data-sec="moneylines" onclick="switchSection('moneylines')">Moneylines</button>
     <button class="sec-tab" data-sec="trackrecord" onclick="switchSection('trackrecord')">Track Record</button>
   </div>
@@ -643,7 +604,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
 
 <div class="app-container" id="app-container">
   <div class="sidebar">
-    <div class="sidebar-label"><span id="sidebar-label">PROPS</span><span class="sidebar-count mono" id="sidebar-count"></span></div>
+    <div class="sidebar-label"><span id="sidebar-label">HIT PROPS</span><span class="sidebar-count mono" id="sidebar-count"></span></div>
     <div id="sidebar-list"></div>
   </div>
 
@@ -718,7 +679,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
         </div>
         <div class="card lineup-table-card"><table class="lineup-table">
           <thead><tr id="mx-lineup-head">
-            <th>#</th><th>Batter</th><th data-tip="Fielding position">Pos</th><th data-tip="Batting handedness">B</th>
+            <th>#</th><th>Batter</th>
             <th data-key="pa" class="view-contact" onclick="sortH2h('pa')">H2H PA</th>
             <th data-key="avg" class="view-contact" onclick="sortH2h('avg')">H2H AVG</th>
             <th data-key="proxyXba" class="view-contact" onclick="sortH2h('proxyXba')">Proxy xBA</th>
@@ -745,13 +706,10 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
           <div class="edge-tier-badge" id="mx-edge-tier">—</div>
         </div>
         <div class="intel-grid">
-          <div class="card intel-card"><div class="intel-card-title">Lineup Tier Distribution</div><div class="tier-bar" id="mx-tier-bar"></div><div class="tier-legend" id="mx-tier-legend"></div><div class="intel-stats-row" id="mx-intel-stats"></div>
-            <div class="intel-divider"></div>
-            <div class="intel-card-title" style="margin-bottom:16px;">Plate Discipline &amp; Exploit Profile</div>
-            <div id="mx-discipline-profile"></div>
-          </div>
-          <div class="card intel-card"><div class="intel-card-title">Full Lineup &middot; Ranked by Blended OPS</div><div id="mx-top-threats"></div></div>
+          <div class="card intel-card"><div class="intel-card-title">Lineup Tier Distribution</div><div class="tier-bar" id="mx-tier-bar"></div><div class="tier-legend" id="mx-tier-legend"></div><div class="intel-stats-row" id="mx-intel-stats"></div></div>
+          <div class="card intel-card"><div class="intel-card-title">Top Threats</div><div id="mx-top-threats"></div></div>
         </div>
+        <div class="card intel-card"><div class="intel-card-title">Softest Matchups</div><div id="mx-soft-threats"></div></div>
       </div>
     </div>
 
@@ -791,7 +749,7 @@ const State = {
     gameDrawer:{gameId:null, side:'away'},
     ptEntity:null, ptMarketKey:null, ptLine:null, ptDrag:null,
     mxMatchup:null, mxSubTab:'pitchmix', mxTableView:'contact', h2hSort:{key:'blendedOps',dir:'desc'}, h2hFilter:'',
-    sidebarTeamSearch:'', sidebarPitcherSearch:''
+    sidebarTeamSearch:''
   }
 };
 const STAT_LABELS = {hits:'Hits', runs:'Runs', homeruns:'Home Runs', rbi:'RBI'};
@@ -942,7 +900,7 @@ function switchSport(sport){
 }
 
 const SECTION_META = {
-  hitprops:      { cluster:'batter',  label:'PROPS' },
+  hitprops:      { cluster:'batter',  label:'HIT PROPS' },
   moneylines:    { cluster:'batter',  label:'MONEYLINES' },
   trackrecord:   { cluster:'batter',  label:'TRACK RECORD' },
   pitcherprops:  { cluster:'pitcher', label:'PITCHER PROPS' },
@@ -1048,11 +1006,17 @@ function renderSidebar(){
     countEl.textContent = list.length ? `${list.length}` : '';
     if(State.pitcher.loading){ container.innerHTML = skeletonList(); return; }
     if(!list.length){ container.innerHTML = `<div class="list-empty">No ${sec==='pitcherprops'?'probable pitchers':'teams'} on today's slate yet.</div>`; return; }
-    container.appendChild(buildSidebarSearchBox(`Search ${sec==='pitcherprops'?'pitcher':'team'}…`, ()=>renderPitcherClusterList(sec, list)));
-    const listWrap = document.createElement('div');
-    listWrap.id = 'sidebar-pitcher-list';
-    container.appendChild(listWrap);
-    renderPitcherClusterList(sec, list);
+    list.forEach(e=>{
+      const primaryMarket = Object.values(e.markets)[0];
+      const streak = currentStreak(primaryMarket.history, primaryMarket.defaultLine);
+      const dotClass = streak.count>=2 ? (streak.dir==='O'?'hot':'cold') : 'neutral';
+      const div = document.createElement('div');
+      div.className='list-item'+(State.ui.ptEntity && State.ui.ptEntity.id===e.id ? ' active pitcher-line':'');
+      const avatarHtml = sec==='pitcherprops' ? `<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${e.id}/headshot/silo/current" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">` : '';
+      div.innerHTML = `<span class="trend-dot ${dotClass}"></span>${avatarHtml}<div><div class="entity-name">${escapeHTML(e.name)}</div><div class="entity-sub">${e.sub}</div></div>`;
+      div.onclick = ()=>selectPtEntity(e.id, sec);
+      container.appendChild(div);
+    });
     return;
   }
 
@@ -1060,70 +1024,20 @@ function renderSidebar(){
     countEl.textContent = State.pitcher.matchups.length ? `${State.pitcher.matchups.length}` : '';
     if(State.pitcher.loading){ container.innerHTML = skeletonList(); return; }
     if(!State.pitcher.matchups.length){ container.innerHTML = '<div class="list-empty">No matchups yet — waiting on probable pitchers.</div>'; return; }
-    container.appendChild(buildSidebarSearchBox('Search pitcher or team…', ()=>renderPitcherClusterList(sec, State.pitcher.matchups)));
-    const listWrap = document.createElement('div');
-    listWrap.id = 'sidebar-pitcher-list';
-    container.appendChild(listWrap);
-    renderPitcherClusterList(sec, State.pitcher.matchups);
-    return;
-  }
-}
-
-// FIX (2026-09-05, diagnostic pass — "search stops after one character"):
-// this used to re-invoke renderSidebar() on every keystroke, which rebuilds
-// the ENTIRE sidebar container — search input included — from scratch.
-// Recreating the <input> element destroys it and replaces it with a new
-// DOM node, so focus is lost after every single character typed. Now the
-// input's oninput only re-renders the results list below it
-// (renderPitcherClusterList), never the search box itself, so the element
-// the browser is focused on is never destroyed.
-function buildSidebarSearchBox(placeholder, onInput){
-  const searchBox = document.createElement('div');
-  searchBox.style.cssText = 'padding:0 16px 12px;';
-  searchBox.innerHTML = `<input type="text" id="sidebar-pitcher-search" placeholder="${escapeHTML(placeholder)}" value="${escapeHTML(State.ui.sidebarPitcherSearch)}" style="width:100%;">`;
-  requestAnimationFrame(()=>{
-    const el = document.getElementById('sidebar-pitcher-search');
-    if(!el) return;
-    el.oninput = debounce(e=>{ State.ui.sidebarPitcherSearch = e.target.value.toLowerCase().trim(); onInput(); },150);
-  });
-  return searchBox;
-}
-
-function renderPitcherClusterList(sec, fullList){
-  const listWrap = document.getElementById('sidebar-pitcher-list');
-  if(!listWrap) return;
-  const q = State.ui.sidebarPitcherSearch;
-  const nameOf = e => sec==='matchupanalyzer' ? e.pitcherName : e.name;
-  const subOf = e => sec==='matchupanalyzer' ? `${e.team} ${e.matchup}` : (e.sub||'');
-  const list = q ? fullList.filter(e => nameOf(e).toLowerCase().includes(q) || subOf(e).toLowerCase().includes(q)) : fullList;
-  if(!list.length){ listWrap.innerHTML = `<div class="list-empty">No matches for "${escapeHTML(q)}".</div>`; return; }
-  listWrap.innerHTML = '';
-  if(sec==='matchupanalyzer'){
-    list.forEach(m=>{
+    State.pitcher.matchups.forEach(m=>{
       const div = document.createElement('div');
       div.className='list-item'+(State.ui.mxMatchup && State.ui.mxMatchup.id===m.id ? ' active matchup-line':'');
       div.innerHTML = `<span class="trend-dot ${m.lineupEdgeTier==='elite'||m.lineupEdgeTier==='strong'?'hot':m.lineupEdgeTier==='soft'?'cold':'neutral'}"></span>
         <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${m.pitcherId}/headshot/silo/current" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">
-        <div><div class="entity-name">${escapeHTML(m.pitcherName)}${m.throws?`<span class="hand-tag">${escapeHTML(m.throws)}HP</span>`:''}</div><div class="entity-sub">${escapeHTML(m.team)} &middot; <span class="opp">${escapeHTML(m.matchup)}</span></div>
+        <div><div class="entity-name">${escapeHTML(m.pitcherName)}</div><div class="entity-sub">${escapeHTML(m.team)} &middot; <span class="opp">${escapeHTML(m.matchup)}</span></div>
         <span class="entity-flag ${m.lineupConfirmed?'confirmed':'projected'}">${m.lineupConfirmed?'LINEUP CONFIRMED':'PROJECTED ROSTER'}</span></div>`;
       div.onclick = ()=>selectMatchup(m.id);
       div.onmouseenter = ()=>showFloatTip(div, mxPitcherTipHTML(m));
       div.onmouseleave = hideFloatTip;
-      listWrap.appendChild(div);
+      container.appendChild(div);
     });
     return;
   }
-  list.forEach(e=>{
-    const primaryMarket = Object.values(e.markets)[0];
-    const streak = currentStreak(primaryMarket.history, primaryMarket.defaultLine);
-    const dotClass = streak.count>=2 ? (streak.dir==='O'?'hot':'cold') : 'neutral';
-    const div = document.createElement('div');
-    div.className='list-item'+(State.ui.ptEntity && State.ui.ptEntity.id===e.id ? ' active pitcher-line':'');
-    const avatarHtml = sec==='pitcherprops' ? `<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${e.id}/headshot/silo/current" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">` : '';
-    div.innerHTML = `<span class="trend-dot ${dotClass}"></span>${avatarHtml}<div><div class="entity-name">${escapeHTML(e.name)}</div><div class="entity-sub">${e.sub}</div></div>`;
-    div.onclick = ()=>selectPtEntity(e.id, sec);
-    listWrap.appendChild(div);
-  });
 }
 
 function renderSidebarTeamList(){
@@ -1276,20 +1190,12 @@ function renderFilters(){
   document.getElementById('inp-search').oninput = debounce(e=>{ State.ui.filters.search=e.target.value.toLowerCase(); renderPropsTable(); },250);
 }
 function getFilteredPlayers(){
-  // FIX (2026-09-04, diagnostic pass): the backend only ever sorts
-  // player_rows by HITS probability (see prediction_service.build_slate) —
-  // there was never a re-sort here for the active tab, so the Runs/Home
-  // Runs/RBI tables were silently displayed in Hits-probability order
-  // the entire time. That's the real reason "Player A" looked like the
-  // top name on every single tab regardless of what his actual HR/RBI/Run
-  // probability was. Each tab now sorts by ITS OWN prop probability.
-  const active = State.ui.activeProp;
   return State.batter.players.filter(p=>{
     const teamMatch = State.ui.filters.team==='ALL' || p.team===State.ui.filters.team;
-    const confMatch = State.ui.filters.confidence==='ALL' || p.props[active]?.conf===State.ui.filters.confidence;
+    const confMatch = State.ui.filters.confidence==='ALL' || p.props[State.ui.activeProp]?.conf===State.ui.filters.confidence;
     const searchMatch = !State.ui.filters.search || p.name.toLowerCase().includes(State.ui.filters.search);
     return teamMatch && confMatch && searchMatch;
-  }).sort((a,b)=> (b.props[active]?.prob ?? 0) - (a.props[active]?.prob ?? 0));
+  });
 }
 function edgeColor(edge){ if(edge>=.08) return 'var(--batter)'; if(edge>=.03) return 'var(--amber)'; return 'var(--red)'; }
 /* ---- Per-prop-tab "character": tier signal driven by the trait that actually predicts that outcome.
@@ -1300,48 +1206,38 @@ function edgeColor(edge){ if(edge>=.08) return 'var(--batter)'; if(edge>=.03) re
    fields prediction_service DOES populate for every player (iso, whiff, babip14d) plus lineup order,
    so each tab genuinely gets its own highlighted subset now instead of four identical plain tables. */
 const PROP_SIGNALS = {
-  homeruns:{ tier:'power',   label:'ISO ≥ .200',        get:p=>p.stats?.iso,      test:v=>Number.isFinite(v) && v>=0.200 },
-  hits:    { tier:'contact', label:'Whiff% ≤ 20',        get:p=>p.stats?.whiff,    test:v=>Number.isFinite(v) && v<=20 },
-  rbi:     { tier:'clutch',  label:'14-Day BABIP ≥ .320', get:p=>p.stats?.babip14d, test:v=>Number.isFinite(v) && v>=0.320 },
-  runs:    { tier:'speed',   label:'Batting 1st–3rd',    get:p=>p.order,           test:v=>Number.isFinite(v) && v<=3 },
+  homeruns:{ tier:'power',   chip:'💪 Power',        label:'ISO ≥ .200  (plus over-the-fence power)',           get:p=>p.stats?.iso,      test:v=>Number.isFinite(v) && v>=0.200, fmt:v=>'.'+String(Math.round(v*1000)).padStart(3,'0') },
+  hits:    { tier:'contact', chip:'🎯 Contact',      label:'Whiff% ≤ 20  (low swing-and-miss, plus contact)',    get:p=>p.stats?.whiff,    test:v=>Number.isFinite(v) && v<=20,     fmt:v=>v.toFixed(1)+'%' },
+  rbi:     { tier:'clutch',  chip:'🔥 Hot Streak',   label:'14-Day BABIP ≥ .320  (currently locked in)',        get:p=>p.stats?.babip14d, test:v=>Number.isFinite(v) && v>=0.320,  fmt:v=>'.'+String(Math.round(v*1000)).padStart(3,'0') },
+  runs:    { tier:'speed',   chip:'🏃 Table-Setter', label:'Batting 1st–3rd  (top-of-order run-scoring slot)',  get:p=>p.order,           test:v=>Number.isFinite(v) && v<=3,      fmt:v=>'#'+v+' spot' },
 };
 const EDGE_TIER_LABEL = { elite:'Elite matchup', strong:'Strong matchup', average:'Average matchup', soft:'Tough matchup' };
 const TIER_CLASSES = ['tier-power','tier-contact','tier-speed','tier-clutch'];
-// TASK (2026-09-04, diagnostic pass): stripped down per request — the
-// legend used to spell out the exact numeric threshold plus a swatch;
-// simplified to a single quiet line since the table itself no longer
-// carries text/emoji chips either (color + the tooltip on hover is enough).
 function renderSignalLegend(){
   const legend = document.getElementById('signal-legend');
   if(!legend) return;
   const sig = PROP_SIGNALS[State.ui.activeProp];
   if(!sig){ legend.innerHTML=''; return; }
-  legend.innerHTML = `<span class="sw" style="background:var(--${sig.tier});"></span><span>${escapeHTML(sig.label)}</span>`
-    + `<span style="margin-left:14px;display:inline-flex;align-items:center;gap:4px;"><span class="edge-dot elite" style="margin-left:0;"></span><span class="edge-dot strong"></span><span class="edge-dot average"></span><span class="edge-dot soft"></span>`
-    + `<span style="color:var(--text-lo);margin-left:2px;">matchup edge vs today's pitcher</span></span>`;
+  legend.innerHTML = `<span class="sw" style="background:var(--${sig.tier});"></span><span>Highlighted rows: ${escapeHTML(sig.label)}</span>`
+    + `<span style="margin-left:14px;"><span class="edge-dot elite" style="margin-left:0;"></span> <span class="edge-dot strong"></span> <span class="edge-dot average"></span> <span class="edge-dot soft"></span> `
+    + `<span style="color:var(--text-lo);">= matchup edge vs today's opposing pitcher (H2H + pitch-type + platoon, updates per pitcher)</span></span>`;
 }
-// TASK (2026-09-04, diagnostic pass — table simplification): dropped the
-// Team / Opp Pitcher / Edge columns per request — those two identifying
-// bits now live as a small subtitle under the player's name instead of
-// their own columns, and the Edge column (mostly "Model only" with no
-// odds feed configured anyway) is gone. Signal chips (emoji + text badge)
-// removed entirely — the tier-colored left border on the name cell and the
-// small matchup-edge dot already carry that information without the visual
-// clutter; hover either for the detail.
 function renderPropsTable(){
   const thead = document.querySelector('#props-table thead'), tbody = document.querySelector('#props-table tbody');
   const propTitle = STAT_LABELS[State.ui.activeProp];
   renderSignalLegend();
   const sig = PROP_SIGNALS[State.ui.activeProp];
-  thead.innerHTML = `<tr><th>Player</th><th>${propTitle} %</th><th>Fair Odds</th><th>Conviction</th></tr>`;
-  if(State.batter.error){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--red);">${escapeHTML(State.batter.error)}</td></tr>`; return; }
-  if(State.batter.loading){ tbody.innerHTML = Array(6).fill('<tr><td colspan="4" style="padding:14px;"><div class="skel" style="height:16px;"></div></td></tr>').join(''); return; }
+  thead.innerHTML = `<tr><th>Player</th><th>Team</th><th>Opp Pitcher</th><th>${propTitle} Prob</th><th>Edge</th><th>Fair Odds</th><th>Conviction</th></tr>`;
+  if(State.batter.error){ tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--red);">${escapeHTML(State.batter.error)}</td></tr>`; return; }
+  if(State.batter.loading){ tbody.innerHTML = Array(6).fill('<tr><td colspan="7" style="padding:14px;"><div class="skel" style="height:16px;"></div></td></tr>').join(''); return; }
   const filtered = getFilteredPlayers();
-  if(!filtered.length){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-lo);">No data matches filters.</td></tr>`; return; }
+  if(!filtered.length){ tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-lo);">No data matches filters.</td></tr>`; return; }
   if(!State.ui.prevProbs) State.ui.prevProbs = {};
-  const banner = State.batter.lineupsConfirmed ? '' : `<tr><td colspan="4"><div class="lineup-provisional-banner">⚠ Today's lineups aren't officially posted yet for every game — the roster shown below is a provisional estimate and will refresh automatically once MLB confirms batting orders.</div></td></tr>`;
+  const banner = State.batter.lineupsConfirmed ? '' : `<tr><td colspan="7"><div class="lineup-provisional-banner">⚠ Today's lineups aren't officially posted yet for every game — the roster shown below is a provisional estimate and will refresh automatically once MLB confirms batting orders.</div></td></tr>`;
   tbody.innerHTML = banner + filtered.map(p=>{
     const propData = p.props[State.ui.activeProp] || {prob:0, odds:null, conf:'low', edge:null};
+    const edge = safeEdge(propData.edge);
+    const edgePct = edge===null ? 0 : Math.max(0, Math.min(1,(edge+.05)/.25));
     const cacheKey = `${p.id}:${State.ui.activeProp}`;
     const prevProb = State.ui.prevProbs[cacheKey];
     let flashClass = '';
@@ -1349,17 +1245,31 @@ function renderPropsTable(){
     State.ui.prevProbs[cacheKey] = propData.prob;
     const signalVal = sig ? sig.get(p) : null;
     const isSignal = sig ? sig.test(signalVal) : false;
+    // "Elite convergence" — the proxy signal AND the model's own conviction
+    // agree on this row, not just one or the other. Genuinely more useful
+    // than a plain highlight: it's telling you two independent reads on
+    // the player point the same direction.
     const isElite = isSignal && propData.conf === 'high';
     const tierClass = isSignal ? ` tier-${sig.tier}${isElite ? ' elite' : ''}` : '';
+    const chip = isSignal ? `<span class="signal-chip ${sig.tier}">${sig.chip} <b>${escapeHTML(sig.fmt(signalVal))}</b></span>` : '';
+    // TASK (2026-09-03) — matchup-edge overlay: pulls this batter's
+    // edgeTier vs the pitcher they're ACTUALLY facing today from
+    // /api/matchup-analyzer (H2H history + pitch-type vulnerability +
+    // platoon split), so the highlight moves when the opposing pitcher
+    // changes even on days the season-stat chip above doesn't. Falls back
+    // to nothing (no dot) when matchup data hasn't loaded for this pairing
+    // yet — never fabricates a tier from season stats alone.
     const matchup = matchupEdgeFor(p);
     const edgeTier = matchup?.edgeTier || null;
     const edgeRowClass = edgeTier ? ` edge-${edgeTier}` : '';
     const edgeTip = edgeTier ? `${EDGE_TIER_LABEL[edgeTier]} vs ${escapeHTML(p.oppPitcher||'opposing pitcher')} — H2H ${matchup.h2h?.pa||0} PA, blended OPS ${matchup.blendedOps?.toFixed(3)??'—'}` : '';
     const edgeDot = edgeTier ? `<span class="edge-dot ${edgeTier}" data-tip="${edgeTip}"></span>` : '';
-    const subtitleTip = `${escapeHTML(p.team)} vs ${escapeHTML(p.oppPitcher||'—')}`;
     return `<tr class="data-row${tierClass}${edgeRowClass}" data-player-id="${p.id}" onclick="openDrawer('${p.id}')">
-      <td class="name-cell"><div style="display:flex;align-items:center;gap:0;"><div><div style="line-height:1.25;">${escapeHTML(p.name)}${edgeDot}</div><div style="font-size:.72em;color:var(--text-lo);font-weight:400;" data-tip="${subtitleTip}">${escapeHTML(p.team)} &middot; vs ${escapeHTML(p.oppPitcher||'—')}</div></div></div></td>
+      <td class="name-cell">${escapeHTML(p.name)}${chip}${edgeDot}</td>
+      <td>${escapeHTML(p.team)}</td>
+      <td>${escapeHTML(p.oppPitcher||'—')}</td>
       <td style="color:var(--batter);" class="${flashClass.trim()}">${(propData.prob*100).toFixed(1)}%</td>
+      <td><span class="edge-meter"><span class="edge-meter-fill" style="width:${edgePct*100}%;background:${edge===null?'var(--text-lo)':edgeColor(edge)};"></span></span><span style="font-size:.9em;color:${edge===null?'var(--text-lo)':edgeColor(edge)};">${edge===null?'Model only':(edge*100).toFixed(1)+'%'}</span></td>
       <td>${formatAmerican(propData.odds)}</td>
       <td><span class="conf-badge ${propData.conf}" data-tip="Model conviction tier, driven by sample size &amp; edge magnitude">${propData.conf.toUpperCase()}</span></td>
     </tr>`;
@@ -1639,9 +1549,6 @@ function renderMoneylines(){
         </div>
         <span class="gc-fairline">FAIR LINE</span>
       </div>
-      <div class="gc-lineup-status">
-        <span class="entity-flag ${g.lineupsConfirmed?'confirmed':'projected'}">${g.lineupsConfirmed?'CONFIRMED LINEUPS':'PROJECTED LINEUPS'}</span>
-      </div>
       <div class="gc-matchup">
         <div class="gc-team-block${awayFlash?' '+awayFlash:''}" onclick="openGameDrawer('${g.id}','away')" data-tip="${(g.awayProb*100).toFixed(1)}% win probability">
           ${teamLogoImg(g.away,40)}
@@ -1672,7 +1579,7 @@ function closeGameDrawer(){ document.getElementById('game-drawer-overlay').class
 async function renderGameDrawer(){
   const game = State.batter.games.find(g=>g.id===State.ui.gameDrawer.gameId);
   if(!game) return;
-  document.getElementById('gd-eyebrow').innerHTML = `Game ${String(game.id).toUpperCase()} <span class="lineup-status ${game.lineupsConfirmed?'confirmed':'projected'}" style="padding:2px 9px;font-size:.62em;margin-left:6px;vertical-align:middle;"><span class="dot"></span>${game.lineupsConfirmed?'Confirmed':'Projected'}</span>`;
+  document.getElementById('gd-eyebrow').textContent = `Game ${String(game.id).toUpperCase()}`;
   document.getElementById('gd-title').innerHTML = `${teamLogoImg(game.away,20)} ${escapeHTML(game.away)} @ ${escapeHTML(game.home)} ${teamLogoImg(game.home,20)}`;
   document.getElementById('gd-score').innerHTML = `
     ${gameContextHTML(game)}
@@ -2215,7 +2122,7 @@ function mxPitcherTipHTML(m){
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
       <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_213,q_auto:best/v1/people/${m.pitcherId}/headshot/silo/current" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">
       <div style="min-width:0;">
-        <div style="font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-hi); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m.pitcherName)}${m.throws?`<span class="hand-tag">${escapeHTML(m.throws)}HP</span>`:''}</div>
+        <div style="font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-hi); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(m.pitcherName)}</div>
         <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-lo);">${escapeHTML(m.matchup||'')}</div>
       </div>
     </div>
@@ -2268,10 +2175,10 @@ function renderLineupTable(){
   const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
   const pitchMix = (State.ui.mxMatchup && State.ui.mxMatchup.pitchMix) || [];
   document.querySelectorAll('.lineup-table thead th[data-key]').forEach(th=>th.classList.toggle('sort-active', th.dataset.key===State.ui.h2hSort.key));
-  if(!batters.length){ body.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
+  if(!batters.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
   let rows = batters.filter(b=>!State.ui.h2hFilter || b.name.toLowerCase().includes(State.ui.h2hFilter));
   rows = rows.slice().sort((a,b)=>{ const av=h2hSortValue(a,State.ui.h2hSort.key), bv=h2hSortValue(b,State.ui.h2hSort.key); return State.ui.h2hSort.dir==='desc'?bv-av:av-bv; });
-  if(!rows.length){ body.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
+  if(!rows.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
   
   window.__mxBatterTips = [];
   body.innerHTML = rows.map((b, idx)=>{
@@ -2314,9 +2221,7 @@ function renderLineupTable(){
         <div class="batter-hover-wrap"${popoverHTML?` onmouseenter="mxShowBatterTip(this, ${idx})" onmouseleave="hideFloatTip()"`:''}>
           <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
         </div>
-      </td>
-      <td><span class="pos-tag">${escapeHTML(b.position||'—')}</span></td>
-      <td><span class="hand-tag" style="margin-left:0;">${escapeHTML(b.bats||'R')}</span></td>`;
+      </td>`;
 
     if (State.ui.mxTableView === 'contact') {
       rowHtml += `
@@ -2354,106 +2259,10 @@ function renderTeamIntel(m){
     <div class="intel-stat"><div class="intel-stat-label">Avg Credibility</div><div class="intel-stat-value">${avgCredibility.toFixed(0)}%</div></div>
     <div class="intel-stat"><div class="intel-stat-label">Stable Sample Batters</div><div class="intel-stat-value">${confirmedBatters}/${batters.length}</div></div>`;
   const ranked = batters.slice().sort((a,b)=>b.blendedOps-a.blendedOps);
-  // FIX (2026-09-04, diagnostic pass): this used to only ever render the
-  // top 3 and bottom 3 batters — everyone in between (usually 3-5 hitters
-  // in a 9-man lineup) had no OPS visible anywhere on this panel at all.
-  // Now renders the FULL lineup, ranked, so every batter's blended OPS is
-  // visible in one place instead of just the two extremes.
+  const top3 = ranked.slice(0,3), bottom3 = ranked.slice(-3).reverse();
   const threatRow = (b,rankLabel)=>`<div class="threat-row threat-row-hover" onmouseenter="mxShowThreatTip(this, '${b.id}')" onmouseleave="hideFloatTip()"><span class="threat-rank">${rankLabel}</span><img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_420,q_auto:best/v1/people/${b.id}/headshot/silo/current" class="threat-avatar" style="object-fit:cover; padding:0;"><div><div class="threat-name">${escapeHTML(b.name)}</div><div class="threat-sub">${b.h2h&&b.h2h.pa?b.h2h.pa+' H2H PA':'No H2H history'} &middot; ${(b.credibility*100).toFixed(0)}% credibility</div></div><span class="threat-ops blended-ops-cell ${b.edgeTier}">${b.blendedOps.toFixed(3)}</span></div>`;
-  document.getElementById('mx-top-threats').innerHTML = ranked.length ? ranked.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
-  renderDisciplineProfile(m, batters);
-}
-
-// TASK (2026-09-04, diagnostic pass) — lineup-level plate-discipline read
-// and a "most exploitable pitch" callout, purely derived from data already
-// on each MatchupBatter. League-average anchors match the constants
-// already used server-side (LEAGUE_AVG_K_RATE=22.0%, LEAGUE_AVG_WHIFF=25.0%
-// in math_engine.py); chase-rate anchor (28%) is the standard MLB league
-// O-Swing% reference, since no equivalent backend constant exists yet.
-const DISC_LEAGUE_AVG = { k: 22.0, whiff: 25.0, chase: 28.0 };
-function renderDisciplineProfile(m, batters){
-  const el = document.getElementById('mx-discipline-profile');
-  if(!el) return;
-  if(!batters.length){ el.innerHTML = `<div class="pitchmix-empty">No batters to profile yet.</div>`; return; }
-  const avg = key => batters.reduce((s,b)=>s+(Number(b[key])||0),0)/batters.length;
-  const avgK = avg('seasonKPct'), avgWhiff = avg('seasonWhiff'), avgChase = avg('seasonChase');
-  const rows = [
-    {label:'K Rate', value:avgK, leagueAvg:DISC_LEAGUE_AVG.k, max:40, from:'#ff7a45', to:'#ffb088'},
-    {label:'Whiff %', value:avgWhiff, leagueAvg:DISC_LEAGUE_AVG.whiff, max:45, from:'#8b7bff', to:'#b6acff'},
-    {label:'Chase %', value:avgChase, leagueAvg:DISC_LEAGUE_AVG.chase, max:45, color:'#f2a93b', from:'#f2a93b', to:'#f7cd85'},
-  ];
-  const discRows = rows.map((r,i)=>{
-    const pct = Math.max(0, Math.min(100, (r.value/r.max)*100));
-    const tickPct = Math.max(0, Math.min(100, (r.leagueAvg/r.max)*100));
-    const aboveAvg = r.value > r.leagueAvg;
-    return `<div class="disc-row" data-tip="Lineup avg ${r.label.toLowerCase()}: ${r.value.toFixed(1)}% &middot; league avg ${r.leagueAvg.toFixed(1)}% &middot; ${aboveAvg?'more vulnerable than average':'more disciplined than average'} in this category">
-      <span class="disc-label">${r.label}</span>
-      <div class="disc-track"><div class="disc-fill" data-target-pct="${pct}" style="background:linear-gradient(90deg, ${r.from}, ${r.to});"></div><div class="disc-avg-tick" style="left:${tickPct}%;"></div></div>
-      <span class="disc-value" style="color:${aboveAvg?'var(--red)':'var(--green)'};">${r.value.toFixed(1)}%</span>
-    </div>`;
-  }).join('');
-
-  // Most exploitable pitch — mean whiffPct against each pitch code, across
-  // every batter in the lineup who has a vulnerability read for it.
-  const pitchAgg = {};
-  batters.forEach(b=>{
-    Object.entries(b.pitchVulnerability||{}).forEach(([code,v])=>{
-      if(v.whiffPct==null) return;
-      if(!pitchAgg[code]) pitchAgg[code] = {sum:0, n:0, type:v.type||code};
-      pitchAgg[code].sum += v.whiffPct; pitchAgg[code].n += 1;
-    });
-  });
-  let worstPitch = null, worstAvg = -1;
-  Object.entries(pitchAgg).forEach(([code,agg])=>{
-    if(agg.n < 2) return; // require at least 2 batters' worth of signal
-    const meanWhiff = agg.sum/agg.n;
-    if(meanWhiff > worstAvg){ worstAvg = meanWhiff; worstPitch = agg.type || code; }
-  });
-
-  const formGroups = {hot:[], cold:[], neutral:[], limited:[]};
-  batters.forEach(b=>{ const t = (b.recentForm||{}).tier; if(formGroups[t]) formGroups[t].push(b); });
-  const formCounts = {hot:formGroups.hot.length, cold:formGroups.cold.length, neutral:formGroups.neutral.length, limited:formGroups.limited.length};
-  window.__mxFormGroups = formGroups;
-
-  el.innerHTML = discRows
-    + `<div class="disc-footnote">Lineup average vs league benchmark (bright tick) &middot; higher reads more vulnerable to a pitcher who can exploit it</div>`
-    + `<div class="exploit-callout"><div><div class="exploit-callout-label">Most Exploitable Pitch Type</div><div class="exploit-callout-value">${worstPitch?escapeHTML(worstPitch):'Insufficient sample'}</div></div>${worstPitch?`<span class="exploit-callout-badge">${worstAvg.toFixed(0)}% AVG WHIFF</span>`:''}</div>`
-    + `<div class="form-pulse">
-        <div class="form-pulse-seg" style="color:var(--green);" onmouseenter="mxShowFormTip(this,'hot')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.hot}</div><div class="form-pulse-label">Hot</div></div>
-        <div class="form-pulse-seg" style="color:var(--red);" onmouseenter="mxShowFormTip(this,'cold')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.cold}</div><div class="form-pulse-label">Cold</div></div>
-        <div class="form-pulse-seg" style="color:var(--text-mid);" onmouseenter="mxShowFormTip(this,'neutral')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.neutral}</div><div class="form-pulse-label">Neutral</div></div>
-        <div class="form-pulse-seg" style="color:var(--text-lo);" onmouseenter="mxShowFormTip(this,'limited')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.limited}</div><div class="form-pulse-label">Limited Sample</div></div>
-      </div>`;
-  // Animate the bars from 0 -> target width on first paint (CSS transition
-  // on .disc-fill only fires on a width change after layout, not on the
-  // initial inline width itself).
-  requestAnimationFrame(()=>{
-    el.querySelectorAll('.disc-fill').forEach(bar=>{ bar.style.width = bar.dataset.targetPct + '%'; });
-  });
-}
-
-const FORM_TIP_META = {
-  hot:{ label:'Hot', color:'var(--green)' }, cold:{ label:'Cold', color:'var(--red)' },
-  neutral:{ label:'Neutral', color:'var(--text-mid)' }, limited:{ label:'Limited Sample', color:'var(--text-lo)' },
-};
-// TASK (2026-09-05, diagnostic pass): Hot/Cold/Neutral/Limited counters
-// used to be counts only — hovering now surfaces exactly which batters
-// landed in that bucket, each with their 14-day recent-form OPS, instead
-// of requiring a manual scan of the ranked list to work it out.
-function mxShowFormTip(anchorEl, tier){
-  const group = (window.__mxFormGroups && window.__mxFormGroups[tier]) || [];
-  const meta = FORM_TIP_META[tier];
-  const rows = group.length
-    ? group.slice().sort((a,b)=>(b.recentForm?.ops||0)-(a.recentForm?.ops||0)).map(b=>
-        `<div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:5px 0;">
-           <span style="font-family:var(--font-body); font-size:12px; font-weight:600; color:var(--text-hi);">${escapeHTML(b.name)}</span>
-           <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:${meta.color};">${(b.recentForm?.ops??0).toFixed(3)} OPS</span>
-         </div>`).join('')
-    : `<div style="font-family:var(--font-mono); font-size:11px; color:var(--text-lo); padding:4px 0;">No batters in this bucket.</div>`;
-  showFloatTip(anchorEl, `<div style="width:220px;">
-      <div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:${meta.color}; border-bottom:1px solid var(--border-soft); padding-bottom:8px;">${meta.label} &middot; 14-Day Form</div>
-      ${rows}
-    </div>`);
+  document.getElementById('mx-top-threats').innerHTML = top3.length ? top3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
+  document.getElementById('mx-soft-threats').innerHTML = bottom3.length ? bottom3.map((b,i)=>threatRow(b,'#'+(i+1))).join('') : `<div class="pitchmix-empty">No batters to rank yet.</div>`;
 }
 
 async function refreshCurrent(){

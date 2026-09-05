@@ -113,13 +113,6 @@ class GameResponse(BaseModel):
     homePitcherId: int | None = None
     awayXRuns: float
     homeXRuns: float
-    # NEW (2026-09-04, diagnostic pass): per-game lineup-confirmation status
-    # for the Moneylines card/drawer badge — mirrors SlateMeta.lineupsConfirmed
-    # but scoped to just this one game's two lineups, since a projected
-    # (unconfirmed) roster can noticeably shift a game's win probability
-    # once the real lineup posts, and that shouldn't look identical to an
-    # already-confirmed line.
-    lineupsConfirmed: bool = False
     # NEW: season-series / recent head-to-head context for the Moneylines
     # sidebar subtitle (replaces the redundant pitcher-vs-pitcher line that
     # already appears on the main game card). All optional — populate from
@@ -149,13 +142,6 @@ class SlateMeta(BaseModel):
     playerCount: int
     gameCount: int
     marketDataAvailable: bool
-    # NEW (2026-09-03, diagnostic pass): False whenever at least one game's
-    # roster is still the arbitrary-roster fallback (real lineups not
-    # posted yet) rather than a confirmed batting order — see
-    # PredictionService.build_slate/_resolve_hitters. The frontend can use
-    # this to show a "provisional lineup" notice instead of presenting a
-    # placeholder 9 as if it were final.
-    lineupsConfirmed: bool = False
 
 
 class SlateResponse(BaseModel):
@@ -357,12 +343,6 @@ class MatchupBatter(BaseModel):
     id: int
     name: str
     order: int
-    # NEW (2026-09-05, diagnostic pass): fielding position and batting
-    # handedness for the H2H Matchups table — see PredictionService.
-    # _batter_matchup_job. position is best-effort ("" if unavailable,
-    # e.g. the raw-roster fallback tier before any real lineup posts).
-    position: str = ""
-    bats: str = "R"
     h2h: H2HSlash
     seasonOps: float
     seasonPa: float
@@ -392,9 +372,6 @@ class MatchupAnalyzerResponse(BaseModel):
     matchup: str
     sub: str
     lineupConfirmed: bool
-    # NEW (2026-09-04, diagnostic pass): pitcher handedness, for the sidebar
-    # hover card — was previously only exposed on PitcherResponse.
-    throws: str = "R"
     pitchMix: list[PitchMixEntry]
     batters: list[MatchupBatter]
     lineupEdgeOps: float

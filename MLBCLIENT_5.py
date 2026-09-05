@@ -12,7 +12,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 from datetime import date, timedelta
 from threading import Lock
@@ -68,35 +67,6 @@ def resolve_pitch_code(code: Optional[str], description: Optional[str]) -> str:
 
 def pitch_display_name(code: str, fallback_description: Optional[str] = None) -> str:
     return PITCH_CODE_NAMES.get(code, fallback_description or "Unknown")
-
-
-# ---------------------------------------------------------------------------
-# DEBUG (2026-08-31) — temporary instrumentation for the Matchup Verifier
-# H2H bug: every batter facing the same pitcher was rendering identical
-# At-bats / Hits-HR-SO / Slash numbers, even though each batter's Season
-# Snapshot (a totally separate call) was correctly different. That points
-# at hitter_vs_pitcher_history()/the vsPlayer stat specifically, not
-# get_matchup()'s aggregation math.
-#
-# DEBUG_H2H=True prints the RAW MLB API payload for every vsPlayer call,
-# tagged with both ids, so we can diagonse which of the two is happening:
-#   (a) MLB's API itself returns the same splits payload regardless of
-#       which batter_id we put in the URL (a real vsPlayer quirk) — the
-#       validation block below then guards against it, OR
-#   (b) the raw payloads differ per batter but get_matchup()/the parsing
-#       here collapses them to the same numbers — a parsing bug for us to
-#       fix in this file instead.
-#
-# LEFT OFF by default on purpose: hitter_vs_pitcher_history() is also on
-# the hot path for a full slate build (batter_vs_pitcher_slash() -> proxy
-# xBA/xSLG, called for every batter on the slate). Flipping this on and
-# then hitting REFRESH floods stdout with ~270 concurrent JSON dumps and
-# drags the whole batter model past its 90s timeout — that's what just
-# happened. Use debug_h2h_standalone.py instead to inspect a single
-# matchup in isolation; only flip this to True for a short-lived local
-# repro of a single /api/matchup/{batterId}/{pitcherId} call, never
-# alongside a slate refresh.
-DEBUG_H2H = False
 
 
 # --- pitch-level lethality knobs (unchanged values from the script) -------
@@ -631,7 +601,7 @@ class MLBClient:
             }
         return results
 
-    def probable_lineup(self, game_pk: int, team_id: int, target_date: str | None = None) -> tuple[list[dict], bool]:
+    def probable_lineup(self, game_pk: int, team_id: int) -> tuple[list[dict], bool]:
         try:
             box = self.boxscore(game_pk)
             for side in ("home", "away"):
@@ -647,59 +617,16 @@ class MLBClient:
                             pos = p.get("position", {}).get("abbreviation", "")
                             if pos == "P" or not person.get("id"):
                                 continue
-                            # NEW (2026-09-05, diagnostic pass): carry today's
-                            # fielding position through — the Matchup
-                            # Analyzer's H2H table wants it per batter.
-                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown"), "position": pos})
+                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown")})
                         if batters:
                             return batters[:9], True
         except Exception:
             pass
 
-        # FIX (2026-09-04, diagnostic pass): used to skip straight from "no
-        # confirmed order yet" to an arbitrary, UNORDERED roster slice
-        # (below) — a "projected" lineup earlier in the day could show
-        # whoever happened to sort first in the roster feed, out of any
-        # realistic batting order, forcing a manual cross-check against a
-        # site like Rotowire. This now tries the team's most recent
-        # COMPLETED game's actual posted batting order first — teams run a
-        # very similar lineup/order day to day, so "yesterday's real order"
-        # is a far better projection than "today's roster in jersey-number
-        # order." Still reported as confirmed=False — it's a projection,
-        # not today's official lineup.
-        if target_date:
-            try:
-                for recent_pk in reversed(self.team_recent_game_pks(team_id, target_date, days=7)):
-                    recent_box = self.boxscore(recent_pk)
-                    for side in ("home", "away"):
-                        team_box = recent_box.get("teams", {}).get(side, {})
-                        if team_box.get("team", {}).get("id") != team_id:
-                            continue
-                        order = team_box.get("battingOrder", [])
-                        players = team_box.get("players", {})
-                        if not order:
-                            continue
-                        batters = []
-                        for pid in order:
-                            p = players.get(f"ID{pid}", {})
-                            person = p.get("person", {})
-                            pos = p.get("position", {}).get("abbreviation", "")
-                            if pos == "P" or not person.get("id"):
-                                continue
-                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown"), "position": pos})
-                        if batters:
-                            return batters[:9], False
-            except Exception:
-                pass
-
         try:
             roster = self.team_roster(team_id)
             batters = [
-                {
-                    "id": entry["person"]["id"],
-                    "name": entry["person"]["fullName"],
-                    "position": entry.get("position", {}).get("abbreviation", ""),
-                }
+                {"id": entry["person"]["id"], "name": entry["person"]["fullName"]}
                 for entry in roster
                 if entry.get("position", {}).get("code") != "1"
             ]
@@ -773,68 +700,8 @@ class MLBClient:
 
     def hitter_vs_pitcher_history(self, batter_id: int, pitcher_id: int) -> list[dict]:
         payload = self.person_stats(batter_id, group="hitting", stats="vsPlayer", opposingPlayerId=pitcher_id)
-
-        if DEBUG_H2H:
-            # NOTE: plain-ASCII tags only (no emoji) — printing non-cp1252
-            # characters on a default Windows console raises a
-            # UnicodeEncodeError, which was silently killing this request's
-            # worker thread and left the frontend hanging on "Loading
-            # matchup data..." until the 60s client timeout. Also wrapped in
-            # try/except now on principle: debug instrumentation must never
-            # be able to take down the real data path, on any platform.
-            try:
-                print(
-                    f"[H2H DEBUG] REQUEST -> batter_id={batter_id} pitcher_id={pitcher_id}",
-                    flush=True,
-                )
-                print(
-                    f"[H2H DEBUG] RESPONSE <- {json.dumps(payload)}",
-                    flush=True,
-                )
-            except Exception as log_err:
-                print(f"[H2H DEBUG] (logging failed, continuing anyway: {log_err})", flush=True)
-
         stats = payload.get("stats", [])
-        raw_splits = stats[0].get("splits", []) if stats else []
-
-        # VALIDATION (2026-08-31): MLB's vsPlayer stat type has been observed
-        # to sometimes hand back splits that don't actually belong to the
-        # requested opposingPlayerId (or belong to a batter/pitcher pair
-        # other than the one we asked for) — the exact shape of the mismatch
-        # depends on which of these fields the payload actually carries, so
-        # we check every plausible one rather than assuming a single schema.
-        # Any split we can't positively confirm is dropped rather than
-        # silently trusted, so a quirked response degrades to "no H2H data"
-        # instead of showing the wrong batter's numbers.
-        validated_splits: list[dict] = []
-        for split in raw_splits:
-            candidate_ids = set()
-            for key in ("opponent", "player", "pitcher"):
-                node = split.get(key)
-                if isinstance(node, dict) and node.get("id") is not None:
-                    candidate_ids.add(int(node["id"]))
-            stat_block = split.get("stat", {})
-            if isinstance(stat_block, dict) and stat_block.get("opposingPlayerId") is not None:
-                candidate_ids.add(int(stat_block["opposingPlayerId"]))
-
-            if not candidate_ids:
-                # Payload doesn't carry any identifying field for us to
-                # check against — can't validate, so we can't safely trust
-                # it either now that we know this endpoint is unreliable.
-                if DEBUG_H2H:
-                    print(f"[H2H DEBUG] split has no identifiable opponent field, dropping: {split}", flush=True)
-                continue
-            if pitcher_id not in candidate_ids:
-                if DEBUG_H2H:
-                    print(
-                        f"[H2H DEBUG] split ids {candidate_ids} don't match requested "
-                        f"pitcher_id={pitcher_id}, dropping: {split}",
-                        flush=True,
-                    )
-                continue
-            validated_splits.append(split)
-
-        return validated_splits
+        return stats[0].get("splits", []) if stats else []
 
     def pitcher_profile(self, pitcher_id: int | None) -> dict:
         if not pitcher_id:

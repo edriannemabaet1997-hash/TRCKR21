@@ -128,6 +128,26 @@ from weather_client import WeatherClient
 # zero configuration, so these are visible out of the box either way.
 logger = logging.getLogger("trckr21.prediction_service")
 
+# TASK 3 (trckr21 handoff, 2026-09-03) — thresholds for
+# _apply_hit_matchup_reconciliation()/_lightweight_matchup_score(): only
+# react when the Hits pipeline is confidently "over" (hit_prob above
+# HIT_MATCHUP_DIVERGENCE_HIT_PROB) at the same time the lightweight matchup
+# score is confidently "under" (below HIT_MATCHUP_DIVERGENCE_ADVANTAGE) — or
+# the mirror image (hit_prob confidently "under," score confidently "over").
+# Mirrors the hit_prob > 0.65 / advantage_score < -20 example from the
+# handoff brief; tune independently if this proves too noisy/quiet or too
+# aggressive/timid in practice.
+HIT_MATCHUP_DIVERGENCE_HIT_PROB = 0.65
+HIT_MATCHUP_DIVERGENCE_HIT_PROB_LOW = 1.0 - HIT_MATCHUP_DIVERGENCE_HIT_PROB  # 0.35
+HIT_MATCHUP_DIVERGENCE_ADVANTAGE = -20.0
+HIT_MATCHUP_DIVERGENCE_ADVANTAGE_HIGH = -HIT_MATCHUP_DIVERGENCE_ADVANTAGE  # +20.0
+
+# TASK (2026-09-04 follow-up) — max relative size of the reconciliation
+# nudge above. Bounded well under 1.0 on purpose: this is meant to correct
+# an outvoted signal, not let one lightweight score overrule Stage A/B's
+# full multi-signal read of the matchup.
+RECONCILIATION_MAX_CORRECTION = 0.20
+
 
 # TASK 1 UI (2026-08-31) — carries the weather signal both consumers need:
 # the raw scoring multiplier (Poisson Monte Carlo / calculate_team_xruns_v2
@@ -275,12 +295,7 @@ def _matchup_multiplier(
             arsenal_whiff_pct=opp_arsenal_whiff_pct,
         )
     else:
-        # FIX (2026-09-03) — same ERA-direction inversion as everywhere else
-        # in this pass: this ratio feeds the Moneylines win-probability
-        # model, where >1.0 is documented (see starter_quality_index) as
-        # "offense-friendly." LEAGUE_AVG_ERA/opp_starter_era put a low-ERA
-        # ace ABOVE 1.0. Flipped to opp_starter_era/LEAGUE_AVG_ERA.
-        pitching_index = clamp(opp_starter_era / LEAGUE_AVG_ERA if LEAGUE_AVG_ERA > 0 else 1.0, 0.75, 1.30)
+        pitching_index = clamp(LEAGUE_AVG_ERA / opp_starter_era if opp_starter_era > 0 else 1.0, 0.75, 1.30)
     return offense_index * pitching_index
 
 STADIUM_INDICES = {
@@ -533,7 +548,7 @@ class PredictionService:
     # ------------------------------------------------------------------
 
     def _today_lineup_signal(
-        self, game_pk: int | None, team_id: int, opp_pitcher_id: int | None, opp_pitcher_hand: str, target_date: str,
+        self, game_pk: int | None, team_id: int, opp_pitcher_id: int | None, opp_pitcher_hand: str,
     ) -> tuple[float | None, float, bool]:
         """Returns (today_lineup_ops, lineup_confidence_weight, confirmed).
 
@@ -561,7 +576,7 @@ class PredictionService:
 
         result = (None, 0.0, False)
         try:
-            lineup, confirmed = self.mlb.probable_lineup(game_pk, team_id, target_date)
+            lineup, confirmed = self.mlb.probable_lineup(game_pk, team_id)
             if not lineup:
                 result = (None, 0.0, confirmed)
             else:
@@ -697,28 +712,9 @@ class PredictionService:
     # ------------------------------------------------------------------
 
     def build_slate(self, target_date: str, force: bool = False) -> dict:
-        # FIX (2026-09-03, diagnostic pass): "missing top players" root
-        # cause. app.py's startup hook calls build_slate() the moment the
-        # server boots — typically hours before MLB posts today's official
-        # lineups. Until a lineup posts, _resolve_hitters() has no real
-        # batting order to work with and falls back to an arbitrary 9-name
-        # slice of the active roster (roster API order, NOT importance —
-        # see _resolve_hitters). That slate then got cached under
-        # target_date PERMANENTLY (see the old unconditional cache-hit
-        # below) — so once the server warmed up on a placeholder roster
-        # slice, it stayed wrong ALL DAY regardless of how many times the
-        # page was reloaded, because nothing ever re-checked whether real
-        # lineups had shown up since. Fixed by tagging every cached slate
-        # with whether every game's lineup was actually confirmed
-        # (meta.lineupsConfirmed) and only trusting the cache once that's
-        # true — an unconfirmed cached slate is rebuilt on the next call
-        # instead of served forever, so as soon as MLB posts lineups
-        # (~2-3h before first pitch) the very next request/refresh picks
-        # up the real 9, without the user needing to know to hit Refresh.
         with self._lock:
-            cached = self._slate_cache.get(target_date)
-            if not force and cached is not None and cached["meta"].get("lineupsConfirmed"):
-                return cached
+            if not force and target_date in self._slate_cache:
+                return self._slate_cache[target_date]
 
         # Fresh team/pitcher cache scope for THIS build: shared by every
         # game thread below (fixes the doubleheader double-fetch), never
@@ -743,11 +739,6 @@ class PredictionService:
         player_rows: list[dict] = []
         game_rows: list[dict] = []
         pitcher_rows: dict[int, dict] = {}
-        # See the build_slate() cache note above — tracks whether EVERY
-        # game in this slate resolved a real, confirmed batting order
-        # (rather than the arbitrary-roster-slice fallback) so the cache
-        # gate above knows whether it's safe to trust this slate all day.
-        all_lineups_confirmed = True
 
         with ThreadPoolExecutor(max_workers=settings.max_workers) as executor:
             future_to_game = {
@@ -763,13 +754,10 @@ class PredictionService:
                         "Failed to build game packet for gamePk=%s on %s — this game will be missing from the slate.",
                         game_pk, target_date,
                     )
-                    all_lineups_confirmed = False
                     continue
                 player_rows.extend(packet["players"])
                 game_rows.append(packet["game"])
                 pitcher_rows.update(packet["pitchers"])
-                if not packet.get("lineupsConfirmed", False):
-                    all_lineups_confirmed = False
 
         player_rows.sort(key=lambda item: item["props"]["hits"]["prob"], reverse=True)
 
@@ -780,7 +768,6 @@ class PredictionService:
                 "season": settings.season,
                 "playerCount": len(player_rows),
                 "gameCount": len(game_rows),
-                "lineupsConfirmed": all_lineups_confirmed and bool(game_rows),
                 "marketDataAvailable": self.odds.enabled,
             },
             "players": player_rows,
@@ -805,29 +792,7 @@ class PredictionService:
                 return idx + 1
         return None
 
-    def _resolve_hitters(self, team_id: int, lineup_list: list[dict], game_pk: int, target_date: str) -> tuple[list[dict], bool]:
-        """Returns (hitters, confirmed). confirmed is True only when the
-        9 names came from an actual posted batting order (schedule-hydrate
-        lineups, or the boxscore battingOrder via probable_lineup()) —
-        False when we had to fall back to an arbitrary roster slice.
-
-        FIX (2026-09-03, diagnostic pass): this used to fall straight to
-        `list(non_pitchers.values())[:9]` — the first 9 non-pitchers in
-        whatever order MLB's roster endpoint happens to return (roster
-        listing order, e.g. jersey number — NOT batting order or
-        importance) — any time `lineup_list` (from the schedule's
-        hydrate=lineups, only populated once MLB posts the day's lineup)
-        was still empty. Since that's the normal state for most of the
-        day until ~2-3h before first pitch, and build_slate() used to
-        cache whatever it built on first request permanently, this
-        silently served a random slice of the 26-man roster — bench bats
-        and all — as "today's lineup" for the rest of the day. Now tries
-        MLBClient.probable_lineup() first, which itself checks the
-        boxscore's battingOrder (sometimes populated slightly earlier
-        than the schedule hydrate) before falling back the same way — and
-        reports whether either path actually found a real order, so
-        build_slate() knows not to treat this result as final.
-        """
+    def _resolve_hitters(self, team_id: int, lineup_list: list[dict]) -> list[dict]:
         roster = self._cached_team_roster(team_id)
         non_pitchers = {
             p.get("person", {}).get("id"): p.get("person", {})
@@ -843,30 +808,8 @@ class PredictionService:
                 fallback_name = node.get("fullName")
                 person = non_pitchers.get(pid, {"id": pid, "fullName": fallback_name})
                 hitters.append(person)
-            if hitters:
-                return hitters, True
-
-        try:
-            fallback_lineup, confirmed = self.mlb.probable_lineup(game_pk, team_id, target_date)
-        except Exception:
-            logger.warning(
-                "probable_lineup() failed for game_pk=%s team_id=%s — falling back to raw roster slice.",
-                game_pk, team_id, exc_info=True,
-            )
-            fallback_lineup, confirmed = [], False
-
-        if fallback_lineup:
-            hitters = []
-            for node in fallback_lineup[:9]:
-                pid = node.get("id")
-                if not pid:
-                    continue
-                person = non_pitchers.get(pid, {"id": pid, "fullName": node.get("name")})
-                hitters.append(person)
-            if hitters:
-                return hitters, confirmed
-
-        return list(non_pitchers.values())[:9], False
+            return hitters
+        return list(non_pitchers.values())[:9]
 
     # ------------------------------------------------------------------
     # PERF — per-player raw data fetch, split out so it can be submitted to
@@ -964,10 +907,10 @@ class PredictionService:
         home_faces_whiff = self._cached_starter_arsenal_whiff(away_pitcher_id)
 
         away_lineup_ops, away_lineup_weight, _away_lineup_confirmed = self._today_lineup_signal(
-            game_pk, away_id, home_pitcher_id, home_pitcher.get("hand", "R"), target_date,
+            game_pk, away_id, home_pitcher_id, home_pitcher.get("hand", "R"),
         )
         home_lineup_ops, home_lineup_weight, _home_lineup_confirmed = self._today_lineup_signal(
-            game_pk, home_id, away_pitcher_id, away_pitcher.get("hand", "R"), target_date,
+            game_pk, home_id, away_pitcher_id, away_pitcher.get("hand", "R"),
         )
 
         away_matchup_mult = _matchup_multiplier(
@@ -1062,11 +1005,8 @@ class PredictionService:
         # BOTH teams into one flat job list. No new I/O here beyond what
         # _resolve_hitters already needed (team roster, now cached).
         hitter_jobs: list[dict] = []
-        lineups_confirmed = True
         for team_id, team_abbr, team_name, team_obp, team_slg, opp_pitcher, opp_bullpen_era, lineup_list, home_away_scalar in team_iter:
-            hitters, team_lineup_confirmed = self._resolve_hitters(team_id, lineup_list, game_pk, target_date)
-            if not team_lineup_confirmed:
-                lineups_confirmed = False
+            hitters = self._resolve_hitters(team_id, lineup_list)
             opp_pitcher_hand = opp_pitcher.get("hand", "R")
             opp_pitcher_era = opp_pitcher.get("era", LEAGUE_AVG_ERA)
             opp_pitcher_velo = opp_pitcher.get("avg_fastball_velo", 0.0)
@@ -1155,6 +1095,13 @@ class PredictionService:
 
             platoon_mult = apply_split_effect(1.0, bat_side, opp_pitcher_hand, split_type)
 
+            # TASK 1: pick the pitcher's platoon split that matches the hand
+            # this batter actually bats from today — same selection rule as
+            # get_matchup()'s pitcher_baa (batter_hand == "L" -> vsL).
+            opp_pitcher_platoon_split = opp_pitcher.get("splits", {}).get(
+                "vsL" if bat_side == "L" else "vsR", {}
+            )
+
             stage_a_prob, iso_val, babip_14d, gen_ba = self._compute_hit_probability_stage_a(
                 season_stats=hitting_stats,
                 platoon_stats=platoon_stats,
@@ -1168,7 +1115,8 @@ class PredictionService:
                 fatigue_factor=fatigue_factor,
                 opp_bullpen_era=opp_bullpen_era,
                 opp_pitcher_era=opp_pitcher_era,
-                opp_pitcher_k_rate=opp_pitcher.get("k_rate", 0.22),
+                opp_pitcher_platoon_baa=opp_pitcher_platoon_split.get("baa", LEAGUE_AVG_BA),
+                opp_pitcher_platoon_bf=int(opp_pitcher_platoon_split.get("bf", 0) or 0),
                 opp_pitcher_whip=opp_pitcher.get("whip", 1.32),
                 platoon_mult=platoon_mult,
             )
@@ -1180,6 +1128,30 @@ class PredictionService:
                 babip_14d=babip_14d,
                 pitcher_velo=opp_pitcher_velo,
                 hitter_whiff_pct=hitter_whiff_proxy,
+            )
+
+            # TASK (2026-09-04, follow-up to trckr21 handoff): the divergence
+            # LOGGER from the previous pass caught these cases but never
+            # corrected them — a real gap flagged by two live examples: José
+            # Ramírez showing "Neutral zone" Matchup Verifier alongside a
+            # 4-for-13/3-HR H2H sample (working as intended — 13 AB is
+            # correctly shrunk hard toward season baseline, not a bug), and
+            # Carson Kelly showing 79% Hit% next to a -40.5% "Pitcher
+            # advantage" verdict (a real, uncorrected gap — Stage A/B's other
+            # 6-7 signals, esp. the 40%-weighted recent-form bucket, were
+            # outvoting the new platoon-BAA term). This now ACTIVELY nudges
+            # hit_prob back toward the lightweight matchup read in BOTH
+            # directions — dampening a Kelly-style false-high, and boosting a
+            # Chourio-style false-low (strong batter platoon edge getting
+            # buried under everything else in the stack) — see
+            # _apply_hit_matchup_reconciliation for the exact bounds.
+            hit_prob = self._apply_hit_matchup_reconciliation(
+                pname=pname,
+                hit_prob=hit_prob,
+                batter_avg=safe_float(hitting_stats.get("avg"), LEAGUE_AVG_BA),
+                batter_k_rate_pct=(season_so / at_bats * 100.0) if at_bats else 22.0,
+                pitcher_platoon_baa=opp_pitcher_platoon_split.get("baa", LEAGUE_AVG_BA),
+                pitcher_k_rate_pct=opp_pitcher.get("k_rate", 0.22) * 100.0,
             )
 
             pa_proj = projected_pa_from_order(order)
@@ -1319,11 +1291,9 @@ class PredictionService:
             "weatherSummary": weather_ctx.summary,
             "weatherTone": weather_ctx.wind_tone,
             "weatherDetail": weather_ctx.wind_detail,
-            # NEW (2026-09-04) — see schemas.GameResponse.lineupsConfirmed note.
-            "lineupsConfirmed": lineups_confirmed,
         }
 
-        return {"game": game_row, "players": players, "pitchers": pitchers_out, "lineupsConfirmed": lineups_confirmed}
+        return {"game": game_row, "players": players, "pitchers": pitchers_out}
 
     # ------------------------------------------------------------------
     # STAGE A — ported from process_abi_single_hitter. Returns a probability
@@ -1345,7 +1315,8 @@ class PredictionService:
         fatigue_factor: float,
         opp_bullpen_era: float,
         opp_pitcher_era: float,
-        opp_pitcher_k_rate: float,
+        opp_pitcher_platoon_baa: float,
+        opp_pitcher_platoon_bf: int,
         opp_pitcher_whip: float,
         platoon_mult: float,
     ) -> tuple[float, float, float, float]:
@@ -1431,27 +1402,44 @@ class PredictionService:
         hit_rate_per_ab = raw_score * 0.85
         raw_hit_prob = 1.0 - math.pow(max(0.0, 1.0 - hit_rate_per_ab), projected_pa)
 
-        # BUGFIX (2026-09-03, diagnostic pass): the original restoration of
-        # this term ("BUGFIX 2026-09-03" below, now corrected further) copied
-        # math_engine's process_hr_prob/process_run_prob/process_rbi_prob
-        # starter_mult formula shape — but that formula itself had the ERA
-        # direction inverted: (LEAGUE_AVG_ERA - opp_pitcher_era) makes a
-        # low-ERA ACE produce a multiplier ABOVE 1.0, which INCREASES the
-        # batter's hit probability against the toughest pitchers on the
-        # slate, and a high-ERA replacement-level arm produces a multiplier
-        # BELOW 1.0, suppressing it. That's backwards — it's the single
-        # biggest reason weak-team bench bats kept out-ranking legitimate
-        # stars: better opposing pitching was making the model MORE
-        # confident in the hit, not less. Also fixed the matching
-        # (LEAGUE_AVG_ERA - opp_bullpen_era) inversion in bullpen_mult below,
-        # and the same shape in math_engine.py's process_hit_prob/
-        # process_run_prob/process_hr_prob/process_rbi_prob,
-        # starter_quality_index, and calculate_team_xruns_v2 (Moneylines).
-        starter_era_mult = 1.0 + ((opp_pitcher_era - LEAGUE_AVG_ERA) / 10.0)
+        # BUGFIX (2026-09-03): opp_pitcher_era was accepted as a parameter but
+        # never referenced anywhere in this function body — the starter's ERA
+        # (the dominant pitcher-quality signal used everywhere else in this
+        # codebase, e.g. math_engine.process_hr_prob/process_run_prob/
+        # process_rbi_prob's starter_mult) was silently dropped from the Hits
+        # pipeline. Only opp_pitcher_k_rate (~±3.7% combined range across the
+        # real MLB K-rate spread) and opp_pitcher_whip (~±3% range) were doing
+        # any matchup-differentiation work — nowhere near enough to move a
+        # player's rank on the board, which is why the same hitters kept
+        # topping Hit% and the "Contact" leaderboard every single day
+        # regardless of who was starting. Restored with the SAME formula shape
+        # (and comparable ~±15-17% magnitude for a normal ERA range) already
+        # used for HR/Run/RBI, so all four props now weight the opposing
+        # starter consistently.
+        starter_era_mult = 1.0 + ((LEAGUE_AVG_ERA - opp_pitcher_era) / 10.0)
+
+        # TASK 1 (trckr21 handoff, 2026-09-03): the flat, hand-agnostic
+        # (1.0 - opp_pitcher_k_rate * 0.22) term above is replaced with the
+        # platoon-specific BAA this batter's hand actually sees from this
+        # pitcher — the same signal get_matchup() already uses (pitcher_
+        # profile()['splits']['vsL'/'vsR'], no new I/O). This is the root
+        # fix for the Hits-vs-Matchup-Verifier contradiction: a dominant
+        # platoon-specific pitcher performance now actually suppresses the
+        # Hits number instead of a cosmetic K-rate discount that barely
+        # moved it. A thin platoon sample (rookies, callups, most relievers
+        # — bf can be 0) is shrunk toward league-average BA via the same
+        # shrink_rate()/K_HITS shape used everywhere else in this module,
+        # so a pitcher with only 15 BF vs lefties this year isn't trusted
+        # at face value.
+        shrunk_platoon_baa = shrink_rate(
+            opp_pitcher_platoon_baa, opp_pitcher_platoon_bf, LEAGUE_AVG_BA, K_HITS
+        )
+        baa_mult = clamp(shrunk_platoon_baa / LEAGUE_AVG_BA, 0.55, 1.35)
+
         prob = (
             raw_hit_prob
             * starter_era_mult
-            * (1.0 - (opp_pitcher_k_rate * 0.22))
+            * baa_mult
             * (1.0 + ((1.20 - opp_pitcher_whip) * 0.05))
         )
 
@@ -1459,7 +1447,7 @@ class PredictionService:
         # (the original's calculate_team_bullpen_fatigue_multiplier also
         # factors in innings/games workload ratio, which isn't cheaply
         # available from the free MLB Stats API; ERA is the dominant term).
-        bullpen_mult = clamp(1.0 + ((opp_bullpen_era - LEAGUE_AVG_ERA) / 25.0), 0.95, 1.06)
+        bullpen_mult = clamp(1.0 + ((LEAGUE_AVG_ERA - opp_bullpen_era) / 25.0), 0.95, 1.06)
         prob *= bullpen_mult
 
         # --- Platoon DNA accelerator ---
@@ -1526,19 +1514,115 @@ class PredictionService:
         velocity_penalty_pts, _triggered = velocity_control_penalty(pitcher_velo, hitter_whiff_pct)
         prob += velocity_penalty_pts
 
-        # BATAS 2 — BABIP regression (now scaled by ISO — see
-        # math_engine.babip_regression_penalty_points's 2026-09-03 note)
-        prob += babip_regression_penalty_points(babip_14d, iso_val)
+        # BATAS 2 — BABIP regression
+        prob += babip_regression_penalty_points(babip_14d)
 
         # BATAS 3 — lineup order bonus
-        prob *= lineup_order_bonus_mult(batting_order)
-
         # V8.9 quality modifier + the second (multiplicative) velocity mod
+        #
+        # TASK 2 (trckr21 handoff, 2026-09-03): clamp the COMBINED lineup *
+        # quality * velocity multiplier before applying it, not just the
+        # final probability. Previously these three could compound to
+        # roughly +22% completely uncapped on top of Stage A's own
+        # [0.02, 0.80] clamp — enough to rescue a genuinely bad matchup
+        # (now correctly flagged by Task 1's platoon-BAA term) back into a
+        # false-positive high number. A real matchup penalty from Stage A
+        # should survive Stage B, not get overwritten by it.
+        lineup_mult = lineup_order_bonus_mult(batting_order)
         quality_mod = hit_quality_modifier(babip_14d, iso_val)
         velo_mod = pitcher_velocity_mod(pitcher_velo)
-        final_calibrated_prob = prob * (1.0 + quality_mod + velo_mod)
+        combined_mult = clamp(lineup_mult * (1.0 + quality_mod + velo_mod), 0.75, 1.15)
+        final_calibrated_prob = prob * combined_mult
 
         return round(clamp(final_calibrated_prob / 100.0, 0.0, 1.0), 4)
+
+    # ------------------------------------------------------------------
+    # TASK (2026-09-04, follow-up to trckr21 handoff) — active Hits/Matchup
+    # reconciliation. Supersedes the log-only divergence check from the
+    # previous pass: that version *found* the Kelly-style contradiction but
+    # never corrected it, which is exactly what got flagged back with real
+    # numbers. This version nudges hit_prob toward the lightweight matchup
+    # read in both directions, bounded, and logs whenever it actually moves
+    # the number so it stays auditable.
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _lightweight_matchup_score(
+        batter_avg: float,
+        batter_k_rate_pct: float,
+        pitcher_platoon_baa: float,
+        pitcher_k_rate_pct: float,
+    ) -> float:
+        """Same split_advantage/k_penalty shape get_matchup() uses, minus
+        H2H. Shared by _apply_hit_matchup_reconciliation below so the
+        reconciliation and get_matchup()'s own verdict can never silently
+        drift onto two different formulas.
+
+        H2H is intentionally excluded here — not because it doesn't matter,
+        but because a full H2H fetch (mlb.hitter_vs_pitcher_history) per
+        hitter, for every hitter in every game of a slate build, is a
+        meaningfully larger I/O cost than the season/platoon signals already
+        sitting in memory from this loop. Season-avg AVG (Ramírez: .242) and
+        platoon BAA (Ramírez: .209 vs RHP) are used the same way get_matchup()
+        uses batter_avg / pitcher_baa; that alone already reproduces
+        get_matchup()'s own -8.8-ish pre-H2H read for a case like Ramírez,
+        which is the point — this is meant to track get_matchup()'s verdict
+        closely, just without the extra fetch.
+        """
+        split_advantage = (batter_avg - 0.250) * 400 + (pitcher_platoon_baa - 0.240) * 400
+        k_penalty = (pitcher_k_rate_pct - 22.0) * 4.0 + (batter_k_rate_pct - 22.0) * 2.0
+        return clamp(split_advantage - k_penalty, -100.0, 100.0)
+
+    def _apply_hit_matchup_reconciliation(
+        self,
+        pname: str,
+        hit_prob: float,
+        batter_avg: float,
+        batter_k_rate_pct: float,
+        pitcher_platoon_baa: float,
+        pitcher_k_rate_pct: float,
+    ) -> float:
+        """Bidirectionally nudge hit_prob toward _lightweight_matchup_score()
+        when the two signals meaningfully disagree — bounded to at most
+        RECONCILIATION_MAX_CORRECTION (20%) relative, and a no-op (mult=1.0)
+        whenever they already roughly agree, so this never touches the
+        majority of ordinary, non-contradictory matchups.
+
+        Two directions, both real cases:
+          - hit_prob HIGH + matchup_score strongly NEGATIVE (Carson Kelly:
+            79% Hit% next to "Pitcher advantage (-40.5%)") -> dampen.
+          - hit_prob LOW + matchup_score strongly POSITIVE (Jackson Chourio-
+            style: big platoon/season advantage buried under recent-form/
+            lineup/velocity terms elsewhere in Stage A/B) -> boost.
+
+        The correction scales with how far past the divergence threshold the
+        score sits (not a flat penalty/boost) so a -21 score barely nudges
+        while a -90 score gets close to the full 20% cap.
+        """
+        matchup_score = self._lightweight_matchup_score(
+            batter_avg, batter_k_rate_pct, pitcher_platoon_baa, pitcher_k_rate_pct
+        )
+
+        if hit_prob > HIT_MATCHUP_DIVERGENCE_HIT_PROB and matchup_score < HIT_MATCHUP_DIVERGENCE_ADVANTAGE:
+            overshoot = (HIT_MATCHUP_DIVERGENCE_ADVANTAGE - matchup_score) / 100.0
+            mult = 1.0 - clamp(overshoot, 0.0, RECONCILIATION_MAX_CORRECTION)
+        elif hit_prob < HIT_MATCHUP_DIVERGENCE_HIT_PROB_LOW and matchup_score > HIT_MATCHUP_DIVERGENCE_ADVANTAGE_HIGH:
+            overshoot = (matchup_score - HIT_MATCHUP_DIVERGENCE_ADVANTAGE_HIGH) / 100.0
+            mult = 1.0 + clamp(overshoot, 0.0, RECONCILIATION_MAX_CORRECTION)
+        else:
+            mult = 1.0
+
+        reconciled = round(clamp(hit_prob * mult, 0.0, 1.0), 4)
+
+        if mult != 1.0:
+            logger.warning(
+                "Hits/Matchup reconciliation applied for %s: hit_prob %.3f -> %.3f "
+                "(mult=%.3f, matchup_score=%.1f, batter_avg=%.3f, pitcher_platoon_baa=%.3f, "
+                "pitcher_k_rate=%.1f%%, batter_k_rate=%.1f%%)",
+                pname, hit_prob, reconciled, mult, matchup_score, batter_avg,
+                pitcher_platoon_baa, pitcher_k_rate_pct, batter_k_rate_pct,
+            )
+
+        return reconciled
 
     # ------------------------------------------------------------------
     # CONSOLIDATION — Pitcher Props (/api/pitcher-props)
@@ -1762,7 +1846,7 @@ class PredictionService:
         )
         arsenal_whiff = self._cached_starter_arsenal_whiff(opp_pitcher_id)
         lineup_ops, lineup_weight, _confirmed = self._today_lineup_signal(
-            game_pk, team_id, opp_pitcher_id, opp_pitcher.get("hand", "R"), target_date,
+            game_pk, team_id, opp_pitcher_id, opp_pitcher.get("hand", "R"),
         )
 
         matchup_mult = _matchup_multiplier(
@@ -1832,7 +1916,7 @@ class PredictionService:
                 pname = prob_pitcher.get("fullName")
                 if pid and pid not in seen_pitcher_ids:
                     seen_pitcher_ids.add(pid)
-                    jobs.append((pid, pname, team_name, opponent_id, opponent_name, is_home, game_pk, target_date))
+                    jobs.append((pid, pname, team_name, opponent_id, opponent_name, is_home, game_pk))
 
         results: list[dict] = []
         if jobs:
@@ -1864,7 +1948,6 @@ class PredictionService:
         opponent_name: str,
         is_home: bool,
         game_pk: int,
-        target_date: str,
     ) -> dict | None:
         pitch_mix = self.mlb.pitch_arsenal(pitcher_id)
 
@@ -1878,7 +1961,7 @@ class PredictionService:
             p["hardHitPct"] = stats["hardHitPct"] if stats else None
             p["lethalitySample"] = stats["sampleSize"] if stats else 0
 
-        lineup, confirmed = self.mlb.probable_lineup(game_pk, opponent_team_id, target_date)
+        lineup, confirmed = self.mlb.probable_lineup(game_pk, opponent_team_id)
         if not lineup:
             return None
 
@@ -1899,7 +1982,6 @@ class PredictionService:
         pitcher_whip = round(safe_float(whip_raw), 2) if whip_raw not in (None, "-", "", "-.--") else None
 
         today_matchup = _matchup_label(opponent_name, is_home)
-        pitcher_hand = self.mlb.person(pitcher_id).get("pitchHand", {}).get("code", "R")
         return {
             "id": f"m_{pitcher_id}",
             "pitcherId": str(pitcher_id),
@@ -1910,7 +1992,6 @@ class PredictionService:
             "matchup": today_matchup,
             "sub": f"{team_name} &middot; {today_matchup}",
             "lineupConfirmed": confirmed,
-            "throws": pitcher_hand,
             "pitchMix": pitch_mix,
             "batters": ranked,
             "lineupEdgeOps": lineup_edge_ops,
@@ -1942,11 +2023,6 @@ class PredictionService:
     def _batter_matchup_job(self, batter: dict, pitcher_id: int) -> dict:
         h2h = self.mlb.batter_vs_pitcher_slash(batter["id"], pitcher_id)
         season_slash = self._batter_season_slash(self.mlb.player_season_hitting(batter["id"]))
-        # NEW (2026-09-05, diagnostic pass): position (from the lineup
-        # resolution — see MLBClient.probable_lineup) and bats (batting
-        # handedness, from person()) for the H2H Matchups table, so the
-        # tool doesn't require cross-checking a lineup card elsewhere.
-        bats = self.mlb.person(batter["id"]).get("batSide", {}).get("code", "R")
 
         # H2H credibility shrink — same shape as shrink_rate(), reused
         # directly (see math_engine.STABILIZATION_PA_H2H note).
@@ -1968,8 +2044,6 @@ class PredictionService:
         return {
             "id": batter["id"],
             "name": batter.get("name", "Unknown"),
-            "position": batter.get("position", ""),
-            "bats": bats,
             "h2h": h2h,
             "seasonOps": round(season_slash["ops"], 3),
             "seasonPa": season_slash["pa"],
@@ -2031,53 +2105,19 @@ class PredictionService:
         h2h_obp = ((total_hits + total_bb + total_hbp) / h2h_denom) if h2h_denom > 0 else h2h_avg
 
         split_advantage = (batter_avg - 0.250) * 400 + (pitcher_baa - 0.240) * 400
-        # FIX (2026-09-04, diagnostic pass — "Matchup Verifier ace bias"):
-        # k_penalty used to weight the PITCHER's K-rate deviation at 4.0x
-        # and the BATTER's own K-rate deviation at only 2.0x — a flat,
-        # unjustified 2x thumb on the scale toward "elite/high-K pitcher
-        # wins," on top of a pitcher already getting full, uncapped credit
-        # for their platoon BAA in split_advantage above. Rebalanced to an
-        # equal 2.0x/2.0x weighting — there's no principled reason a
-        # pitcher's whiff-generation should count double a batter's own
-        # contact skill in a head-to-head read.
-        k_penalty = (pitcher_k_rate - 22.0) * 2.0 + (batter_k_rate - 22.0) * 2.0
+        k_penalty = (pitcher_k_rate - 22.0) * 4.0 + (batter_k_rate - 22.0) * 2.0
         raw_advantage = split_advantage - k_penalty
 
-        # FIX (2026-09-04): split_advantage above is a BLUNT signal — it's
-        # this pitcher's overall season BAA against the batter's handedness,
-        # nothing about how THIS batter's specific pitch-recognition/power
-        # profile lines up against THIS pitcher's actual arsenal. Ace-tier
-        # pitchers naturally post very low platoon BAA (.150-.200), which
-        # swung split_advantage hard toward "pitcher" almost automatically —
-        # exactly the "everyone's red against Skubal/Misiorowski regardless
-        # of fit" pattern reported after extensive real-world observation.
-        # Two changes: (1) cap split_advantage's swing so no single
-        # generic season-average signal can dominate the score outright —
-        # forces H2H and pitch-arsenal fit (added next) to carry real
-        # weight instead of being drowned out; (2) fold in the SAME
-        # H2H-blended, arsenal-vulnerability-aware OPS signal that already
-        # powers the Matchup Analyzer's edgeTier (_batter_matchup_job) —
-        # so a batter who profiles well against this specific pitcher's
-        # actual pitches now gets meaningful credit here too, not just in
-        # a separate tool that this Verifier never talked to.
-        raw_advantage = clamp(raw_advantage, -35.0, 35.0)
-
-        try:
-            fit_job = self._batter_matchup_job({"id": batter_id, "name": batter_name}, pitcher_id)
-            arsenal_fit_ops = fit_job["blendedOps"]
-            arsenal_fit_component = clamp((arsenal_fit_ops - LEAGUE_AVG_OPS_FALLBACK) * 70.0, -25.0, 25.0)
-            raw_advantage += arsenal_fit_component
-        except Exception:
-            logger.warning(
-                "Matchup Verifier: pitch-arsenal fit lookup failed for batter=%s pitcher=%s — "
-                "falling back to the platoon/K-rate signal only.",
-                batter_id, pitcher_id, exc_info=True,
-            )
-
-        if has_h2h and total_ab >= 5:
-            h2h_weight = min(0.5, total_ab * 0.05)
-            h2h_diff = (h2h_avg - 0.250) * 500
-            raw_advantage = ((1 - h2h_weight) * raw_advantage) + (h2h_weight * h2h_diff)
+        # TASK 4 (trckr21 handoff, 2026-09-03): reuse the same Bayesian
+        # shrink_rate()/STABILIZATION_PA_H2H shape used everywhere else in
+        # this product for career H2H at-bats, instead of this endpoint's
+        # own ad hoc `h2h_weight = min(0.5, total_ab * 0.05)` — which gave
+        # 10 AB a flat 50% weight with no shrinkage at all. Safe to call
+        # unconditionally: shrink_rate(..., sample_size=0, ...) returns
+        # raw_advantage unchanged when there's no H2H history, so the old
+        # `if has_h2h and total_ab >= 5` gate is no longer needed.
+        h2h_diff = (h2h_avg - 0.250) * 500
+        raw_advantage = shrink_rate(h2h_diff, total_ab, raw_advantage, STABILIZATION_PA_H2H)
 
         advantage_score = round(clamp(raw_advantage, -100.0, 100.0), 1)
 

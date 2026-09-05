@@ -357,12 +357,6 @@ class MatchupBatter(BaseModel):
     id: int
     name: str
     order: int
-    # NEW (2026-09-05, diagnostic pass): fielding position and batting
-    # handedness for the H2H Matchups table — see PredictionService.
-    # _batter_matchup_job. position is best-effort ("" if unavailable,
-    # e.g. the raw-roster fallback tier before any real lineup posts).
-    position: str = ""
-    bats: str = "R"
     h2h: H2HSlash
     seasonOps: float
     seasonPa: float

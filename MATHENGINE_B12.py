@@ -183,21 +183,13 @@ def starter_quality_index(
     always populates them — so this never has to guess at a pitching_index
     with zero signal.
     """
-    # FIX (2026-09-03): era_idx/proj_er_idx were LEAGUE_AVG/value — that
-    # makes a low-ERA ace (value < LEAGUE_AVG) produce an index ABOVE 1.0,
-    # which the docstring above defines as "offense-friendly." Backwards:
-    # an ace is the opposite of offense-friendly. k_rate_idx and
-    # arsenal_whiff_pct already use the correct orientation (LEAGUE_AVG /
-    # value, so a high-K/high-whiff — tougher — pitcher scores BELOW 1.0);
-    # era_idx/proj_er_idx are flipped here (value / LEAGUE_AVG) to match
-    # that same "higher index = easier matchup" convention.
-    era_idx = era / LEAGUE_AVG_ERA if LEAGUE_AVG_ERA > 0 else 1.0
-    proj_er_idx = proj_er / LEAGUE_AVG_PROJ_ER if LEAGUE_AVG_PROJ_ER > 0 else 1.0
+    era_idx = LEAGUE_AVG_ERA / era if era > 0 else 1.0
+    proj_er_idx = LEAGUE_AVG_PROJ_ER / proj_er if proj_er > 0 else 1.0
     k_rate_idx = LEAGUE_AVG_K_RATE / k_rate if k_rate > 0 else 1.0
 
     components = [(era_idx, 0.35), (proj_er_idx, 0.15), (k_rate_idx, 0.25)]
     if recent_blended_era is not None and recent_blended_era > 0:
-        components.append((recent_blended_era / LEAGUE_AVG_ERA, 0.15))
+        components.append((LEAGUE_AVG_ERA / recent_blended_era, 0.15))
     if recent_blended_k_rate is not None and recent_blended_k_rate > 0:
         components.append((LEAGUE_AVG_K_RATE / recent_blended_k_rate, 0.05))
     if arsenal_whiff_pct is not None and arsenal_whiff_pct > 0:
@@ -625,31 +617,15 @@ def pitcher_velocity_mod(pitcher_velo: float) -> float:
 # ---------------------------------------------------------------------------
 # BATAS 2 — BABIP regression penalty, expressed in percentage POINTS
 # (matches the original's `prob -= X.0` on a 0-100 scale).
-#
-# REBALANCE (2026-09-03, diagnostic pass): this penalty used to key off
-# babip_14d ALONE. A 14-day BABIP is a noisy window — for a light-hitting
-# slap hitter running lucky it usually IS about to regress, but for a
-# hitter squaring the ball up consistently (high ISO = hard, sustained
-# contact) an elevated BABIP is at least partly a skill signal, not pure
-# luck. Flat -20pts either way meant a genuinely locked-in star took the
-# exact same penalty as a bloop-and-a-walk journeyman on a lucky week —
-# combined with the ERA-direction bug above, that's what was pushing real
-# stars below replacement-level bench bats on the board. iso_val now
-# scales the penalty down (never by more than 60%) instead of removing the
-# regression premise entirely — a legitimate power hitter's hot BABIP is
-# trusted more, a low-ISO hitter's is still treated as likely to cool off.
 # ---------------------------------------------------------------------------
-def babip_regression_penalty_points(babip_14d: float, iso_val: float = 0.0) -> float:
+def babip_regression_penalty_points(babip_14d: float) -> float:
     if 0.300 <= babip_14d <= 0.349:
-        base = -2.0
-    elif 0.350 <= babip_14d <= 0.379:
-        base = -12.0
-    elif babip_14d >= 0.380:
-        base = -20.0
-    else:
-        return 0.0
-    power_relief = clamp(iso_val / 0.220, 0.0, 0.60)
-    return base * (1.0 - power_relief)
+        return -2.0
+    if 0.350 <= babip_14d <= 0.379:
+        return -12.0
+    if babip_14d >= 0.380:
+        return -20.0
+    return 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -774,16 +750,8 @@ def hardhit_pct_proxy(iso_val: float, air_rate: float) -> float:
 
 
 def process_hit_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso) -> float:
-    # FIX (2026-09-03 diagnostic pass): starter_mult/bullpen_mult were
-    # inverted — (4.20 - era) means a LOW-ERA ace pitcher (era < 4.20)
-    # produced a multiplier > 1.0, INCREASING the batter's event
-    # probability against him, and a high-ERA replacement-level arm
-    # produced a multiplier < 1.0, suppressing it. That's backwards: a
-    # tougher (lower-ERA) pitcher should lower the batter's probability.
-    # Flipped to (era - 4.20) so a below-average ERA now correctly
-    # suppresses the rate and an above-average ERA boosts it.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     min_prob, max_prob = get_prob_bounds("hits")
     return compute_event_probability(
         rate, pa, starter_mult, bullpen_mult, park, platoon, iso, min_prob=min_prob, max_prob=max_prob
@@ -791,9 +759,8 @@ def process_hit_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso) -> 
 
 
 def process_run_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso, team_obp, order) -> float:
-    # FIX (2026-09-03) — see process_hit_prob's note; same inversion, same fix.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     team_factor = clamp(team_obp / 0.315, 0.90, 1.10)
     archetype_mult = run_scoring_archetype_factor(order, iso)
     min_prob, max_prob = get_prob_bounds("runs")
@@ -827,9 +794,8 @@ def process_hr_prob(
     # only touch the Hits pipeline; wired into HR here too, since power output
     # is arguably at least as fatigue/count sensitive as a generic hit. Default
     # 1.0 keeps this a no-op for any caller that doesn't pass them.
-    # FIX (2026-09-03) — see process_hit_prob's note; same inversion, same fix.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     power_index = hr_power_index(iso_val, hr_rate_observed)
     min_prob, max_prob = get_prob_bounds("hr")
     adjusted_rate = rate * fatigue_mult * count_boost_mult
@@ -840,9 +806,8 @@ def process_hr_prob(
 
 
 def process_rbi_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso, team_obp, order, team_slg) -> float:
-    # FIX (2026-09-03) — see process_hit_prob's note; same inversion, same fix.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     lineup_factor = clamp(team_obp / 0.315, 0.90, 1.15)
     protection_mult = lineup_protection_factor(order, team_slg)
     min_prob, max_prob = get_prob_bounds("rbi")
@@ -1168,10 +1133,7 @@ def calculate_team_xruns_v2(
     matchup_mult: float, park_factor: float, weather_mult: float, bullpen_era: float, bullpen_fatigue_mult: float
 ) -> float:
     base_run_projection = 4.30
-    # FIX (2026-09-03) — same inversion as process_hit_prob et al.: a low-ERA
-    # (good) bullpen was INCREASING the batting team's projected runs.
-    # Flipped so a tougher bullpen lowers xRuns and a weak one raises it.
-    bullpen_factor = 1.0 + ((bullpen_era - LEAGUE_AVG_ERA) / 25.0)
+    bullpen_factor = 1.0 + ((LEAGUE_AVG_ERA - bullpen_era) / 25.0)
     bullpen_factor *= bullpen_fatigue_mult
     final_xruns = base_run_projection * matchup_mult * park_factor * weather_mult * bullpen_factor
     return clamp(final_xruns, 1.5, 10.0)

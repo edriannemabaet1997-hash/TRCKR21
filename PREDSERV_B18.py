@@ -533,7 +533,7 @@ class PredictionService:
     # ------------------------------------------------------------------
 
     def _today_lineup_signal(
-        self, game_pk: int | None, team_id: int, opp_pitcher_id: int | None, opp_pitcher_hand: str, target_date: str,
+        self, game_pk: int | None, team_id: int, opp_pitcher_id: int | None, opp_pitcher_hand: str,
     ) -> tuple[float | None, float, bool]:
         """Returns (today_lineup_ops, lineup_confidence_weight, confirmed).
 
@@ -561,7 +561,7 @@ class PredictionService:
 
         result = (None, 0.0, False)
         try:
-            lineup, confirmed = self.mlb.probable_lineup(game_pk, team_id, target_date)
+            lineup, confirmed = self.mlb.probable_lineup(game_pk, team_id)
             if not lineup:
                 result = (None, 0.0, confirmed)
             else:
@@ -805,7 +805,7 @@ class PredictionService:
                 return idx + 1
         return None
 
-    def _resolve_hitters(self, team_id: int, lineup_list: list[dict], game_pk: int, target_date: str) -> tuple[list[dict], bool]:
+    def _resolve_hitters(self, team_id: int, lineup_list: list[dict], game_pk: int) -> tuple[list[dict], bool]:
         """Returns (hitters, confirmed). confirmed is True only when the
         9 names came from an actual posted batting order (schedule-hydrate
         lineups, or the boxscore battingOrder via probable_lineup()) —
@@ -847,7 +847,7 @@ class PredictionService:
                 return hitters, True
 
         try:
-            fallback_lineup, confirmed = self.mlb.probable_lineup(game_pk, team_id, target_date)
+            fallback_lineup, confirmed = self.mlb.probable_lineup(game_pk, team_id)
         except Exception:
             logger.warning(
                 "probable_lineup() failed for game_pk=%s team_id=%s — falling back to raw roster slice.",
@@ -964,10 +964,10 @@ class PredictionService:
         home_faces_whiff = self._cached_starter_arsenal_whiff(away_pitcher_id)
 
         away_lineup_ops, away_lineup_weight, _away_lineup_confirmed = self._today_lineup_signal(
-            game_pk, away_id, home_pitcher_id, home_pitcher.get("hand", "R"), target_date,
+            game_pk, away_id, home_pitcher_id, home_pitcher.get("hand", "R"),
         )
         home_lineup_ops, home_lineup_weight, _home_lineup_confirmed = self._today_lineup_signal(
-            game_pk, home_id, away_pitcher_id, away_pitcher.get("hand", "R"), target_date,
+            game_pk, home_id, away_pitcher_id, away_pitcher.get("hand", "R"),
         )
 
         away_matchup_mult = _matchup_multiplier(
@@ -1064,7 +1064,7 @@ class PredictionService:
         hitter_jobs: list[dict] = []
         lineups_confirmed = True
         for team_id, team_abbr, team_name, team_obp, team_slg, opp_pitcher, opp_bullpen_era, lineup_list, home_away_scalar in team_iter:
-            hitters, team_lineup_confirmed = self._resolve_hitters(team_id, lineup_list, game_pk, target_date)
+            hitters, team_lineup_confirmed = self._resolve_hitters(team_id, lineup_list, game_pk)
             if not team_lineup_confirmed:
                 lineups_confirmed = False
             opp_pitcher_hand = opp_pitcher.get("hand", "R")
@@ -1319,8 +1319,6 @@ class PredictionService:
             "weatherSummary": weather_ctx.summary,
             "weatherTone": weather_ctx.wind_tone,
             "weatherDetail": weather_ctx.wind_detail,
-            # NEW (2026-09-04) — see schemas.GameResponse.lineupsConfirmed note.
-            "lineupsConfirmed": lineups_confirmed,
         }
 
         return {"game": game_row, "players": players, "pitchers": pitchers_out, "lineupsConfirmed": lineups_confirmed}
@@ -1762,7 +1760,7 @@ class PredictionService:
         )
         arsenal_whiff = self._cached_starter_arsenal_whiff(opp_pitcher_id)
         lineup_ops, lineup_weight, _confirmed = self._today_lineup_signal(
-            game_pk, team_id, opp_pitcher_id, opp_pitcher.get("hand", "R"), target_date,
+            game_pk, team_id, opp_pitcher_id, opp_pitcher.get("hand", "R"),
         )
 
         matchup_mult = _matchup_multiplier(
@@ -1832,7 +1830,7 @@ class PredictionService:
                 pname = prob_pitcher.get("fullName")
                 if pid and pid not in seen_pitcher_ids:
                     seen_pitcher_ids.add(pid)
-                    jobs.append((pid, pname, team_name, opponent_id, opponent_name, is_home, game_pk, target_date))
+                    jobs.append((pid, pname, team_name, opponent_id, opponent_name, is_home, game_pk))
 
         results: list[dict] = []
         if jobs:
@@ -1864,7 +1862,6 @@ class PredictionService:
         opponent_name: str,
         is_home: bool,
         game_pk: int,
-        target_date: str,
     ) -> dict | None:
         pitch_mix = self.mlb.pitch_arsenal(pitcher_id)
 
@@ -1878,7 +1875,7 @@ class PredictionService:
             p["hardHitPct"] = stats["hardHitPct"] if stats else None
             p["lethalitySample"] = stats["sampleSize"] if stats else 0
 
-        lineup, confirmed = self.mlb.probable_lineup(game_pk, opponent_team_id, target_date)
+        lineup, confirmed = self.mlb.probable_lineup(game_pk, opponent_team_id)
         if not lineup:
             return None
 
@@ -1899,7 +1896,6 @@ class PredictionService:
         pitcher_whip = round(safe_float(whip_raw), 2) if whip_raw not in (None, "-", "", "-.--") else None
 
         today_matchup = _matchup_label(opponent_name, is_home)
-        pitcher_hand = self.mlb.person(pitcher_id).get("pitchHand", {}).get("code", "R")
         return {
             "id": f"m_{pitcher_id}",
             "pitcherId": str(pitcher_id),
@@ -1910,7 +1906,6 @@ class PredictionService:
             "matchup": today_matchup,
             "sub": f"{team_name} &middot; {today_matchup}",
             "lineupConfirmed": confirmed,
-            "throws": pitcher_hand,
             "pitchMix": pitch_mix,
             "batters": ranked,
             "lineupEdgeOps": lineup_edge_ops,
@@ -1942,11 +1937,6 @@ class PredictionService:
     def _batter_matchup_job(self, batter: dict, pitcher_id: int) -> dict:
         h2h = self.mlb.batter_vs_pitcher_slash(batter["id"], pitcher_id)
         season_slash = self._batter_season_slash(self.mlb.player_season_hitting(batter["id"]))
-        # NEW (2026-09-05, diagnostic pass): position (from the lineup
-        # resolution — see MLBClient.probable_lineup) and bats (batting
-        # handedness, from person()) for the H2H Matchups table, so the
-        # tool doesn't require cross-checking a lineup card elsewhere.
-        bats = self.mlb.person(batter["id"]).get("batSide", {}).get("code", "R")
 
         # H2H credibility shrink — same shape as shrink_rate(), reused
         # directly (see math_engine.STABILIZATION_PA_H2H note).
@@ -1968,8 +1958,6 @@ class PredictionService:
         return {
             "id": batter["id"],
             "name": batter.get("name", "Unknown"),
-            "position": batter.get("position", ""),
-            "bats": bats,
             "h2h": h2h,
             "seasonOps": round(season_slash["ops"], 3),
             "seasonPa": season_slash["pa"],

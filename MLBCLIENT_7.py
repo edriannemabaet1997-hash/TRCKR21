@@ -647,10 +647,7 @@ class MLBClient:
                             pos = p.get("position", {}).get("abbreviation", "")
                             if pos == "P" or not person.get("id"):
                                 continue
-                            # NEW (2026-09-05, diagnostic pass): carry today's
-                            # fielding position through — the Matchup
-                            # Analyzer's H2H table wants it per batter.
-                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown"), "position": pos})
+                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown")})
                         if batters:
                             return batters[:9], True
         except Exception:
@@ -686,7 +683,7 @@ class MLBClient:
                             pos = p.get("position", {}).get("abbreviation", "")
                             if pos == "P" or not person.get("id"):
                                 continue
-                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown"), "position": pos})
+                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown")})
                         if batters:
                             return batters[:9], False
             except Exception:
@@ -695,11 +692,7 @@ class MLBClient:
         try:
             roster = self.team_roster(team_id)
             batters = [
-                {
-                    "id": entry["person"]["id"],
-                    "name": entry["person"]["fullName"],
-                    "position": entry.get("position", {}).get("abbreviation", ""),
-                }
+                {"id": entry["person"]["id"], "name": entry["person"]["fullName"]}
                 for entry in roster
                 if entry.get("position", {}).get("code") != "1"
             ]

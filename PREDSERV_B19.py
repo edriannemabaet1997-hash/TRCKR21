@@ -1942,11 +1942,6 @@ class PredictionService:
     def _batter_matchup_job(self, batter: dict, pitcher_id: int) -> dict:
         h2h = self.mlb.batter_vs_pitcher_slash(batter["id"], pitcher_id)
         season_slash = self._batter_season_slash(self.mlb.player_season_hitting(batter["id"]))
-        # NEW (2026-09-05, diagnostic pass): position (from the lineup
-        # resolution — see MLBClient.probable_lineup) and bats (batting
-        # handedness, from person()) for the H2H Matchups table, so the
-        # tool doesn't require cross-checking a lineup card elsewhere.
-        bats = self.mlb.person(batter["id"]).get("batSide", {}).get("code", "R")
 
         # H2H credibility shrink — same shape as shrink_rate(), reused
         # directly (see math_engine.STABILIZATION_PA_H2H note).
@@ -1968,8 +1963,6 @@ class PredictionService:
         return {
             "id": batter["id"],
             "name": batter.get("name", "Unknown"),
-            "position": batter.get("position", ""),
-            "bats": bats,
             "h2h": h2h,
             "seasonOps": round(season_slash["ops"], 3),
             "seasonPa": season_slash["pa"],

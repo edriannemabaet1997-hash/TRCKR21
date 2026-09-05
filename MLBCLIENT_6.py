@@ -631,7 +631,7 @@ class MLBClient:
             }
         return results
 
-    def probable_lineup(self, game_pk: int, team_id: int, target_date: str | None = None) -> tuple[list[dict], bool]:
+    def probable_lineup(self, game_pk: int, team_id: int) -> tuple[list[dict], bool]:
         try:
             box = self.boxscore(game_pk)
             for side in ("home", "away"):
@@ -647,59 +647,16 @@ class MLBClient:
                             pos = p.get("position", {}).get("abbreviation", "")
                             if pos == "P" or not person.get("id"):
                                 continue
-                            # NEW (2026-09-05, diagnostic pass): carry today's
-                            # fielding position through — the Matchup
-                            # Analyzer's H2H table wants it per batter.
-                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown"), "position": pos})
+                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown")})
                         if batters:
                             return batters[:9], True
         except Exception:
             pass
 
-        # FIX (2026-09-04, diagnostic pass): used to skip straight from "no
-        # confirmed order yet" to an arbitrary, UNORDERED roster slice
-        # (below) — a "projected" lineup earlier in the day could show
-        # whoever happened to sort first in the roster feed, out of any
-        # realistic batting order, forcing a manual cross-check against a
-        # site like Rotowire. This now tries the team's most recent
-        # COMPLETED game's actual posted batting order first — teams run a
-        # very similar lineup/order day to day, so "yesterday's real order"
-        # is a far better projection than "today's roster in jersey-number
-        # order." Still reported as confirmed=False — it's a projection,
-        # not today's official lineup.
-        if target_date:
-            try:
-                for recent_pk in reversed(self.team_recent_game_pks(team_id, target_date, days=7)):
-                    recent_box = self.boxscore(recent_pk)
-                    for side in ("home", "away"):
-                        team_box = recent_box.get("teams", {}).get(side, {})
-                        if team_box.get("team", {}).get("id") != team_id:
-                            continue
-                        order = team_box.get("battingOrder", [])
-                        players = team_box.get("players", {})
-                        if not order:
-                            continue
-                        batters = []
-                        for pid in order:
-                            p = players.get(f"ID{pid}", {})
-                            person = p.get("person", {})
-                            pos = p.get("position", {}).get("abbreviation", "")
-                            if pos == "P" or not person.get("id"):
-                                continue
-                            batters.append({"id": person["id"], "name": person.get("fullName", "Unknown"), "position": pos})
-                        if batters:
-                            return batters[:9], False
-            except Exception:
-                pass
-
         try:
             roster = self.team_roster(team_id)
             batters = [
-                {
-                    "id": entry["person"]["id"],
-                    "name": entry["person"]["fullName"],
-                    "position": entry.get("position", {}).get("abbreviation", ""),
-                }
+                {"id": entry["person"]["id"], "name": entry["person"]["fullName"]}
                 for entry in roster
                 if entry.get("position", {}).get("code") != "1"
             ]

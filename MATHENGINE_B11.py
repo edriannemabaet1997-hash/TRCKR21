@@ -54,50 +54,6 @@ DECIMAL_B = 100.0 / 110.0
 STABILIZATION_PA_H2H = 100
 LEAGUE_AVG_OPS_FALLBACK = 0.710
 
-# ---------------------------------------------------------------------------
-# TASK (2026-08-31) — Moneylines team-strength signal upgrade (chat items
-# #1-#8). New anchors for _matchup_multiplier()'s (prediction_service.py)
-# starter-quality index — pitcher_profile()'s proj_k/proj_er/k_rate +
-# recent-form + Matchup Analyzer's arsenal whiff%, instead of season ERA
-# alone — and for blending today's actual/projected lineup strength with
-# the season-wide OBP/SLG fallback, all via the SAME shrink_rate() shape
-# already used everywhere else in this module (no second formula family).
-# ---------------------------------------------------------------------------
-LEAGUE_AVG_K_RATE = 0.220
-LEAGUE_AVG_PROJ_ER = 2.50
-
-# Recent-form anchor (item #3): last PITCHER_RECENT_FORM_STARTS starts,
-# shrunk toward season ERA/K-rate with anchor_k=PITCHER_RECENT_FORM_ANCHOR_K.
-# Deliberately small — 2-3 starts is a tiny sample, but the whole point of
-# this signal is letting it nudge the season baseline, not get swamped by it.
-PITCHER_RECENT_FORM_STARTS = 3
-PITCHER_RECENT_FORM_ANCHOR_K = 3
-
-# Lineup-strength confidence gate (item #8): ONE shrink_rate() shape for
-# both the confirmed and projected-lineup cases — only the "sample size"
-# input changes, never the formula. anchor_k stays fixed;
-# LINEUP_STRENGTH_TRUST_CONFIRMED >> anchor_k so a confirmed lineup
-# dominates the season fallback; LINEUP_STRENGTH_TRUST_PROJECTED <<
-# anchor_k so an unconfirmed/projected lineup mostly defers to the
-# season-wide OBP/SLG anchor (protects against late-scratch risk). All
-# three are independently tunable.
-LINEUP_STRENGTH_ANCHOR_K = 60.0
-LINEUP_STRENGTH_TRUST_CONFIRMED = 180.0
-LINEUP_STRENGTH_TRUST_PROJECTED = 25.0
-
-# Platoon-split credibility gate (item #7): a batter's OPS vs the throwing
-# hand they'll actually face today is shrunk toward their blended (H2H +
-# season) OPS via the same shrink_rate() shape, with anchor_k =
-# PLATOON_MIN_PA_CREDIBLE — a batter needs roughly this many PA against
-# that hand before the platoon-specific number carries real weight.
-PLATOON_MIN_PA_CREDIBLE = 20.0
-
-# Credibility-weighted lineup aggregate (item #6): floor on any single
-# batter's weight so a brand-new callup with ~0 H2H credibility still
-# counts in the lineup aggregate, just heavily discounted rather than
-# zeroed out entirely.
-LINEUP_WEIGHT_FLOOR = 0.05
-
 MIN_PROB = 0.02
 MAX_PROB = 0.95
 HOME_FIELD_ADV_RUNS = 0.25
@@ -149,169 +105,6 @@ def shrink_rate(observed: float, sample_size: int, league_avg: float, k_factor: 
     if sample_size <= 0:
         return league_avg
     return (observed * sample_size + league_avg * k_factor) / (sample_size + k_factor)
-
-
-# ---------------------------------------------------------------------------
-# TASK (2026-08-31) — Moneylines team-strength signal upgrade. Pure helper
-# functions consumed by prediction_service._matchup_multiplier() and its
-# new _cached_starter_recent_form / _today_lineup_signal callers. See the
-# constants block above for what each anchor means.
-# ---------------------------------------------------------------------------
-def starter_quality_index(
-    era: float,
-    proj_er: float,
-    k_rate: float,
-    recent_blended_era: float | None = None,
-    recent_blended_k_rate: float | None = None,
-    arsenal_whiff_pct: float | None = None,
-) -> float:
-    """Composite starter-quality ratio for _matchup_multiplier()'s
-    pitching_index — replaces the old plain LEAGUE_AVG_ERA/era ratio.
-
-    Combines pitcher_profile()'s own era/proj_er/k_rate (chat item #1) with
-    two optional richer signals (recent-form blended era/k-rate from
-    starter_recent_form() below — item #3 — and Matchup Analyzer's
-    pitcherArsenalWhiffPct — item #5) into one ratio, each expressed the
-    same direction as the original: > 1.0 means an offense-friendly
-    (below-average) starter, < 1.0 means a tougher-than-average one.
-
-    The optional signals are (index, weight) pairs added on top of the
-    three always-on ones; weights don't need to sum to 1.0 (they're
-    normalized by weight_total below), so adding/removing a signal never
-    requires hand-rebalancing the others. era/proj_er/k_rate are always
-    present because pitcher_profile() (and its default_pitcher() fallback)
-    always populates them — so this never has to guess at a pitching_index
-    with zero signal.
-    """
-    # FIX (2026-09-03): era_idx/proj_er_idx were LEAGUE_AVG/value — that
-    # makes a low-ERA ace (value < LEAGUE_AVG) produce an index ABOVE 1.0,
-    # which the docstring above defines as "offense-friendly." Backwards:
-    # an ace is the opposite of offense-friendly. k_rate_idx and
-    # arsenal_whiff_pct already use the correct orientation (LEAGUE_AVG /
-    # value, so a high-K/high-whiff — tougher — pitcher scores BELOW 1.0);
-    # era_idx/proj_er_idx are flipped here (value / LEAGUE_AVG) to match
-    # that same "higher index = easier matchup" convention.
-    era_idx = era / LEAGUE_AVG_ERA if LEAGUE_AVG_ERA > 0 else 1.0
-    proj_er_idx = proj_er / LEAGUE_AVG_PROJ_ER if LEAGUE_AVG_PROJ_ER > 0 else 1.0
-    k_rate_idx = LEAGUE_AVG_K_RATE / k_rate if k_rate > 0 else 1.0
-
-    components = [(era_idx, 0.35), (proj_er_idx, 0.15), (k_rate_idx, 0.25)]
-    if recent_blended_era is not None and recent_blended_era > 0:
-        components.append((recent_blended_era / LEAGUE_AVG_ERA, 0.15))
-    if recent_blended_k_rate is not None and recent_blended_k_rate > 0:
-        components.append((LEAGUE_AVG_K_RATE / recent_blended_k_rate, 0.05))
-    if arsenal_whiff_pct is not None and arsenal_whiff_pct > 0:
-        components.append((LEAGUE_AVG_WHIFF / arsenal_whiff_pct, 0.05))
-
-    weight_total = sum(w for _, w in components)
-    weighted_sum = sum(idx * w for idx, w in components)
-    index = weighted_sum / weight_total if weight_total > 0 else 1.0
-    return clamp(index, 0.75, 1.30)
-
-
-def starter_recent_form(
-    recent_er: list[float],
-    recent_ip: list[float],
-    recent_k: list[float],
-    recent_bf: list[float],
-    season_era: float,
-    season_k_rate: float,
-) -> dict:
-    """Blend a starter's last few starts (chat item #3 — 2-3 starts, see
-    PITCHER_RECENT_FORM_STARTS) into their season ERA/K-rate via
-    shrink_rate(), anchor_k=PITCHER_RECENT_FORM_ANCHOR_K.
-
-    Pure math, no I/O — caller (prediction_service._cached_starter_recent_
-    form) supplies parallel per-start lists straight off pitcher_recent_
-    pitching_log()'s raw MLB gameLog stat blocks (earnedRuns/inningsPitched/
-    strikeOuts/battersFaced), same house convention as everywhere else here.
-    """
-    starts_sampled = len(recent_ip)
-    total_ip = sum(recent_ip)
-    total_bf = sum(recent_bf)
-    recent_era_observed = (sum(recent_er) / total_ip * 9.0) if total_ip > 0 else None
-    recent_k_rate_observed = (sum(recent_k) / total_bf) if total_bf > 0 else None
-
-    blended_era = (
-        shrink_rate(recent_era_observed, starts_sampled, season_era, PITCHER_RECENT_FORM_ANCHOR_K)
-        if recent_era_observed is not None else season_era
-    )
-    blended_k_rate = (
-        shrink_rate(recent_k_rate_observed, starts_sampled, season_k_rate, PITCHER_RECENT_FORM_ANCHOR_K)
-        if recent_k_rate_observed is not None else season_k_rate
-    )
-    return {
-        "startsSampled": starts_sampled,
-        "recentEra": round(recent_era_observed, 2) if recent_era_observed is not None else None,
-        "recentKRate": round(recent_k_rate_observed, 3) if recent_k_rate_observed is not None else None,
-        "blendedEra": round(blended_era, 3),
-        "blendedKRate": round(blended_k_rate, 3),
-    }
-
-
-def lineup_strength_offense_index(
-    today_lineup_ops: float | None,
-    lineup_confidence_weight: float,
-    season_team_obp: float,
-    season_team_slg: float,
-    anchor_k: float = LINEUP_STRENGTH_ANCHOR_K,
-) -> float:
-    """Offense-side half of _matchup_multiplier() — replaces the old plain
-    season-only (obp_ratio + slg_ratio)/2 average with today's actual/
-    projected lineup strength (chat items #2/#4), shrunk toward the
-    season-wide OBP+SLG fallback via shrink_rate(), using the SAME dynamic
-    confidence-gate pattern as everywhere else in this module (item #8):
-    the caller picks `lineup_confidence_weight` from LINEUP_STRENGTH_TRUST_
-    CONFIRMED or LINEUP_STRENGTH_TRUST_PROJECTED depending on probable_
-    lineup()'s `confirmed` flag — ONE formula, not two branches with
-    different math.
-
-    `today_lineup_ops` is expected to already be the credibility-weighted,
-    platoon-adjusted lineup OPS built from the same per-batter pipeline the
-    Matchup Analyzer tab's lineupEdgeOps already uses (see prediction_
-    service._today_lineup_signal) — not a second, separate per-player
-    projection aggregation off the Hits/HR/RBI/Runs tab.
-
-    With today_lineup_ops=None (or lineup_confidence_weight<=0 — no
-    lineup resolved yet), this is byte-for-byte the season-OPS-only
-    behavior: the pre-existing fallback path, not a new failure mode.
-    """
-    season_ops = season_team_obp + season_team_slg
-    if today_lineup_ops is None or lineup_confidence_weight <= 0:
-        blended_ops = season_ops
-    else:
-        blended_ops = shrink_rate(today_lineup_ops, lineup_confidence_weight, season_ops, anchor_k)
-    return clamp(blended_ops / LEAGUE_AVG_OPS_FALLBACK, 0.80, 1.25)
-
-
-def platoon_adjusted_ops(blended_ops: float, platoon_ops: float, platoon_pa: int) -> float:
-    """Nudge a batter's blended (H2H + season) OPS toward their OPS vs the
-    throwing hand they'll actually face today (chat item #7), credibility-
-    gated on platoon sample size via the same shrink_rate() shape used
-    everywhere else: a batter with only a handful of PA against that hand
-    barely moves off `blended_ops`; a batter with a real platoon sample
-    moves most of the way to their platoon-specific number.
-    """
-    if platoon_ops <= 0 or platoon_pa <= 0:
-        return blended_ops
-    return shrink_rate(platoon_ops, platoon_pa, blended_ops, PLATOON_MIN_PA_CREDIBLE)
-
-
-def credibility_weighted_average(values: list[float], weights: list[float]) -> float | None:
-    """Weighted mean with a floor on each weight (chat item #6, LINEUP_
-    WEIGHT_FLOOR) — a low-credibility batter (tiny H2H sample, e.g. a
-    fresh callup) still counts toward the lineup aggregate, just heavily
-    discounted, instead of a plain unweighted mean letting a 3-PA callup
-    swing the number exactly as much as the cleanup hitter.
-    """
-    if not values:
-        return None
-    weighted_sum, weight_total = 0.0, 0.0
-    for v, w in zip(values, weights):
-        w_eff = max(w, LINEUP_WEIGHT_FLOOR)
-        weighted_sum += v * w_eff
-        weight_total += w_eff
-    return weighted_sum / weight_total if weight_total > 0 else None
 
 
 # ---------------------------------------------------------------------------
@@ -625,31 +418,15 @@ def pitcher_velocity_mod(pitcher_velo: float) -> float:
 # ---------------------------------------------------------------------------
 # BATAS 2 — BABIP regression penalty, expressed in percentage POINTS
 # (matches the original's `prob -= X.0` on a 0-100 scale).
-#
-# REBALANCE (2026-09-03, diagnostic pass): this penalty used to key off
-# babip_14d ALONE. A 14-day BABIP is a noisy window — for a light-hitting
-# slap hitter running lucky it usually IS about to regress, but for a
-# hitter squaring the ball up consistently (high ISO = hard, sustained
-# contact) an elevated BABIP is at least partly a skill signal, not pure
-# luck. Flat -20pts either way meant a genuinely locked-in star took the
-# exact same penalty as a bloop-and-a-walk journeyman on a lucky week —
-# combined with the ERA-direction bug above, that's what was pushing real
-# stars below replacement-level bench bats on the board. iso_val now
-# scales the penalty down (never by more than 60%) instead of removing the
-# regression premise entirely — a legitimate power hitter's hot BABIP is
-# trusted more, a low-ISO hitter's is still treated as likely to cool off.
 # ---------------------------------------------------------------------------
-def babip_regression_penalty_points(babip_14d: float, iso_val: float = 0.0) -> float:
+def babip_regression_penalty_points(babip_14d: float) -> float:
     if 0.300 <= babip_14d <= 0.349:
-        base = -2.0
-    elif 0.350 <= babip_14d <= 0.379:
-        base = -12.0
-    elif babip_14d >= 0.380:
-        base = -20.0
-    else:
-        return 0.0
-    power_relief = clamp(iso_val / 0.220, 0.0, 0.60)
-    return base * (1.0 - power_relief)
+        return -2.0
+    if 0.350 <= babip_14d <= 0.379:
+        return -12.0
+    if babip_14d >= 0.380:
+        return -20.0
+    return 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -774,16 +551,8 @@ def hardhit_pct_proxy(iso_val: float, air_rate: float) -> float:
 
 
 def process_hit_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso) -> float:
-    # FIX (2026-09-03 diagnostic pass): starter_mult/bullpen_mult were
-    # inverted — (4.20 - era) means a LOW-ERA ace pitcher (era < 4.20)
-    # produced a multiplier > 1.0, INCREASING the batter's event
-    # probability against him, and a high-ERA replacement-level arm
-    # produced a multiplier < 1.0, suppressing it. That's backwards: a
-    # tougher (lower-ERA) pitcher should lower the batter's probability.
-    # Flipped to (era - 4.20) so a below-average ERA now correctly
-    # suppresses the rate and an above-average ERA boosts it.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     min_prob, max_prob = get_prob_bounds("hits")
     return compute_event_probability(
         rate, pa, starter_mult, bullpen_mult, park, platoon, iso, min_prob=min_prob, max_prob=max_prob
@@ -791,9 +560,8 @@ def process_hit_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso) -> 
 
 
 def process_run_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso, team_obp, order) -> float:
-    # FIX (2026-09-03) — see process_hit_prob's note; same inversion, same fix.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     team_factor = clamp(team_obp / 0.315, 0.90, 1.10)
     archetype_mult = run_scoring_archetype_factor(order, iso)
     min_prob, max_prob = get_prob_bounds("runs")
@@ -827,9 +595,8 @@ def process_hr_prob(
     # only touch the Hits pipeline; wired into HR here too, since power output
     # is arguably at least as fatigue/count sensitive as a generic hit. Default
     # 1.0 keeps this a no-op for any caller that doesn't pass them.
-    # FIX (2026-09-03) — see process_hit_prob's note; same inversion, same fix.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     power_index = hr_power_index(iso_val, hr_rate_observed)
     min_prob, max_prob = get_prob_bounds("hr")
     adjusted_rate = rate * fatigue_mult * count_boost_mult
@@ -840,9 +607,8 @@ def process_hr_prob(
 
 
 def process_rbi_prob(rate, pa, pitcher_era, bullpen_era, park, platoon, iso, team_obp, order, team_slg) -> float:
-    # FIX (2026-09-03) — see process_hit_prob's note; same inversion, same fix.
-    starter_mult = 1.0 + ((pitcher_era - 4.20) / 10.0)
-    bullpen_mult = 1.0 + ((bullpen_era - 4.20) / 10.0)
+    starter_mult = 1.0 + ((4.20 - pitcher_era) / 10.0)
+    bullpen_mult = 1.0 + ((4.20 - bullpen_era) / 10.0)
     lineup_factor = clamp(team_obp / 0.315, 0.90, 1.15)
     protection_mult = lineup_protection_factor(order, team_slg)
     min_prob, max_prob = get_prob_bounds("rbi")
@@ -1168,10 +934,7 @@ def calculate_team_xruns_v2(
     matchup_mult: float, park_factor: float, weather_mult: float, bullpen_era: float, bullpen_fatigue_mult: float
 ) -> float:
     base_run_projection = 4.30
-    # FIX (2026-09-03) — same inversion as process_hit_prob et al.: a low-ERA
-    # (good) bullpen was INCREASING the batting team's projected runs.
-    # Flipped so a tougher bullpen lowers xRuns and a weak one raises it.
-    bullpen_factor = 1.0 + ((bullpen_era - LEAGUE_AVG_ERA) / 25.0)
+    bullpen_factor = 1.0 + ((LEAGUE_AVG_ERA - bullpen_era) / 25.0)
     bullpen_factor *= bullpen_fatigue_mult
     final_xruns = base_run_projection * matchup_mult * park_factor * weather_mult * bullpen_factor
     return clamp(final_xruns, 1.5, 10.0)

@@ -252,7 +252,6 @@ tr.data-row.edge-average td.name-cell{ box-shadow:inset 3px 0 0 var(--amber); }
 tr.data-row.edge-soft td.name-cell{ box-shadow:inset 3px 0 0 var(--power); }
 .lineup-provisional-banner{ grid-column:1/-1; padding:9px 14px; margin-bottom:10px; border:1px solid var(--amber); background:rgba(242,169,59,.10); color:var(--amber); font-size:.82em; border-radius:8px; }
 .hand-tag{ display:inline-block; margin-left:6px; padding:1px 5px; font-family:var(--font-mono); font-size:.68em; font-weight:700; letter-spacing:.3px; color:var(--text-lo); border:1px solid var(--border-soft); border-radius:4px; vertical-align:middle; }
-.pos-tag{ display:inline-block; padding:2px 7px; font-family:var(--font-mono); font-size:.72em; font-weight:700; letter-spacing:.3px; color:var(--text-mid); background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:5px; }
 td.name-cell{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.9em; }
 /* TASK (2026-09-04) — updated for the simplified 4-column Props table
    (Player / Prob% / Fair Odds / Conviction); previously tuned for 7 columns. */
@@ -718,7 +717,7 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
         </div>
         <div class="card lineup-table-card"><table class="lineup-table">
           <thead><tr id="mx-lineup-head">
-            <th>#</th><th>Batter</th><th data-tip="Fielding position">Pos</th><th data-tip="Batting handedness">B</th>
+            <th>#</th><th>Batter</th>
             <th data-key="pa" class="view-contact" onclick="sortH2h('pa')">H2H PA</th>
             <th data-key="avg" class="view-contact" onclick="sortH2h('avg')">H2H AVG</th>
             <th data-key="proxyXba" class="view-contact" onclick="sortH2h('proxyXba')">Proxy xBA</th>
@@ -2268,10 +2267,10 @@ function renderLineupTable(){
   const batters = (State.ui.mxMatchup && State.ui.mxMatchup.batters) || [];
   const pitchMix = (State.ui.mxMatchup && State.ui.mxMatchup.pitchMix) || [];
   document.querySelectorAll('.lineup-table thead th[data-key]').forEach(th=>th.classList.toggle('sort-active', th.dataset.key===State.ui.h2hSort.key));
-  if(!batters.length){ body.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
+  if(!batters.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No lineup data available yet for this game.</td></tr>`; return; }
   let rows = batters.filter(b=>!State.ui.h2hFilter || b.name.toLowerCase().includes(State.ui.h2hFilter));
   rows = rows.slice().sort((a,b)=>{ const av=h2hSortValue(a,State.ui.h2hSort.key), bv=h2hSortValue(b,State.ui.h2hSort.key); return State.ui.h2hSort.dir==='desc'?bv-av:av-bv; });
-  if(!rows.length){ body.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
+  if(!rows.length){ body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-lo);">No batters match "${escapeHTML(State.ui.h2hFilter)}".</td></tr>`; return; }
   
   window.__mxBatterTips = [];
   body.innerHTML = rows.map((b, idx)=>{
@@ -2314,9 +2313,7 @@ function renderLineupTable(){
         <div class="batter-hover-wrap"${popoverHTML?` onmouseenter="mxShowBatterTip(this, ${idx})" onmouseleave="hideFloatTip()"`:''}>
           <span class="batter-name">${escapeHTML(b.name)}</span>${small?`<span class="small-sample-tag" data-tip="Under 10 career PA vs this pitcher — H2H OPS is noisy">SMALL SAMPLE</span>`:''}
         </div>
-      </td>
-      <td><span class="pos-tag">${escapeHTML(b.position||'—')}</span></td>
-      <td><span class="hand-tag" style="margin-left:0;">${escapeHTML(b.bats||'R')}</span></td>`;
+      </td>`;
 
     if (State.ui.mxTableView === 'contact') {
       rowHtml += `
@@ -2410,19 +2407,17 @@ function renderDisciplineProfile(m, batters){
     if(meanWhiff > worstAvg){ worstAvg = meanWhiff; worstPitch = agg.type || code; }
   });
 
-  const formGroups = {hot:[], cold:[], neutral:[], limited:[]};
-  batters.forEach(b=>{ const t = (b.recentForm||{}).tier; if(formGroups[t]) formGroups[t].push(b); });
-  const formCounts = {hot:formGroups.hot.length, cold:formGroups.cold.length, neutral:formGroups.neutral.length, limited:formGroups.limited.length};
-  window.__mxFormGroups = formGroups;
+  const formCounts = {hot:0, cold:0, neutral:0, limited:0};
+  batters.forEach(b=>{ const t = (b.recentForm||{}).tier; if(formCounts[t]!==undefined) formCounts[t]++; });
 
   el.innerHTML = discRows
     + `<div class="disc-footnote">Lineup average vs league benchmark (bright tick) &middot; higher reads more vulnerable to a pitcher who can exploit it</div>`
     + `<div class="exploit-callout"><div><div class="exploit-callout-label">Most Exploitable Pitch Type</div><div class="exploit-callout-value">${worstPitch?escapeHTML(worstPitch):'Insufficient sample'}</div></div>${worstPitch?`<span class="exploit-callout-badge">${worstAvg.toFixed(0)}% AVG WHIFF</span>`:''}</div>`
     + `<div class="form-pulse">
-        <div class="form-pulse-seg" style="color:var(--green);" onmouseenter="mxShowFormTip(this,'hot')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.hot}</div><div class="form-pulse-label">Hot</div></div>
-        <div class="form-pulse-seg" style="color:var(--red);" onmouseenter="mxShowFormTip(this,'cold')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.cold}</div><div class="form-pulse-label">Cold</div></div>
-        <div class="form-pulse-seg" style="color:var(--text-mid);" onmouseenter="mxShowFormTip(this,'neutral')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.neutral}</div><div class="form-pulse-label">Neutral</div></div>
-        <div class="form-pulse-seg" style="color:var(--text-lo);" onmouseenter="mxShowFormTip(this,'limited')" onmouseleave="hideFloatTip()"><div class="form-pulse-count">${formCounts.limited}</div><div class="form-pulse-label">Limited Sample</div></div>
+        <div class="form-pulse-seg" style="color:var(--green);"><div class="form-pulse-count">${formCounts.hot}</div><div class="form-pulse-label">Hot</div></div>
+        <div class="form-pulse-seg" style="color:var(--red);"><div class="form-pulse-count">${formCounts.cold}</div><div class="form-pulse-label">Cold</div></div>
+        <div class="form-pulse-seg" style="color:var(--text-mid);"><div class="form-pulse-count">${formCounts.neutral}</div><div class="form-pulse-label">Neutral</div></div>
+        <div class="form-pulse-seg" style="color:var(--text-lo);"><div class="form-pulse-count">${formCounts.limited}</div><div class="form-pulse-label">Limited Sample</div></div>
       </div>`;
   // Animate the bars from 0 -> target width on first paint (CSS transition
   // on .disc-fill only fires on a width change after layout, not on the
@@ -2430,30 +2425,6 @@ function renderDisciplineProfile(m, batters){
   requestAnimationFrame(()=>{
     el.querySelectorAll('.disc-fill').forEach(bar=>{ bar.style.width = bar.dataset.targetPct + '%'; });
   });
-}
-
-const FORM_TIP_META = {
-  hot:{ label:'Hot', color:'var(--green)' }, cold:{ label:'Cold', color:'var(--red)' },
-  neutral:{ label:'Neutral', color:'var(--text-mid)' }, limited:{ label:'Limited Sample', color:'var(--text-lo)' },
-};
-// TASK (2026-09-05, diagnostic pass): Hot/Cold/Neutral/Limited counters
-// used to be counts only — hovering now surfaces exactly which batters
-// landed in that bucket, each with their 14-day recent-form OPS, instead
-// of requiring a manual scan of the ranked list to work it out.
-function mxShowFormTip(anchorEl, tier){
-  const group = (window.__mxFormGroups && window.__mxFormGroups[tier]) || [];
-  const meta = FORM_TIP_META[tier];
-  const rows = group.length
-    ? group.slice().sort((a,b)=>(b.recentForm?.ops||0)-(a.recentForm?.ops||0)).map(b=>
-        `<div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:5px 0;">
-           <span style="font-family:var(--font-body); font-size:12px; font-weight:600; color:var(--text-hi);">${escapeHTML(b.name)}</span>
-           <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:${meta.color};">${(b.recentForm?.ops??0).toFixed(3)} OPS</span>
-         </div>`).join('')
-    : `<div style="font-family:var(--font-mono); font-size:11px; color:var(--text-lo); padding:4px 0;">No batters in this bucket.</div>`;
-  showFloatTip(anchorEl, `<div style="width:220px;">
-      <div style="font-family:var(--font-display); font-size:12px; font-weight:700; margin-bottom:8px; color:${meta.color}; border-bottom:1px solid var(--border-soft); padding-bottom:8px;">${meta.label} &middot; 14-Day Form</div>
-      ${rows}
-    </div>`);
 }
 
 async function refreshCurrent(){
