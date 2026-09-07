@@ -1091,10 +1091,6 @@ class PredictionService:
                     "opp_bullpen_era": opp_bullpen_era, "split_type": split_type,
                     "is_high_fatigue": is_high_fatigue, "fatigue_factor": fatigue_factor,
                     "home_away_scalar": home_away_scalar,
-                    # NEW (2026-09-08, diagnostic pass): per-TEAM confirmation
-                    # status, not just the per-GAME aggregate — see
-                    # PlayerResponse.lineupConfirmed.
-                    "team_lineup_confirmed": team_lineup_confirmed,
                 })
 
         # --- PASS 2: fetch every hitter's raw per-player data CONCURRENTLY
@@ -1144,7 +1140,6 @@ class PredictionService:
             is_high_fatigue = job["is_high_fatigue"]
             fatigue_factor = job["fatigue_factor"]
             home_away_scalar = job["home_away_scalar"]
-            team_lineup_confirmed = job["team_lineup_confirmed"]
 
             bat_side = bundle["bat_side"]
             hitting_stats = bundle["hitting_stats"]
@@ -1238,11 +1233,6 @@ class PredictionService:
                 "order": order,
                 "bats": bat_side,
                 "projectedPA": pa_proj,
-                # NEW (2026-09-08, diagnostic pass): per-team lineup status —
-                # replaces the old whole-slate-only banner (SlateMeta.
-                # lineupsConfirmed) with a status that's actually correct
-                # when you've filtered the Props table down to one team.
-                "lineupConfirmed": team_lineup_confirmed,
                 "props": {
                     "hits": _quote_from_market(hit_prob, pa_sample, hit_quote),
                     "homeruns": _quote_from_market(hr_prob, pa_sample, hr_quote),
@@ -1569,14 +1559,13 @@ class PredictionService:
                 opp_node = teams.get("home" if side == "away" else "away", {})
                 team_name = team_node.get("team", {}).get("name", "")
                 opponent_name = opp_node.get("team", {}).get("name", "")
-                opponent_team_id = opp_node.get("team", {}).get("id")
                 is_home = side == "home"
                 prob_pitcher = team_node.get("probablePitcher") or {}
                 pid = prob_pitcher.get("id")
                 pname = prob_pitcher.get("fullName")
                 if pid and pid not in seen_pitcher_ids:
                     seen_pitcher_ids.add(pid)
-                    jobs.append((pid, pname, team_name, opponent_name, is_home, opponent_team_id))
+                    jobs.append((pid, pname, team_name, opponent_name, is_home))
 
         results: list[dict] = []
         if jobs:
@@ -1600,7 +1589,7 @@ class PredictionService:
         return results
 
     def _build_pitcher_props_entry(
-        self, pitcher_id: int, pitcher_name: str, team_name: str, opponent_name: str, is_home: bool, opponent_team_id: int | None = None,
+        self, pitcher_id: int, pitcher_name: str, team_name: str, opponent_name: str, is_home: bool
     ) -> dict | None:
         games = self.mlb.pitcher_recent_pitching_log(pitcher_id, limit=10)
         if not games:
@@ -1641,8 +1630,6 @@ class PredictionService:
             },
             "labels": labels,
             "matchDetails": match_details,
-            "pitcherId": pitcher_id,
-            "opponentTeamId": opponent_team_id,
         }
 
     # ------------------------------------------------------------------
@@ -1816,8 +1803,6 @@ class PredictionService:
             "matchDetails": match_details,
             "startTimeUTC": game_date_utc,
             "venue": venue_name,
-            "teamId": team_id,
-            "opponentId": opponent_id,
         }
 
     # ------------------------------------------------------------------
@@ -2004,129 +1989,6 @@ class PredictionService:
     # ------------------------------------------------------------------
     # Matchup Verifier
     # ------------------------------------------------------------------
-
-    # ------------------------------------------------------------------
-    # Player Card scouting tool (replaces manual Statcast calibration)
-    # ------------------------------------------------------------------
-
-    # ------------------------------------------------------------------
-    # Season H2H (Team Matchups) / Pitcher-vs-Team (Pitcher Props) tools
-    # — replace the Kelly Stake card on both tabs.
-    # ------------------------------------------------------------------
-
-    def get_team_h2h(self, team_id: int, opponent_id: int) -> dict:
-        team_info = self.mlb.team_info(team_id)
-        opp_info = self.mlb.team_info(opponent_id)
-        season = settings.season
-        games = self.mlb.team_h2h_games(team_id, opponent_id, season)
-
-        def _line(subset: list[dict]) -> dict:
-            wins = sum(1 for g in subset if g["win"])
-            return {
-                "games": len(subset),
-                "wins": wins,
-                "losses": len(subset) - wins,
-                "runsFor": sum(g["runsFor"] for g in subset),
-                "runsAgainst": sum(g["runsAgainst"] for g in subset),
-            }
-
-        return {
-            "teamId": team_id,
-            "teamName": team_info.get("name", ""),
-            "opponentId": opponent_id,
-            "opponentName": opp_info.get("name", ""),
-            "season": season,
-            "overall": _line(games),
-            "home": _line([g for g in games if g["isHome"]]),
-            "away": _line([g for g in games if not g["isHome"]]),
-            "day": _line([g for g in games if g["dayNight"] == "day"]),
-            "night": _line([g for g in games if g["dayNight"] == "night"]),
-        }
-
-    def get_pitcher_vs_team(self, pitcher_id: int, team_id: int) -> dict:
-        pitcher_person = self.mlb.person(pitcher_id)
-        team_info = self.mlb.team_info(team_id)
-        season = settings.season
-        games = self.mlb.pitcher_vs_team_games(pitcher_id, team_id)
-
-        def _line(subset: list[dict]) -> dict:
-            ip_outs = 0
-            er = runs = hits = walks = strikeouts = 0
-            for g in subset:
-                s = g["stat"]
-                ip_str = str(s.get("inningsPitched", "0.0") or "0.0")
-                whole, _, frac = ip_str.partition(".")
-                ip_outs += int(whole or 0) * 3 + int(frac or 0)
-                er += int(s.get("earnedRuns", 0) or 0)
-                runs += int(s.get("runs", 0) or 0)
-                hits += int(s.get("hits", 0) or 0)
-                walks += int(s.get("baseOnBalls", 0) or 0)
-                strikeouts += int(s.get("strikeOuts", 0) or 0)
-            ip_val = ip_outs / 3.0
-            batters_faced_ab = hits + (ip_outs)  # rough AB proxy: outs recorded + hits allowed
-            return {
-                "games": len(subset),
-                "inningsPitched": round(ip_val, 1),
-                "er": er,
-                "runs": runs,
-                "hits": hits,
-                "walks": walks,
-                "strikeouts": strikeouts,
-                "era": round((er * 9.0 / ip_val), 2) if ip_val > 0 else None,
-                "whip": round((walks + hits) / ip_val, 2) if ip_val > 0 else None,
-                "baa": round(hits / batters_faced_ab, 3) if batters_faced_ab > 0 else None,
-            }
-
-        return {
-            "pitcherId": pitcher_id,
-            "pitcherName": pitcher_person.get("fullName", "Unknown"),
-            "teamId": team_id,
-            "teamName": team_info.get("name", ""),
-            "season": season,
-            "overall": _line(games),
-            "home": _line([g for g in games if g["isHome"]]),
-            "away": _line([g for g in games if not g["isHome"]]),
-            "day": _line([g for g in games if g["dayNight"] == "day"]),
-            "night": _line([g for g in games if g["dayNight"] == "night"]),
-        }
-
-    def get_player_scouting(self, batter_id: int, pitcher_id: int | None) -> dict:
-        batter_person = self.mlb.person(batter_id)
-        platoon = self.mlb.batter_platoon_slash(batter_id)
-        # NEW (2026-09-08, diagnostic pass): single enriched game-log fetch,
-        # shared between the recent hand-split and the Last 7 Games log —
-        # avoids resolving the same 7 games' boxscores twice.
-        recent_log = self.mlb.recent_game_log_enriched(batter_id, games=7)
-        recent_hand = self.mlb.recent_hand_splits(batter_id, games=7, log=recent_log)
-        last7 = self.mlb.recent_game_log_summary(batter_id, games=7, log=recent_log)
-
-        def _split_line(side: dict) -> dict:
-            return {"avg": side.get("avg", ".000"), "ops": side.get("ops", 0.0), "pa": side.get("pa", 0), "hr": side.get("hr", 0)}
-
-        result = {
-            "playerId": batter_id,
-            "name": batter_person.get("fullName", "Unknown"),
-            "seasonVsLHP": _split_line(platoon.get("vsLHP", {})),
-            "seasonVsRHP": _split_line(platoon.get("vsRHP", {})),
-            "recentVsLHP": recent_hand.get("vsLHP", {"ab": 0, "h": 0, "avg": ".000"}),
-            "recentVsRHP": recent_hand.get("vsRHP", {"ab": 0, "h": 0, "avg": ".000"}),
-            "recentHandGamesCovered": recent_hand.get("gamesCovered", 0),
-            "last7": last7,
-            "pitcherId": None,
-            "pitcherName": None,
-            "pitcherHand": None,
-            "h2h": None,
-        }
-
-        if pitcher_id:
-            pitcher_person = self.mlb.person(pitcher_id)
-            h2h = self.mlb.batter_vs_pitcher_slash(batter_id, pitcher_id)
-            result["pitcherId"] = pitcher_id
-            result["pitcherName"] = pitcher_person.get("fullName", "Unknown")
-            result["pitcherHand"] = pitcher_person.get("pitchHand", {}).get("code", "R")
-            result["h2h"] = h2h
-
-        return result
 
     def get_matchup(self, batter_id: int, pitcher_id: int) -> dict:
         batter = self.mlb.person(batter_id)

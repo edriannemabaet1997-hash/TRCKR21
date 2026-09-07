@@ -250,14 +250,7 @@ tr.data-row.edge-elite td.name-cell{ box-shadow:inset 3px 0 0 var(--green); }
 tr.data-row.edge-strong td.name-cell{ box-shadow:inset 3px 0 0 var(--speed); }
 tr.data-row.edge-average td.name-cell{ box-shadow:inset 3px 0 0 var(--amber); }
 tr.data-row.edge-soft td.name-cell{ box-shadow:inset 3px 0 0 var(--power); }
-.lineup-status-banner{ grid-column:1/-1; display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:10px; border-radius:8px; font-size:.82em; line-height:1.5; }
-.lineup-status-banner.confirmed{ border:1px solid rgba(51,193,122,.35); background:rgba(51,193,122,.08); color:var(--text-mid); }
-.lineup-status-banner.confirmed strong{ color:var(--green); }
-.lineup-status-banner.projected{ border:1px solid rgba(242,169,59,.4); background:rgba(242,169,59,.10); color:var(--text-mid); }
-.lineup-status-banner.projected strong{ color:var(--amber); }
-.lineup-status-dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; box-shadow:0 0 6px currentColor; }
-.lineup-status-banner.confirmed .lineup-status-dot{ background:var(--green); color:var(--green); }
-.lineup-status-banner.projected .lineup-status-dot{ background:var(--amber); color:var(--amber); }
+.lineup-provisional-banner{ grid-column:1/-1; padding:9px 14px; margin-bottom:10px; border:1px solid var(--amber); background:rgba(242,169,59,.10); color:var(--amber); font-size:.82em; border-radius:8px; }
 .hand-tag{ display:inline-block; margin-left:6px; padding:1px 5px; font-family:var(--font-mono); font-size:.68em; font-weight:700; letter-spacing:.3px; color:var(--text-lo); border:1px solid var(--border-soft); border-radius:4px; vertical-align:middle; }
 .pos-tag{ display:inline-block; padding:2px 7px; font-family:var(--font-mono); font-size:.72em; font-weight:700; letter-spacing:.3px; color:var(--text-mid); background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:5px; }
 /* TASK (2026-09-06, diagnostic pass) — Player Card scouting tool. */
@@ -287,35 +280,13 @@ tr.data-row.edge-soft td.name-cell{ box-shadow:inset 3px 0 0 var(--power); }
 .scout-stat-label{ font-family:var(--font-mono); font-size:.6em; font-weight:700; color:var(--text-lo); text-transform:uppercase; letter-spacing:.4px; margin-top:3px; }
 .scout-footnote{ font-family:var(--font-mono); font-size:.66em; color:var(--text-ghost); margin-top:12px; line-height:1.5; }
 .scout-empty{ font-family:var(--font-mono); font-size:.78em; color:var(--text-lo); padding:8px 0; }
-.scout-spark{ display:flex; align-items:flex-end; gap:5px; margin-top:16px; padding-top:6px; }
-.scout-spark-col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; }
-.scout-spark-bar-wrap{ width:100%; height:52px; display:flex; align-items:flex-end; }
+.scout-spark{ display:flex; align-items:flex-end; gap:5px; height:52px; margin-top:16px; padding-top:6px; }
+.scout-spark-bar-wrap{ flex:1; height:100%; display:flex; align-items:flex-end; }
 .scout-spark-bar{ width:100%; border-radius:3px 3px 1px 1px; transition:height .5s var(--ease); }
 .scout-spark-bar.out{ background:var(--border-soft); }
 .scout-spark-bar.hit{ background:linear-gradient(180deg, var(--batter), rgba(51,214,192,.4)); }
 .scout-spark-bar.hr{ background:linear-gradient(180deg, var(--power), rgba(255,122,69,.4)); }
-.scout-spark-hand{ font-family:var(--font-mono); font-size:.62em; font-weight:800; letter-spacing:.3px; color:var(--text-ghost); }
-.scout-spark-hand.lhp{ color:var(--pitcher); }
-.scout-spark-hand.rhp{ color:var(--batter); }
 .scout-skel{ display:flex; flex-direction:column; }
-/* TASK (2026-09-07, diagnostic pass) — Season H2H (Team Matchups) and
-   Pitcher-vs-Team (Pitcher Props) tools, replacing the Kelly Stake card. */
-.h2h-hero{ display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; margin-bottom:18px; padding-bottom:18px; border-bottom:1px solid var(--border-soft); }
-.h2h-hero-record{ font-family:var(--font-display); font-size:2.6em; font-weight:700; color:var(--text-hi); line-height:1; background:linear-gradient(90deg, var(--text-hi), var(--batter)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-.h2h-hero-sub{ font-family:var(--font-mono); font-size:.76em; color:var(--text-mid); line-height:1.6; }
-.h2h-split-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
-.h2h-split-block{ background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; padding:14px; }
-.h2h-split-label{ font-family:var(--font-mono); font-size:.64em; font-weight:800; letter-spacing:.5px; color:var(--text-lo); margin-bottom:8px; }
-.h2h-split-record{ font-family:var(--font-mono); font-size:1.3em; font-weight:800; color:var(--text-hi); margin-bottom:8px; }
-.h2h-bar-track{ height:5px; border-radius:3px; background:var(--bg-card-2); overflow:hidden; margin-bottom:8px; }
-.h2h-bar-fill{ height:100%; border-radius:3px; transition:width .8s var(--ease); }
-.h2h-split-sub{ font-family:var(--font-mono); font-size:.66em; color:var(--text-ghost); }
-.pvt-overall{ background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; padding:14px; margin-bottom:14px; }
-.pvt-split-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
-.pvt-split-block{ background:var(--bg-raised); border:1px solid var(--border-soft); border-radius:10px; padding:14px; }
-.pvt-split-header{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.pvt-split-label{ font-family:var(--font-mono); font-size:.66em; font-weight:800; letter-spacing:.5px; color:var(--text-lo); }
-.pvt-split-meta{ font-family:var(--font-mono); font-size:.64em; color:var(--text-ghost); margin-left:auto; }
 td.name-cell{ font-family:var(--font-body); font-weight:600; color:var(--text-hi); font-size:.9em; }
 /* TASK (2026-09-04) — updated for the simplified 4-column Props table
    (Player / Prob% / Fair Odds / Conviction); previously tuned for 7 columns. */
@@ -754,7 +725,6 @@ tr.data-row:hover td.name-cell{ background:var(--bg-raised) !important; }
       <div class="market-toggles" id="pt-market-toggles"></div>
       <div class="card chart-card"><div class="chart-area" id="pt-chart-area"></div><div class="match-info-box" id="pt-match-info"><div class="mi-title" id="pt-mi-title">--</div><div class="mi-score" id="pt-mi-score">--</div><div class="mi-text" id="pt-mi-text">--</div></div></div>
       <div class="metrics-grid" id="pt-metrics-grid"></div>
-      <div id="pt-extra-tool"></div>
       <div class="status-bar"><span id="pt-model-status">MODEL &middot; Poisson / NB2 dynamic gate &middot; L10 sample</span><span class="disclaimer">Informational only &middot; not betting advice</span></div>
     </div>
 
@@ -1252,9 +1222,7 @@ const BatterAPI = {
   fetchPitcherProps(date,refresh=false){ return this.request(`/api/pitcher-props${this._dateQuery(date,refresh)}`); },
   fetchTeamMatchups(date,refresh=false){ return this.request(`/api/team-matchups${this._dateQuery(date,refresh)}`); },
   fetchMatchupAnalyzer(date,refresh=false){ return this.request(`/api/matchup-analyzer${this._dateQuery(date,refresh)}`); },
-  fetchPlayerScouting(batterId,pitcherId){ const q = pitcherId ? `?pitcher_id=${pitcherId}` : ''; return this.request(`/api/player-scouting/${batterId}${q}`); },
-  fetchTeamH2H(teamId,opponentId){ return this.request(`/api/team-h2h/${teamId}/${opponentId}`); },
-  fetchPitcherVsTeam(pitcherId,teamId){ return this.request(`/api/pitcher-vs-team/${pitcherId}/${teamId}`); }
+  fetchPlayerScouting(batterId,pitcherId){ const q = pitcherId ? `?pitcher_id=${pitcherId}` : ''; return this.request(`/api/player-scouting/${batterId}${q}`); }
 };
 
 function eastCoastToday(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date()); }
@@ -1406,27 +1374,7 @@ function renderPropsTable(){
   const filtered = getFilteredPlayers();
   if(!filtered.length){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-lo);">No data matches filters.</td></tr>`; return; }
   if(!State.ui.prevProbs) State.ui.prevProbs = {};
-  // FIX (2026-09-08, diagnostic pass): this used to be one blanket,
-  // whole-slate banner ("lineups aren't posted for every game") that
-  // showed regardless of which team you'd actually filtered down to — so
-  // it kept warning about OTHER teams' unconfirmed lineups even while
-  // looking at a team whose lineup WAS already confirmed. Now scoped to
-  // the selected team specifically (each player row already carries its
-  // own team's lineupConfirmed status), and shows a positive confirmation
-  // state too, not just a warning. Suppressed entirely on "All Conf" /
-  // all-teams views, where a single status can't accurately describe a
-  // mix of confirmed and projected teams at once.
-  const teamFilter = State.ui.filters.team;
-  let banner = '';
-  if(teamFilter && teamFilter!=='ALL' && filtered.length){
-    const confirmed = filtered[0].lineupConfirmed;
-    banner = `<tr><td colspan="4"><div class="lineup-status-banner ${confirmed?'confirmed':'projected'}">
-      <span class="lineup-status-dot"></span>
-      <span>${confirmed
-        ? `<strong>${escapeHTML(teamFilter)}</strong> lineup is officially confirmed — probabilities reflect today's real batting order.`
-        : `<strong>${escapeHTML(teamFilter)}</strong> lineup isn't officially posted yet — showing a projected batting order based on their most recent games. Will refresh automatically once MLB confirms.`}</span>
-    </div></td></tr>`;
-  }
+  const banner = State.batter.lineupsConfirmed ? '' : `<tr><td colspan="4"><div class="lineup-provisional-banner">⚠ Today's lineups aren't officially posted yet for every game — the roster shown below is a provisional estimate and will refresh automatically once MLB confirms batting orders.</div></td></tr>`;
   tbody.innerHTML = banner + filtered.map(p=>{
     const propData = p.props[State.ui.activeProp] || {prob:0, odds:null, conf:'low', edge:null};
     const cacheKey = `${p.id}:${State.ui.activeProp}`;
@@ -1590,13 +1538,7 @@ function renderPlayerScoutingHTML(p, data){
 
   const maxHits = Math.max(1, ...last7.log.map(g=>g.h));
   const sparkline = last7.log.length ? `<div class="scout-spark">
-      ${last7.log.map(g=>{
-        const pitcherLabel = g.pitcherName ? `vs ${g.pitcherName} (${g.pitcherHand||'R'}HP)` : 'Opposing starter unresolved';
-        return `<div class="scout-spark-col">
-          <div class="scout-spark-bar-wrap" data-tip="${g.date?escapeHTML(g.date):'Game'}: ${g.h}-for-${g.ab}${g.hr?`, ${g.hr} HR`:''} &middot; ${escapeHTML(pitcherLabel)}"><div class="scout-spark-bar ${g.hr>0?'hr':g.h>0?'hit':'out'}" style="height:${Math.max(6,(g.h/maxHits)*100)}%;"></div></div>
-          <div class="scout-spark-hand ${g.pitcherHand==='L'?'lhp':'rhp'}">${g.pitcherHand||'—'}</div>
-        </div>`;
-      }).join('')}
+      ${last7.log.map(g=>`<div class="scout-spark-bar-wrap" data-tip="${g.date?escapeHTML(g.date):'Game'}: ${g.h}-for-${g.ab}${g.hr?`, ${g.hr} HR`:''}"><div class="scout-spark-bar ${g.hr>0?'hr':g.h>0?'hit':'out'}" style="height:${Math.max(6,(g.h/maxHits)*100)}%;"></div></div>`).join('')}
     </div>` : '';
 
   return `
@@ -1620,7 +1562,7 @@ function renderPlayerScoutingHTML(p, data){
         <div class="scout-stat"><div class="scout-stat-value">${last7.ab}</div><div class="scout-stat-label">AB</div></div>
       </div>
       ${sparkline}
-      ${last7.games ? `<div class="scout-footnote">Hits per game, oldest to most recent, with the opposing starter's hand below each bar &middot; ${last7.games} games logged</div>` : `<div class="scout-empty">No recent game log available.</div>`}
+      ${last7.games ? `<div class="scout-footnote">Hits per game, oldest to most recent &middot; ${last7.games} games logged</div>` : `<div class="scout-empty">No recent game log available.</div>`}
     </div>`;
 }
 
@@ -2031,109 +1973,6 @@ function renderPtView(){
   document.getElementById('pt-entity-name').innerHTML = `${avatarHtml}${escapeHTML(State.ui.ptEntity.name)}`;
   document.getElementById('pt-entity-context').innerHTML = `${market.label} &middot; L${market.history.length} sample &middot; <span class="opp">${escapeHTML(State.ui.ptEntity.matchup)}</span>`;
   renderPtChart(market); renderPtHeaderStats(market, State.ui.ptLine); renderPtMetrics(market, State.ui.ptLine);
-  renderPtExtraTool(isPitcher);
-}
-
-// TASK (2026-09-07, diagnostic pass) — replaces the removed Kelly Stake
-// card with something usable without a live sportsbook line: on Pitcher
-// Props, the pitcher's full season track record against THIS SPECIFIC
-// opposing team (walks/runs/strikeouts, home/away, day/night); on Team
-// Matchups, the two clubs' season head-to-head record, same splits.
-function renderPtExtraTool(isPitcher){
-  const container = document.getElementById('pt-extra-tool');
-  if(!container) return;
-  const entity = State.ui.ptEntity;
-  const cacheKey = isPitcher ? `pvt:${entity.pitcherId}:${entity.opponentTeamId}` : `h2h:${entity.teamId}:${entity.opponentId}`;
-  if(container.dataset.key === cacheKey) return; // already loaded for this entity, avoid refetch on market-tab switch
-  container.dataset.key = cacheKey;
-  container.innerHTML = `<div class="scout-card" style="margin-top:20px;"><div class="scout-card-title">${isPitcher?'Pitcher vs Team &middot; Season':'Season Head-to-Head'}</div><div class="scout-skel"><div class="skel" style="height:110px;border-radius:10px;"></div></div></div>`;
-  const request = isPitcher
-    ? (entity.opponentTeamId ? BatterAPI.fetchPitcherVsTeam(entity.pitcherId, entity.opponentTeamId) : Promise.reject(new Error('Opposing team not resolved.')))
-    : (entity.opponentId ? BatterAPI.fetchTeamH2H(entity.teamId, entity.opponentId) : Promise.reject(new Error('Opponent team not resolved.')));
-  request.then(data=>{
-    if(container.dataset.key !== cacheKey) return; // user navigated away while this was in flight
-    container.innerHTML = isPitcher ? renderPitcherVsTeamHTML(data) : renderTeamH2HHTML(data);
-    requestAnimationFrame(()=>{ container.querySelectorAll('.h2h-bar-fill').forEach(el=>{ el.style.width = (el.dataset.targetPct||0) + '%'; }); });
-  }).catch(e=>{
-    if(container.dataset.key !== cacheKey) return;
-    container.innerHTML = `<div class="scout-card" style="margin-top:20px;border-left:3px solid var(--red);"><div class="scout-card-title" style="color:var(--red);">${isPitcher?'Pitcher vs Team':'Season Head-to-Head'} Unavailable</div><div style="font-size:.85em;color:var(--text-mid);">${escapeHTML(e.message||'Could not reach the server.')}</div></div>`;
-  });
-}
-
-function splitDeltaTag(a, b, higherIsBetter=true){
-  if(a==null || b==null || (a===0 && b===0)) return '';
-  const diff = a - b;
-  if(Math.abs(diff) < 0.001) return `<span class="scout-delta neutral">EVEN</span>`;
-  const better = higherIsBetter ? diff > 0 : diff < 0;
-  return better ? `<span class="scout-delta up">&#9650; BETTER</span>` : `<span class="scout-delta down">&#9660; WORSE</span>`;
-}
-
-function renderTeamH2HHTML(data){
-  const pctBar = (line, color) => {
-    const total = line.wins + line.losses;
-    const pct = total ? (line.wins/total*100) : 0;
-    return `<div class="h2h-bar-track"><div class="h2h-bar-fill" data-target-pct="${pct}" style="background:${color};"></div></div>`;
-  };
-  const splitBlock = (label, line, sub) => `
-    <div class="h2h-split-block">
-      <div class="h2h-split-label">${label}</div>
-      <div class="h2h-split-record">${line.wins}-${line.losses}</div>
-      ${pctBar(line, 'var(--batter)')}
-      <div class="h2h-split-sub">${sub}</div>
-    </div>`;
-  const runDiff = data.overall.runsFor - data.overall.runsAgainst;
-  return `
-    <div class="scout-card" style="margin-top:20px;">
-      <div class="scout-card-title">Season Head-to-Head <span class="scout-card-title-sub">${data.season} &middot; ${escapeHTML(data.teamName)} vs ${escapeHTML(data.opponentName)}</span></div>
-      ${data.overall.games ? `
-      <div class="h2h-hero">
-        <div class="h2h-hero-record">${data.overall.wins}-${data.overall.losses}</div>
-        <div class="h2h-hero-sub">${data.overall.games} games played this season &middot; run differential <span style="color:${runDiff>=0?'var(--green)':'var(--red)'};font-weight:700;">${runDiff>=0?'+':''}${runDiff}</span> (${data.overall.runsFor}-${data.overall.runsAgainst})</div>
-      </div>
-      <div class="h2h-split-grid">
-        ${splitBlock('HOME', data.home, `${escapeHTML(data.teamName)} hosting`)}
-        ${splitBlock('AWAY', data.away, `${escapeHTML(data.teamName)} on the road`)}
-        ${splitBlock('DAY', data.day, 'Day games')}
-        ${splitBlock('NIGHT', data.night, 'Night games')}
-      </div>
-      <div class="scout-footnote">Regular-season meetings only, current season to date.</div>
-      ` : `<div class="scout-empty">No completed meetings between these two teams yet this season.</div>`}
-    </div>`;
-}
-
-function renderPitcherVsTeamHTML(data){
-  const statRow = (line) => `
-    <div class="scout-stat-row">
-      <div class="scout-stat"><div class="scout-stat-value">${line.era ?? '—'}</div><div class="scout-stat-label">ERA</div></div>
-      <div class="scout-stat"><div class="scout-stat-value">${line.whip ?? '—'}</div><div class="scout-stat-label">WHIP</div></div>
-      <div class="scout-stat"><div class="scout-stat-value">${line.baa!=null ? '.'+String(Math.round(line.baa*1000)).padStart(3,'0') : '—'}</div><div class="scout-stat-label">BAA</div></div>
-      <div class="scout-stat"><div class="scout-stat-value">${line.walks}</div><div class="scout-stat-label">BB</div></div>
-      <div class="scout-stat"><div class="scout-stat-value">${line.strikeouts}</div><div class="scout-stat-label">K</div></div>
-      <div class="scout-stat"><div class="scout-stat-value">${line.runs}</div><div class="scout-stat-label">R</div></div>
-    </div>`;
-  const splitHeader = (label, line, refLine) => `
-    <div class="pvt-split-header">
-      <span class="pvt-split-label">${label}</span>
-      <span class="pvt-split-meta">${line.games} G &middot; ${line.inningsPitched.toFixed(1)} IP</span>
-      ${splitDeltaTag(refLine?.era, line.era, false)}
-    </div>`;
-  return `
-    <div class="scout-card" style="margin-top:20px;">
-      <div class="scout-card-title">Pitcher vs Team &middot; Season <span class="scout-card-title-sub">${data.season} &middot; ${escapeHTML(data.pitcherName)} vs ${escapeHTML(data.teamName)}</span></div>
-      ${data.overall.games ? `
-      <div class="pvt-overall">
-        ${splitHeader('SEASON OVERALL', data.overall)}
-        ${statRow(data.overall)}
-      </div>
-      <div class="pvt-split-grid">
-        <div class="pvt-split-block">${splitHeader('HOME', data.home, data.overall)}${statRow(data.home)}</div>
-        <div class="pvt-split-block">${splitHeader('AWAY', data.away, data.overall)}${statRow(data.away)}</div>
-        <div class="pvt-split-block">${splitHeader('DAY', data.day, data.overall)}${statRow(data.day)}</div>
-        <div class="pvt-split-block">${splitHeader('NIGHT', data.night, data.overall)}${statRow(data.night)}</div>
-      </div>
-      <div class="scout-footnote">BAA is derived (hits &divide; estimated at-bats faced) &middot; small per-split samples are common for a single pitcher vs a single team.</div>
-      ` : `<div class="scout-empty">No recorded appearances by this pitcher against this team yet this season.</div>`}
-    </div>`;
 }
 function flashNumber(el, baseClass, newVal, prevVal, threshold){
   const changed = prevVal!==undefined && Math.abs(newVal-prevVal)>threshold;
@@ -2160,15 +1999,14 @@ function renderPtHeaderStats(market,line){
 function renderPtMetrics(market,line){
   const calc = calibrateMarket(market.history,line, market.model && market.model.anchorMu, K_TEAM_RUNS), grid = document.getElementById('pt-metrics-grid'), sd = stdDev(market.history), streak = currentStreak(market.history,line);
   const muCaption = calc.anchorMu!=null ? `L${calc.sampleSize} avg ${calc.observedMu.toFixed(2)} &rarr; shrunk to xRuns anchor` : `L${calc.sampleSize} average`;
-  // FIX (2026-09-07, diagnostic pass): Kelly Stake card removed — dropped
-  // per request on both Pitcher Props and Team Matchups; replaced below
-  // (pt-extra-tool) with a season-long head-to-head / vs-team tool that's
-  // actually usable without a live sportsbook line to size a stake against.
   grid.innerHTML = `
     <div class="card metric-card"><span class="metric-label">Mean (&mu;)</span><span class="metric-value">${calc.mu.toFixed(2)}</span><span class="metric-caption">${muCaption}</span></div>
     <div class="card metric-card"><span class="metric-label">Std Dev (&sigma;)</span><span class="metric-value">${sd.toFixed(2)}</span><span class="metric-caption">Variance: ${calc.variance.toFixed(2)}</span></div>
     <div class="card metric-card"><span class="metric-label">VMR</span><span class="metric-value">${calc.vmr.toFixed(2)}</span><span class="metric-caption">${calc.vmr>1?'Over-dispersed &rarr; NB2':'Poisson-shaped'}</span></div>
-    <div class="card metric-card"><span class="metric-label">Current Streak</span><span class="metric-value">${streak.count||'—'}${streak.dir?' '+streak.dir:''}</span><span class="metric-caption">consecutive results</span></div>`;
+    <div class="card metric-card"><span class="metric-label">Current Streak</span><span class="metric-value">${streak.count||'—'}${streak.dir?' '+streak.dir:''}</span><span class="metric-caption">consecutive results</span></div>
+    <div class="card metric-card wide"><span class="metric-label">Kelly Stake (at -110)</span><span class="metric-value">${calc.kellyPct.toFixed(2)}%</span>
+      <div class="compare-row"><span class="compare-label">Model</span><div class="compare-bar-track"><div class="compare-bar-fill model" style="width:${(calc.overProb*100).toFixed(1)}%"></div></div><span class="compare-pct">${(calc.overProb*100).toFixed(1)}%</span></div>
+      <div class="compare-row"><span class="compare-label">Market</span><div class="compare-bar-track"><div class="compare-bar-fill market" style="width:${(MARKET_IMPLIED_PROB*100).toFixed(1)}%"></div></div><span class="compare-pct">${(MARKET_IMPLIED_PROB*100).toFixed(1)}%</span></div></div>`;
 }
 function renderPtChart(market){
   const area = document.getElementById('pt-chart-area'); area.innerHTML='';

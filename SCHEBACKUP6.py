@@ -54,10 +54,6 @@ class PlayerResponse(BaseModel):
     order: int | None = None
     bats: str = "R"
     projectedPA: float = 0.0
-    # NEW (2026-09-08, diagnostic pass): whether THIS player's team's
-    # batting order is a confirmed, officially-posted lineup (vs. the
-    # best-effort projected fallback — see MLBClient.probable_lineup).
-    lineupConfirmed: bool = False
     props: dict[str, PropQuote]
     stats: PlayerStats
 
@@ -284,11 +280,6 @@ class PitcherPropsResponse(BaseModel):
     markets: dict[str, MarketData]
     labels: list[str]
     matchDetails: list[MatchDetail]
-    # NEW (2026-09-07, diagnostic pass): numeric IDs for the "Pitcher vs
-    # Team, season" tool — id above is already the pitcher's id as a
-    # string (kept for backward compat), opponentTeamId is new.
-    pitcherId: int
-    opponentTeamId: int | None = None
 
 
 class TeamMatchupsResponse(BaseModel):
@@ -305,9 +296,6 @@ class TeamMatchupsResponse(BaseModel):
     matchDetails: list[MatchDetail]
     startTimeUTC: str | None = None
     venue: str | None = None
-    # NEW (2026-09-07, diagnostic pass): numeric IDs for the season-H2H tool.
-    teamId: int
-    opponentId: int | None = None
 
 
 class PitchMixEntry(BaseModel):
@@ -434,111 +422,3 @@ class MatchupResponse(BaseModel):
     advantageScore: float
     verdict: Literal["batter", "pitcher", "neutral"]
     verdictLabel: str
-
-
-# --- NEW (2026-09-06, diagnostic pass): Player Card scouting tool,
-# replacing the manual Statcast-calibration sliders in the batter drawer.
-
-
-class SplitLine(BaseModel):
-    avg: str
-    ops: float = 0.0
-    pa: int = 0
-    hr: int = 0
-
-
-class RecentHandSplit(BaseModel):
-    ab: int = 0
-    h: int = 0
-    avg: str = ".000"
-
-
-class GameLogEntry(BaseModel):
-    date: str | None = None
-    ab: int = 0
-    h: int = 0
-    hr: int = 0
-    bb: int = 0
-    so: int = 0
-    # NEW (2026-09-08, diagnostic pass): the actual opposing starter faced
-    # that game, so the Last 7 Games hover can show it directly.
-    pitcherId: int | None = None
-    pitcherName: str | None = None
-    pitcherHand: str | None = None
-
-
-class RecentGameLogSummary(BaseModel):
-    games: int = 0
-    ab: int = 0
-    h: int = 0
-    hr: int = 0
-    bb: int = 0
-    so: int = 0
-    avg: str = ".000"
-    log: list[GameLogEntry] = []
-
-
-class PlayerScoutingResponse(BaseModel):
-    playerId: int
-    name: str
-    seasonVsLHP: SplitLine
-    seasonVsRHP: SplitLine
-    recentVsLHP: RecentHandSplit
-    recentVsRHP: RecentHandSplit
-    recentHandGamesCovered: int = 0
-    last7: RecentGameLogSummary
-    pitcherId: int | None = None
-    pitcherName: str | None = None
-    pitcherHand: str | None = None
-    h2h: H2HSlash | None = None
-
-
-# --- NEW (2026-09-07, diagnostic pass): Team Matchups season H2H tool and
-# Pitcher-vs-Team season tool, replacing the Kelly Stake card on both tabs.
-
-
-class TeamH2HSplitLine(BaseModel):
-    games: int = 0
-    wins: int = 0
-    losses: int = 0
-    runsFor: int = 0
-    runsAgainst: int = 0
-
-
-class TeamH2HResponse(BaseModel):
-    teamId: int
-    teamName: str
-    opponentId: int
-    opponentName: str
-    season: int
-    overall: TeamH2HSplitLine
-    home: TeamH2HSplitLine
-    away: TeamH2HSplitLine
-    day: TeamH2HSplitLine
-    night: TeamH2HSplitLine
-
-
-class PitcherVsTeamSplitLine(BaseModel):
-    games: int = 0
-    inningsPitched: float = 0.0
-    er: int = 0
-    runs: int = 0
-    hits: int = 0
-    walks: int = 0
-    strikeouts: int = 0
-    era: float | None = None
-    whip: float | None = None
-    baa: float | None = None
-
-
-class PitcherVsTeamResponse(BaseModel):
-    pitcherId: int
-    pitcherName: str
-    teamId: int
-    teamName: str
-    season: int
-    overall: PitcherVsTeamSplitLine
-    home: PitcherVsTeamSplitLine
-    away: PitcherVsTeamSplitLine
-    day: PitcherVsTeamSplitLine
-    night: PitcherVsTeamSplitLine

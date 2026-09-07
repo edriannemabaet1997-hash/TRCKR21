@@ -256,78 +256,6 @@ class MLBClient:
         payload = self._get(f"/teams/{team_id}/roster", {"rosterType": "active"})
         return payload.get("roster", [])
 
-    def team_info(self, team_id: int) -> dict:
-        try:
-            payload = self._get(f"/teams/{team_id}")
-            teams = payload.get("teams", [])
-            return teams[0] if teams else {}
-        except Exception:
-            return {}
-
-    # NEW (2026-09-07, diagnostic pass) — Team Matchups season H2H tool.
-    # A single schedule call scoped to teamId+opponentId+season returns
-    # every game between the two clubs this year, final score included —
-    # no per-game boxscore fetches needed, since dayNight and each side's
-    # score already live directly on the schedule game object.
-    def team_h2h_games(self, team_id: int, opponent_id: int, season: int) -> list[dict]:
-        try:
-            payload = self._get("/schedule", {
-                "sportId": 1, "teamId": team_id, "opponentId": opponent_id,
-                "season": season, "gameType": "R",
-            })
-        except Exception:
-            return []
-        games_out = []
-        for date_block in payload.get("dates", []):
-            for game in date_block.get("games", []):
-                if game.get("status", {}).get("abstractGameState") != "Final":
-                    continue
-                teams = game.get("teams", {})
-                is_home = teams.get("home", {}).get("team", {}).get("id") == team_id
-                side, opp_side = ("home", "away") if is_home else ("away", "home")
-                runs_for = teams.get(side, {}).get("score")
-                runs_against = teams.get(opp_side, {}).get("score")
-                if runs_for is None or runs_against is None:
-                    continue
-                games_out.append({
-                    "gamePk": game.get("gamePk"),
-                    "isHome": is_home,
-                    "dayNight": game.get("dayNight", "day"),
-                    "runsFor": int(runs_for),
-                    "runsAgainst": int(runs_against),
-                    "win": int(runs_for) > int(runs_against),
-                })
-        return games_out
-
-    # NEW (2026-09-07, diagnostic pass) — Pitcher Props "pitcher vs this
-    # team, all season" tool. Pulls the pitcher's full-season game log,
-    # keeps only the starts made against team_id, then resolves day/night
-    # for just those (typically a handful of starts a year against any
-    # one club) via a lightweight per-gamePk schedule lookup rather than a
-    # full boxscore fetch.
-    def pitcher_vs_team_games(self, pitcher_id: int, team_id: int) -> list[dict]:
-        try:
-            payload = self.person_stats(pitcher_id, group="pitching", stats="gameLog")
-        except Exception:
-            return []
-        stats = payload.get("stats", [])
-        splits = stats[0].get("splits", []) if stats else []
-        matched = [s for s in splits if (s.get("opponent") or {}).get("id") == team_id]
-        games_out = []
-        for s in matched:
-            game_pk = s.get("game", {}).get("gamePk")
-            day_night = "day"
-            if game_pk:
-                try:
-                    sched = self._get("/schedule", {"sportId": 1, "gamePk": game_pk})
-                    dates = sched.get("dates", [])
-                    if dates and dates[0].get("games"):
-                        day_night = dates[0]["games"][0].get("dayNight", "day")
-                except Exception:
-                    pass
-            games_out.append({"gamePk": game_pk, "isHome": s.get("isHome", True), "dayNight": day_night, "stat": s.get("stat", {})})
-        return games_out
-
     def person_stats(self, person_id: int, group: str, stats: str = "season", season: int | None = None, **params) -> dict:
         query = {"stats": stats, "group": group, "season": season or settings.season, **params}
         return self._get(f"/people/{person_id}/stats", query)
@@ -853,98 +781,85 @@ class MLBClient:
     # bucket the line by his throwing hand. More API calls than a single
     # aggregate query, but this only runs once, on demand, when a person
     # opens that one player's card — not across the full slate.
-    # NEW (2026-09-08, diagnostic pass): single enriched fetch, shared by
-    # recent_hand_splits() and recent_game_log_summary() below — each game
-    # log line now also carries the actual opposing starter's id/name/hand
-    # (resolved once per game via boxscore), instead of the previous
-    # design where both callers independently re-fetched the same
-    # boxscores to get roughly the same answer.
-    def recent_game_log_enriched(self, batter_id: int, games: int = 7) -> list[dict]:
-        try:
-            payload = self.person_stats(batter_id, group="hitting", stats="gameLog")
-            stats = payload.get("stats", [])
-            splits = stats[0].get("splits", []) if stats else []
-            splits = splits[-games:] if splits else []
-        except Exception:
-            return []
-
-        enriched = []
-        for split in splits:
-            game_pk = split.get("game", {}).get("gamePk")
-            stat = split.get("stat", {})
-            entry = {
-                "date": split.get("date"),
-                "ab": int(stat.get("atBats", 0) or 0),
-                "h": int(stat.get("hits", 0) or 0),
-                "hr": int(stat.get("homeRuns", 0) or 0),
-                "bb": int(stat.get("baseOnBalls", 0) or 0),
-                "so": int(stat.get("strikeOuts", 0) or 0),
-                "pitcherId": None, "pitcherName": None, "pitcherHand": "R",
-            }
-            if game_pk:
-                try:
-                    box = self.boxscore(game_pk)
-                    teams = box.get("teams", {})
-                    batter_side = None
-                    for side in ("home", "away"):
-                        if f"ID{batter_id}" in teams.get(side, {}).get("players", {}):
-                            batter_side = side
-                            break
-                    if batter_side is not None:
-                        opp_side = "away" if batter_side == "home" else "home"
-                        pitcher_ids = teams.get(opp_side, {}).get("pitchers", [])
-                        if pitcher_ids:
-                            starter_id = pitcher_ids[0]
-                            person = self.person(starter_id)
-                            entry["pitcherId"] = starter_id
-                            entry["pitcherName"] = person.get("fullName")
-                            entry["pitcherHand"] = person.get("pitchHand", {}).get("code", "R")
-                except Exception:
-                    pass
-            enriched.append(entry)
-        return enriched
-
-    def recent_hand_splits(self, batter_id: int, games: int = 7, log: list[dict] | None = None) -> dict:
+    def recent_hand_splits(self, batter_id: int, games: int = 7) -> dict:
         fallback = {
             "vsLHP": {"ab": 0, "h": 0, "avg": ".000"},
             "vsRHP": {"ab": 0, "h": 0, "avg": ".000"},
             "gamesCovered": 0,
         }
-        entries = log if log is not None else self.recent_game_log_enriched(batter_id, games)
-        if not entries:
+        try:
+            payload = self.person_stats(batter_id, group="hitting", stats="gameLog")
+            stats = payload.get("stats", [])
+            splits = stats[0].get("splits", []) if stats else []
+            splits = splits[-games:] if splits else []
+            if not splits:
+                return fallback
+            buckets = {"L": {"ab": 0, "h": 0}, "R": {"ab": 0, "h": 0}}
+            covered = 0
+            for split in splits:
+                game_pk = split.get("game", {}).get("gamePk")
+                stat = split.get("stat", {})
+                ab = int(stat.get("atBats", 0) or 0)
+                h = int(stat.get("hits", 0) or 0)
+                if not game_pk:
+                    continue
+                try:
+                    box = self.boxscore(game_pk)
+                except Exception:
+                    continue
+                teams = box.get("teams", {})
+                batter_side = None
+                for side in ("home", "away"):
+                    if f"ID{batter_id}" in teams.get(side, {}).get("players", {}):
+                        batter_side = side
+                        break
+                if batter_side is None:
+                    continue
+                opp_side = "away" if batter_side == "home" else "home"
+                pitcher_ids = teams.get(opp_side, {}).get("pitchers", [])
+                if not pitcher_ids:
+                    continue
+                hand = self.person(pitcher_ids[0]).get("pitchHand", {}).get("code", "R")
+                bucket = buckets.get(hand, buckets["R"])
+                bucket["ab"] += ab
+                bucket["h"] += h
+                covered += 1
+
+            def _avg(b: dict) -> str:
+                return f".{int(round(b['h'] / b['ab'] * 1000)):03d}" if b["ab"] > 0 else ".000"
+
+            return {
+                "vsLHP": {"ab": buckets["L"]["ab"], "h": buckets["L"]["h"], "avg": _avg(buckets["L"])},
+                "vsRHP": {"ab": buckets["R"]["ab"], "h": buckets["R"]["h"], "avg": _avg(buckets["R"])},
+                "gamesCovered": covered,
+            }
+        except Exception:
             return fallback
-        buckets = {"L": {"ab": 0, "h": 0}, "R": {"ab": 0, "h": 0}}
-        covered = 0
-        for e in entries:
-            if e.get("pitcherId") is None:
-                continue
-            hand = e.get("pitcherHand", "R")
-            bucket = buckets.get(hand, buckets["R"])
-            bucket["ab"] += e["ab"]
-            bucket["h"] += e["h"]
-            covered += 1
 
-        def _avg(b: dict) -> str:
-            return f".{int(round(b['h'] / b['ab'] * 1000)):03d}" if b["ab"] > 0 else ".000"
-
-        return {
-            "vsLHP": {"ab": buckets["L"]["ab"], "h": buckets["L"]["h"], "avg": _avg(buckets["L"])},
-            "vsRHP": {"ab": buckets["R"]["ab"], "h": buckets["R"]["h"], "avg": _avg(buckets["R"])},
-            "gamesCovered": covered,
-        }
-
-    def recent_game_log_summary(self, batter_id: int, games: int = 7, log: list[dict] | None = None) -> dict:
+    def recent_game_log_summary(self, batter_id: int, games: int = 7) -> dict:
         fallback = {"games": 0, "ab": 0, "h": 0, "hr": 0, "bb": 0, "so": 0, "avg": ".000", "log": []}
-        entries = log if log is not None else self.recent_game_log_enriched(batter_id, games)
-        if not entries:
+        try:
+            payload = self.person_stats(batter_id, group="hitting", stats="gameLog")
+            stats = payload.get("stats", [])
+            splits = stats[0].get("splits", []) if stats else []
+            splits = splits[-games:] if splits else []
+            if not splits:
+                return fallback
+            ab = h = hr = bb = so = 0
+            log = []
+            for split in splits:
+                stat = split.get("stat", {})
+                g_ab = int(stat.get("atBats", 0) or 0)
+                g_h = int(stat.get("hits", 0) or 0)
+                g_hr = int(stat.get("homeRuns", 0) or 0)
+                g_bb = int(stat.get("baseOnBalls", 0) or 0)
+                g_so = int(stat.get("strikeOuts", 0) or 0)
+                ab += g_ab; h += g_h; hr += g_hr; bb += g_bb; so += g_so
+                log.append({"date": split.get("date"), "ab": g_ab, "h": g_h, "hr": g_hr, "bb": g_bb, "so": g_so})
+            avg = f".{int(round(h / ab * 1000)):03d}" if ab > 0 else ".000"
+            return {"games": len(splits), "ab": ab, "h": h, "hr": hr, "bb": bb, "so": so, "avg": avg, "log": log}
+        except Exception:
             return fallback
-        ab = sum(e["ab"] for e in entries)
-        h = sum(e["h"] for e in entries)
-        hr = sum(e["hr"] for e in entries)
-        bb = sum(e["bb"] for e in entries)
-        so = sum(e["so"] for e in entries)
-        avg = f".{int(round(h / ab * 1000)):03d}" if ab > 0 else ".000"
-        return {"games": len(entries), "ab": ab, "h": h, "hr": hr, "bb": bb, "so": so, "avg": avg, "log": entries}
 
     def hitter_vs_pitcher_history(self, batter_id: int, pitcher_id: int) -> list[dict]:
         payload = self.person_stats(batter_id, group="hitting", stats="vsPlayer", opposingPlayerId=pitcher_id)

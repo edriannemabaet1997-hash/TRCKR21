@@ -23,11 +23,8 @@ from schemas import (
     MatchupResponse,
     PitcherPropsResponse,
     PitcherResponse,
-    PitcherVsTeamResponse,
     PlayerResponse,
-    PlayerScoutingResponse,
     SlateResponse,
-    TeamH2HResponse,
     TeamMatchupsResponse,
     TrackRecordResponse,
 )
@@ -172,36 +169,6 @@ def get_matchup(batter_id: int, pitcher_id: int) -> dict:
         return prediction_service.get_matchup(batter_id, pitcher_id)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Failed to build matchup: {exc}") from exc
-
-
-# --- NEW (2026-09-06, diagnostic pass): Player Card scouting tool,
-# replacing the manual Statcast-calibration sliders. pitcher_id is optional
-# so the card still renders (platoon splits + last 7 games, minus the
-# head-to-head block) before an opposing pitcher is known.
-@app.get("/api/player-scouting/{batter_id}", response_model=PlayerScoutingResponse)
-def get_player_scouting(batter_id: int, pitcher_id: int | None = Query(default=None)) -> dict:
-    try:
-        return prediction_service.get_player_scouting(batter_id, pitcher_id)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to build player scouting report: {exc}") from exc
-
-
-# --- NEW (2026-09-07, diagnostic pass): season H2H (Team Matchups) and
-# pitcher-vs-team (Pitcher Props) tools, replacing the Kelly Stake card.
-@app.get("/api/team-h2h/{team_id}/{opponent_id}", response_model=TeamH2HResponse)
-def get_team_h2h(team_id: int, opponent_id: int) -> dict:
-    try:
-        return prediction_service.get_team_h2h(team_id, opponent_id)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to build team H2H report: {exc}") from exc
-
-
-@app.get("/api/pitcher-vs-team/{pitcher_id}/{team_id}", response_model=PitcherVsTeamResponse)
-def get_pitcher_vs_team(pitcher_id: int, team_id: int) -> dict:
-    try:
-        return prediction_service.get_pitcher_vs_team(pitcher_id, team_id)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to build pitcher-vs-team report: {exc}") from exc
 
 
 # --- NEW: consolidation (2026-08-29) — retires generate_projections.py /
