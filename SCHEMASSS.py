@@ -272,38 +272,6 @@ class MatchDetail(BaseModel):
     text: str
 
 
-class PitcherBattedBallProfile(BaseModel):
-    groundOuts: int = 0
-    airOuts: int = 0
-    goAoRatio: float | None = None
-    tendency: Literal["ground_ball", "balanced", "fly_ball", "unknown"] = "unknown"
-
-
-class PitcherQualityTier(BaseModel):
-    tier: Literal["elite", "above_average", "average", "below_average", "poor"]
-    note: str
-
-
-class PitcherProjectedWorkload(BaseModel):
-    projectedIP: float
-    projectedIPLow: float
-    projectedIPHigh: float
-    sampleStarts: int
-    distribution: Literal["poisson", "negative_binomial"]
-
-
-class PitcherQualitySnapshot(BaseModel):
-    era: float | None = None
-    whip: float | None = None
-    k9: float | None = None
-    bb9: float | None = None
-    battedBallProfile: PitcherBattedBallProfile
-    qualityTier: PitcherQualityTier
-    twoStrikePutAwayPct: float | None = None
-    twoStrikeSampleSize: int = 0
-    projectedWorkload: PitcherProjectedWorkload | None = None
-
-
 class PitcherPropsResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -321,10 +289,6 @@ class PitcherPropsResponse(BaseModel):
     # string (kept for backward compat), opponentTeamId is new.
     pitcherId: int
     opponentTeamId: int | None = None
-    # NEW (2026-09-10, diagnostic pass): sidebar hover Pitcher Quality
-    # Snapshot — see PredictionService._pitcher_quality_snapshot for what
-    # each field is (and isn't) derived from.
-    qualitySnapshot: PitcherQualitySnapshot | None = None
 
 
 class TeamMatchupsResponse(BaseModel):

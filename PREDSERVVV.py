@@ -51,7 +51,7 @@ from __future__ import annotations
 import logging
 import math
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeoutError, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import Lock
@@ -89,7 +89,6 @@ from math_engine import (
     bullpen_fatigue_multiplier,
     calculate_team_xruns_v2,
     calculate_woba_from_stats,
-    calibrate_count_market,
     clamp,
     confidence_from_edge,
     credibility_weighted_average,
@@ -136,15 +135,6 @@ logger = logging.getLogger("trckr21.prediction_service")
 # show up within a reasonable wait, long enough that rapid page
 # reloads/refreshes don't each trigger their own cold rebuild.
 LINEUP_RECHECK_INTERVAL_SECONDS = 300
-
-# NEW (2026-09-11, diagnostic pass) — see the inflight-join fix in
-# _build_slate_blocking / _blocking_list_build. Bounds how long a request
-# will wait on a build it's piggybacking on before giving up on that one
-# and starting its own.
-INFLIGHT_JOIN_TIMEOUT_SECONDS = 180
-
-# NEW (2026-09-11, diagnostic pass) — see _pitcher_quality_snapshot's note.
-PITCHER_QUALITY_CACHE_TTL_SECONDS = 1800
 
 
 # TASK 1 UI (2026-08-31) — carries the weather signal both consumers need:
@@ -380,21 +370,9 @@ class PredictionService:
         self._pitcher_index: dict[int, dict] = {}
         # CONSOLIDATION — same per-date, in-memory cache pattern as
         # _slate_cache, one dict per new endpoint.
-        # FIX (2026-09-10, diagnostic pass): these three used to cache
-        # PERMANENTLY until an explicit refresh=True — no staleness check
-        # at all, unlike build_slate(). That's why a lineup swap (e.g. a
-        # late scratch/call-up change) never showed up here even minutes
-        # later: Matchup Analyzer kept serving the exact snapshot it built
-        # the first time it was ever requested that day. Each entry is now
-        # {"data": [...], "cachedAt": datetime} and goes through the same
-        # stale-while-revalidate + in-flight de-dup helpers build_slate()
-        # uses (_cached_list_build / _schedule_background_list_rebuild).
-        self._pitcher_props_cache: dict[str, dict] = {}
-        self._team_matchups_cache: dict[str, dict] = {}
-        self._matchup_analyzer_cache: dict[str, dict] = {}
-        self._pitcher_props_inflight: dict[str, Future] = {}
-        self._team_matchups_inflight: dict[str, Future] = {}
-        self._matchup_analyzer_inflight: dict[str, Future] = {}
+        self._pitcher_props_cache: dict[str, list[dict]] = {}
+        self._team_matchups_cache: dict[str, list[dict]] = {}
+        self._matchup_analyzer_cache: dict[str, list[dict]] = {}
         self._lock = Lock()
 
         # PERF (2026-08-29) — team/pitcher-season-level fetch cache, scoped
@@ -424,16 +402,6 @@ class PredictionService:
         self._starter_recent_form_cache: dict[int, dict] = {}
         self._starter_arsenal_whiff_cache: dict[int, float | None] = {}
         self._lineup_signal_cache: dict[tuple[int, int, int], tuple] = {}
-        # NEW (2026-09-11, diagnostic pass): _pitcher_quality_snapshot's
-        # season-stat fetch and put-away aggregation (which walks several
-        # recent starts' worth of pitch-by-pitch data) were re-run from
-        # scratch on EVERY Pitcher Props rebuild, including every 5-minute
-        # stale-while-revalidate cycle — none of which meaningfully changes
-        # within a day. That's real added load on top of everything else
-        # this app already fetches, and a likely contributor to slowdowns
-        # after hours of continuous use. Cached per pitcher_id for
-        # PITCHER_QUALITY_CACHE_TTL_SECONDS instead of every rebuild.
-        self._pitcher_quality_cache: dict[int, dict] = {}
         self._team_cache_lock = Lock()
 
     # ------------------------------------------------------------------
@@ -808,30 +776,7 @@ class PredictionService:
 
         if not is_builder:
             logger.info("build_slate(%s): joining an already-running build instead of starting a redundant one.", target_date)
-            # FIX (2026-09-11, diagnostic pass): this used to be an
-            # unbounded inflight.result() — if the build it's joining ever
-            # genuinely hangs (a stuck network call somewhere, or just a
-            # pathologically slow day against a throttled upstream API),
-            # every request piles up waiting on that SAME stuck Future
-            # forever, with no way out short of restarting the process —
-            # matching "nag timeout tapos di na maibalik." Bounded to
-            # INFLIGHT_JOIN_TIMEOUT_SECONDS; a request that waits this
-            # long gives up on the stuck build and starts its own fresh
-            # one instead of hanging alongside it indefinitely.
-            try:
-                return inflight.result(timeout=INFLIGHT_JOIN_TIMEOUT_SECONDS)
-            except FutureTimeoutError:
-                logger.warning(
-                    "build_slate(%s): the build we were joining has been running for over %ss — starting a fresh one instead of waiting indefinitely.",
-                    target_date, INFLIGHT_JOIN_TIMEOUT_SECONDS,
-                )
-                with self._lock:
-                    # Only clear it if it's still the SAME stuck entry —
-                    # don't clobber a newer build that may have already
-                    # taken its place.
-                    if self._slate_inflight.get(target_date) is inflight:
-                        self._slate_inflight.pop(target_date, None)
-                return self._build_slate_blocking(target_date)
+            return inflight.result()
 
         try:
             slate = self._build_slate_uncached(target_date)
@@ -862,88 +807,6 @@ class PredictionService:
                     self._slate_inflight.pop(target_date, None)
 
         threading.Thread(target=_run, daemon=True, name=f"slate-bg-rebuild-{target_date}").start()
-
-    # ------------------------------------------------------------------
-    # Generic stale-while-revalidate + in-flight de-dup, for the three
-    # simpler "list" endpoints (pitcher-props, team-matchups, matchup-
-    # analyzer) — same shape as the slate-specific version above, minus
-    # the per-item lineupsConfirmed gate (a flat TTL is a fine, honest
-    # trade-off here: it bounds the worst-case staleness the same way
-    # without needing each of these three to separately track a
-    # slate-style confirmation flag).
-    # ------------------------------------------------------------------
-
-    def _cached_list_build(self, cache: dict, inflight: dict, target_date: str, force: bool, build_fn, cache_name: str) -> list[dict]:
-        with self._lock:
-            entry = cache.get(target_date)
-        if entry is not None and not force:
-            age = (datetime.now(timezone.utc) - entry["cachedAt"]).total_seconds()
-            if age < LINEUP_RECHECK_INTERVAL_SECONDS:
-                return entry["data"]
-            self._schedule_background_list_rebuild(cache, inflight, target_date, build_fn, cache_name)
-            return entry["data"]
-        return self._blocking_list_build(cache, inflight, target_date, build_fn, cache_name)
-
-    def _blocking_list_build(self, cache: dict, inflight: dict, target_date: str, build_fn, cache_name: str) -> list[dict]:
-        with self._lock:
-            fut = inflight.get(target_date)
-            if fut is not None:
-                is_builder = False
-            else:
-                fut = Future()
-                inflight[target_date] = fut
-                is_builder = True
-
-        if not is_builder:
-            logger.info("%s(%s): joining an already-running build instead of starting a redundant one.", cache_name, target_date)
-            # FIX (2026-09-11, diagnostic pass) — same unbounded-wait fix as
-            # _build_slate_blocking above, applied here too.
-            try:
-                return fut.result(timeout=INFLIGHT_JOIN_TIMEOUT_SECONDS)
-            except FutureTimeoutError:
-                logger.warning(
-                    "%s(%s): the build we were joining has been running for over %ss — starting a fresh one instead of waiting indefinitely.",
-                    cache_name, target_date, INFLIGHT_JOIN_TIMEOUT_SECONDS,
-                )
-                with self._lock:
-                    if inflight.get(target_date) is fut:
-                        inflight.pop(target_date, None)
-                return self._blocking_list_build(cache, inflight, target_date, build_fn, cache_name)
-
-        try:
-            data = build_fn(target_date)
-            with self._lock:
-                cache[target_date] = {"data": data, "cachedAt": datetime.now(timezone.utc)}
-        except Exception as exc:
-            fut.set_exception(exc)
-            with self._lock:
-                inflight.pop(target_date, None)
-            raise
-        with self._lock:
-            inflight.pop(target_date, None)
-        fut.set_result(data)
-        return data
-
-    def _schedule_background_list_rebuild(self, cache: dict, inflight: dict, target_date: str, build_fn, cache_name: str) -> None:
-        with self._lock:
-            if target_date in inflight:
-                return
-            fut = inflight[target_date] = Future()
-
-        def _run() -> None:
-            try:
-                data = build_fn(target_date)
-                with self._lock:
-                    cache[target_date] = {"data": data, "cachedAt": datetime.now(timezone.utc)}
-                fut.set_result(data)
-            except Exception:
-                logger.exception("Background %s rebuild failed for %s — will retry on the next stale hit.", cache_name, target_date)
-                fut.set_exception(RuntimeError("background rebuild failed"))
-            finally:
-                with self._lock:
-                    inflight.pop(target_date, None)
-
-        threading.Thread(target=_run, daemon=True, name=f"{cache_name}-bg-{target_date}").start()
 
     def _build_slate_uncached(self, target_date: str) -> dict:
         # Fresh team/pitcher cache scope for THIS build: shared by every
@@ -1784,49 +1647,11 @@ class PredictionService:
     # CONSOLIDATION — Pitcher Props (/api/pitcher-props)
     # ------------------------------------------------------------------
 
-    def _resolve_probable_pitcher(self, team_node: dict, game_pk: int | None, team_id: int | None) -> tuple[int | None, str | None]:
-        """FIX (2026-09-10, diagnostic pass): MLB's schedule hydrate only
-        populates probablePitcher once it's been announced — a TBD rotation
-        slot, a rookie/Triple-A call-up not yet locked in, or just fetching
-        early in the day all leave this empty, and the entire matchup
-        silently disappeared from Pitcher Props / Team Matchups / Matchup
-        Analyzer as a result (no pid meant the job never got queued at
-        all). Falls back to that game's boxscore, which is sometimes
-        populated with a starter before the schedule hydrate catches up —
-        same "try a second real source before giving up" pattern already
-        used for lineups (see probable_lineup). Still returns (None, None)
-        if genuinely nothing is available anywhere yet — there's no
-        legitimate name to show at that point.
-        """
-        prob_pitcher = team_node.get("probablePitcher") or {}
-        pid = prob_pitcher.get("id")
-        pname = prob_pitcher.get("fullName")
-        if pid:
-            return pid, pname
-        if not game_pk or not team_id:
-            return None, None
-        try:
-            box = self.mlb.boxscore(game_pk)
-            for side in ("home", "away"):
-                team_box = box.get("teams", {}).get(side, {})
-                if team_box.get("team", {}).get("id") != team_id:
-                    continue
-                pitcher_ids = team_box.get("pitchers", [])
-                if not pitcher_ids:
-                    return None, None
-                starter_id = pitcher_ids[0]
-                return starter_id, self.mlb.person(starter_id).get("fullName")
-        except Exception:
-            pass
-        return None, None
-
     def build_pitcher_props(self, target_date: str, force: bool = False) -> list[dict]:
-        return self._cached_list_build(
-            self._pitcher_props_cache, self._pitcher_props_inflight, target_date, force,
-            self._build_pitcher_props_uncached, "pitcher-props",
-        )
+        with self._lock:
+            if not force and target_date in self._pitcher_props_cache:
+                return self._pitcher_props_cache[target_date]
 
-    def _build_pitcher_props_uncached(self, target_date: str) -> list[dict]:
         games = self.mlb.schedule(target_date)
         jobs: list[tuple] = []
         seen_pitcher_ids: set[int] = set()
@@ -1836,11 +1661,12 @@ class PredictionService:
                 team_node = teams.get(side, {})
                 opp_node = teams.get("home" if side == "away" else "away", {})
                 team_name = team_node.get("team", {}).get("name", "")
-                team_id = team_node.get("team", {}).get("id")
                 opponent_name = opp_node.get("team", {}).get("name", "")
                 opponent_team_id = opp_node.get("team", {}).get("id")
                 is_home = side == "home"
-                pid, pname = self._resolve_probable_pitcher(team_node, game.get("gamePk"), team_id)
+                prob_pitcher = team_node.get("probablePitcher") or {}
+                pid = prob_pitcher.get("id")
+                pname = prob_pitcher.get("fullName")
                 if pid and pid not in seen_pitcher_ids:
                     seen_pitcher_ids.add(pid)
                     jobs.append((pid, pname, team_name, opponent_name, is_home, opponent_team_id))
@@ -1862,6 +1688,8 @@ class PredictionService:
                     if entry:
                         results.append(entry)
 
+        with self._lock:
+            self._pitcher_props_cache[target_date] = results
         return results
 
     def _build_pitcher_props_entry(
@@ -1871,7 +1699,7 @@ class PredictionService:
         if not games:
             return None
 
-        history_k, history_er, history_bb, history_outs = [], [], [], []
+        history_k, history_er, history_bb = [], [], []
         labels, match_details = [], []
         for g in games:
             s = g.get("stat", {})
@@ -1881,7 +1709,6 @@ class PredictionService:
             history_k.append(k)
             history_er.append(er)
             history_bb.append(bb)
-            history_outs.append(round(parse_innings_pitched(s.get("inningsPitched", "0.0")) * 3))
             labels.append(_format_date_label(g.get("date", ""), g.get("isHome", True), (g.get("opponent") or {}).get("name", "OPP")))
             score_prefix = "W" if g.get("isWin", False) else "L"
             match_details.append({
@@ -1909,148 +1736,6 @@ class PredictionService:
             "matchDetails": match_details,
             "pitcherId": pitcher_id,
             "opponentTeamId": opponent_team_id,
-            # NEW (2026-09-10, diagnostic pass) — Pitcher Quality Snapshot,
-            # for the sidebar hover card. See _pitcher_quality_snapshot for
-            # exactly what's real vs. what's honestly omitted.
-            "qualitySnapshot": self._pitcher_quality_snapshot(pitcher_id, history_outs),
-        }
-
-    # NEW (2026-09-10, diagnostic pass) — Pitcher Quality Snapshot.
-    #
-    # Every number here is either a standard, real MLB Stats API field, a
-    # well-established sabermetric convention (ERA+), or something this
-    # codebase already computes elsewhere from real pitch-by-pitch data
-    # (putAwayPct — see pitcher_pitch_lethality). Two things were
-    # explicitly requested but are NOT included, on purpose, because doing
-    # so honestly would mean fabricating them:
-    #   - "Line-out rate": the standard season pitching stat line splits
-    #     outs into groundOuts/airOuts only — line drives aren't tracked as
-    #     their own category there. Rather than invent a split with no
-    #     real backing, this exposes the real groundOuts/airOuts (GO/AO)
-    #     read instead, which IS a genuine, standard batted-ball-tendency
-    #     signal (groundball vs. flyball pitcher).
-    #   - "Strikeout rate on 2-strike / 3-2 COUNTS specifically": count-
-    #     situation splits aren't in the season stat API at all — getting
-    #     this exactly would require parsing every pitch of every start
-    #     this season, which isn't a reasonable per-request cost. What IS
-    #     already computed from real pitch-by-pitch data in this codebase
-    #     is putAwayPct: strikeouts specifically on 2-STRIKE pitches, from
-    #     the pitcher's last several starts (pitcher_pitch_lethality) —
-    #     the closest real answer to "how good is he at finishing hitters
-    #     off once he's got two strikes," aggregated here across his whole
-    #     arsenal instead of per-pitch-type.
-    def _pitcher_quality_snapshot(self, pitcher_id: int, history_outs: list[int]) -> dict:
-        with self._team_cache_lock:
-            cached = self._pitcher_quality_cache.get(pitcher_id)
-        if cached is not None:
-            age = (datetime.now(timezone.utc) - cached["cachedAt"]).total_seconds()
-            if age < PITCHER_QUALITY_CACHE_TTL_SECONDS:
-                # projectedWorkload is the one part that's cheap to recompute
-                # and legitimately DOES shift build-to-build (fresher recent-
-                # outs history) — refreshed on every call even on a cache
-                # hit, everything else (season stats, put-away rate) reused.
-                snapshot = dict(cached["data"])
-                snapshot["projectedWorkload"] = self._pitcher_projected_workload(history_outs)
-                return snapshot
-
-        snapshot = self._pitcher_quality_snapshot_uncached(pitcher_id)
-        with self._team_cache_lock:
-            self._pitcher_quality_cache[pitcher_id] = {"data": dict(snapshot), "cachedAt": datetime.now(timezone.utc)}
-        snapshot["projectedWorkload"] = self._pitcher_projected_workload(history_outs)
-        return snapshot
-
-    def _pitcher_projected_workload(self, history_outs: list[int]) -> dict | None:
-        # Same Poisson/NB2 calibration engine used for every other prop in
-        # this app (calibrate_count_market), run on this pitcher's own
-        # last-10-start outs-recorded history. mu is in OUTS internally
-        # (consistent unit for the count-market model); converted to
-        # innings (outs / 3) only for display.
-        if not history_outs:
-            return None
-        outs_model = calibrate_count_market(history_outs, 15.5)
-        mu_outs = outs_model["mu"]
-        sd_outs = math.sqrt(outs_model["variance"]) if outs_model["variance"] > 0 else 0.0
-        return {
-            "projectedIP": round(mu_outs / 3.0, 1),
-            "projectedIPLow": round(max(0.0, mu_outs - sd_outs) / 3.0, 1),
-            "projectedIPHigh": round((mu_outs + sd_outs) / 3.0, 1),
-            "sampleStarts": outs_model["sampleSize"],
-            "distribution": outs_model["distribution"],
-        }
-
-    def _pitcher_quality_snapshot_uncached(self, pitcher_id: int) -> dict:
-        season_pitching = self.mlb._first_stat(self.mlb.person_stats(pitcher_id, group="pitching", stats="season"))
-        era_raw = season_pitching.get("era")
-        whip_raw = season_pitching.get("whip")
-        era = safe_float(era_raw) if era_raw not in (None, "-", "", "-.--") else None
-        whip = safe_float(whip_raw) if whip_raw not in (None, "-", "", "-.--") else None
-        k9 = safe_float(season_pitching.get("strikeoutsPer9Inn"), None)
-        bb9 = safe_float(season_pitching.get("walksPer9Inn"), None)
-        ground_outs = int(season_pitching.get("groundOuts", 0) or 0)
-        air_outs = int(season_pitching.get("airOuts", 0) or 0)
-
-        go_ao_ratio = round(ground_outs / air_outs, 2) if air_outs > 0 else None
-        if go_ao_ratio is None:
-            tendency = "unknown"
-        elif go_ao_ratio >= 1.5:
-            tendency = "ground_ball"
-        elif go_ao_ratio <= 0.9:
-            tendency = "fly_ball"
-        else:
-            tendency = "balanced"
-
-        # ERA+ (era_plus > 100 = better than league-average ERA) — the
-        # same standard convention used across baseball media, computed
-        # here from this app's own LEAGUE_AVG_ERA constant so it's
-        # consistent with every other ERA-relative calc in this codebase.
-        era_plus = round(LEAGUE_AVG_ERA / era * 100) if era and era > 0 else None
-        if era_plus is None:
-            tier, tier_note = "average", "Insufficient ERA sample to grade."
-        elif era_plus >= 130:
-            tier, tier_note = "elite", f"ERA+ {era_plus} (ERA {era:.2f} vs. league {LEAGUE_AVG_ERA:.2f})"
-        elif era_plus >= 110:
-            tier, tier_note = "above_average", f"ERA+ {era_plus} (ERA {era:.2f} vs. league {LEAGUE_AVG_ERA:.2f})"
-        elif era_plus >= 90:
-            tier, tier_note = "average", f"ERA+ {era_plus} (ERA {era:.2f} vs. league {LEAGUE_AVG_ERA:.2f})"
-        elif era_plus >= 70:
-            tier, tier_note = "below_average", f"ERA+ {era_plus} (ERA {era:.2f} vs. league {LEAGUE_AVG_ERA:.2f})"
-        else:
-            tier, tier_note = "poor", f"ERA+ {era_plus} (ERA {era:.2f} vs. league {LEAGUE_AVG_ERA:.2f})"
-
-        # Two-strike put-away rate, aggregated across the full arsenal —
-        # real pitch-by-pitch data from this pitcher's own recent starts.
-        put_away_pct, put_away_sample = None, 0
-        try:
-            recent_pks = self.mlb.pitcher_recent_game_pks(pitcher_id)
-            lethality = self.mlb.pitcher_pitch_lethality(pitcher_id, recent_pks) if recent_pks else {}
-            total_two_strike_pitches = sum(v.get("sampleSize", 0) or 0 for v in lethality.values())
-            # pitcher_pitch_lethality returns rates, not raw counts, per
-            # pitch type — recompute the raw twoStrikePitches/twoStrikeKs
-            # totals isn't exposed there, so this reconstructs a
-            # sample-size-weighted average from what IS exposed
-            # (putAwayPct per pitch type + that pitch's own sample size)
-            # rather than re-parsing play-by-play a second time.
-            weighted_sum, weight_total = 0.0, 0
-            for v in lethality.values():
-                if v.get("putAwayPct") is not None and v.get("sampleSize"):
-                    weighted_sum += v["putAwayPct"] * v["sampleSize"]
-                    weight_total += v["sampleSize"]
-            if weight_total > 0:
-                put_away_pct = round(weighted_sum / weight_total, 1)
-                put_away_sample = weight_total
-        except Exception:
-            logger.warning("Pitcher quality snapshot: put-away aggregation failed for pitcher_id=%s.", pitcher_id, exc_info=True)
-
-        # Projected workload is computed separately by
-        # _pitcher_projected_workload() every call (cheap, and legitimately
-        # benefits from the freshest recent-outs history) — not cached here.
-
-        return {
-            "era": era, "whip": whip, "k9": k9, "bb9": bb9,
-            "battedBallProfile": {"groundOuts": ground_outs, "airOuts": air_outs, "goAoRatio": go_ao_ratio, "tendency": tendency},
-            "qualityTier": {"tier": tier, "note": tier_note},
-            "twoStrikePutAwayPct": put_away_pct,
-            "twoStrikeSampleSize": put_away_sample,
         }
 
     # ------------------------------------------------------------------
@@ -2067,12 +1752,10 @@ class PredictionService:
     # ------------------------------------------------------------------
 
     def build_team_matchups(self, target_date: str, force: bool = False) -> list[dict]:
-        return self._cached_list_build(
-            self._team_matchups_cache, self._team_matchups_inflight, target_date, force,
-            self._build_team_matchups_uncached, "team-matchups",
-        )
+        with self._lock:
+            if not force and target_date in self._team_matchups_cache:
+                return self._team_matchups_cache[target_date]
 
-    def _build_team_matchups_uncached(self, target_date: str) -> list[dict]:
         games = self.mlb.schedule(target_date)
         jobs: list[tuple] = []
         seen_team_ids: set[int] = set()
@@ -2090,11 +1773,7 @@ class PredictionService:
                 team_name = team_node.get("team", {}).get("name", "")
                 opponent_id = int(opp_node.get("team", {}).get("id", 0))
                 opponent_name = opp_node.get("team", {}).get("name", "")
-                # FIX (2026-09-10, diagnostic pass): see _resolve_probable_pitcher
-                # — a TBD/not-yet-announced opposing starter used to leave this
-                # card's opponent-pitcher context empty even when the boxscore
-                # already had a real name to offer.
-                opp_pitcher_id, _opp_pitcher_name = self._resolve_probable_pitcher(opp_node, game_pk, opponent_id)
+                opp_pitcher_id = (opp_node.get("probablePitcher") or {}).get("id")
                 is_home = side == "home"
                 if team_id and team_id not in seen_team_ids:
                     seen_team_ids.add(team_id)
@@ -2121,6 +1800,8 @@ class PredictionService:
                     if entry:
                         results.append(entry)
 
+        with self._lock:
+            self._team_matchups_cache[target_date] = results
         return results
 
     def _build_team_matchup_entry(
@@ -2237,12 +1918,10 @@ class PredictionService:
     # ------------------------------------------------------------------
 
     def build_matchup_analyzer(self, target_date: str, force: bool = False) -> list[dict]:
-        return self._cached_list_build(
-            self._matchup_analyzer_cache, self._matchup_analyzer_inflight, target_date, force,
-            self._build_matchup_analyzer_uncached, "matchup-analyzer",
-        )
+        with self._lock:
+            if not force and target_date in self._matchup_analyzer_cache:
+                return self._matchup_analyzer_cache[target_date]
 
-    def _build_matchup_analyzer_uncached(self, target_date: str) -> list[dict]:
         games = self.mlb.schedule(target_date)
         jobs: list[tuple] = []
         seen_pitcher_ids: set[int] = set()
@@ -2252,13 +1931,13 @@ class PredictionService:
             for side in ("away", "home"):
                 team_node = teams.get(side, {})
                 opp_node = teams.get("home" if side == "away" else "away", {})
-                team_id = team_node.get("team", {}).get("id")
                 team_name = team_node.get("team", {}).get("name", "")
                 opponent_id = int(opp_node.get("team", {}).get("id", 0))
                 opponent_name = opp_node.get("team", {}).get("name", "")
                 is_home = side == "home"
-                # FIX (2026-09-10, diagnostic pass) — see _resolve_probable_pitcher.
-                pid, pname = self._resolve_probable_pitcher(team_node, game_pk, team_id)
+                prob_pitcher = team_node.get("probablePitcher") or {}
+                pid = prob_pitcher.get("id")
+                pname = prob_pitcher.get("fullName")
                 if pid and pid not in seen_pitcher_ids:
                     seen_pitcher_ids.add(pid)
                     jobs.append((pid, pname, team_name, opponent_id, opponent_name, is_home, game_pk, target_date))
@@ -2280,6 +1959,8 @@ class PredictionService:
                     if entry:
                         results.append(entry)
 
+        with self._lock:
+            self._matchup_analyzer_cache[target_date] = results
         return results
 
     def _build_matchup_analyzer_entry(
@@ -2738,4 +2419,4 @@ class PredictionService:
             batting = player.get("stats", {}).get("batting", {})
             if stat_key in batting:
                 return int(batting.get(stat_key, 0) or 0)
-        return None
+        return None 

@@ -1260,7 +1260,6 @@ function pitcherQualityTipHTML(e){
     ${dominance?`<div>
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-lo);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">Vs. Today's Lineup</div>
       <div style="font-family:var(--font-body);font-size:12px;font-weight:600;color:${dominance.color};">${dominance.label}</div>
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-ghost);margin-top:4px;line-height:1.5;">${mx.totalH2hPa!=null && mx.totalH2hPa<30?`Based on limited career H2H (${mx.totalH2hPa} PA) blended with season form &mdash; `:''}A lineup-level read, not a guaranteed outcome; any single start still carries real game-to-game variance.</div>
     </div>`:''}
   </div>`;
 }
@@ -2549,26 +2548,12 @@ function mxStatDial(value, max, color, label, sub){
     <div style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-lo); font-weight:700;">${label}</div>
   </div>`;
 }
-// TASK (2026-09-11, diagnostic pass): this tooltip is shown on a PITCHER's
-// own sidebar card, but used to reuse MX_TIER_META — which is written from
-// the LINEUP's perspective (elite=green="Elite Matchup" means the LINEUP
-// is favored; soft=red="Poor Matchup" means the LINEUP struggles here).
-// Shown on the pitcher's own card, "Poor Matchup" in red reads as bad news
-// FOR THE PITCHER — but a "soft" lineup-edge tier is actually the best
-// possible outcome for him. Same underlying number, contradictory-looking
-// label depending on which component you were looking at. Now uses
-// PQ_DOMINANCE_META (pitcher-framed) here specifically — MX_TIER_META is
-// untouched and still used correctly elsewhere for lineup-centric views
-// (e.g. Team Intel's Lineup Tier Distribution).
 function mxPitcherTipHTML(m){
   const era = (m.pitcherEra!=null) ? Number(m.pitcherEra).toFixed(2) : '—';
   const whip = (m.pitcherWhip!=null) ? Number(m.pitcherWhip).toFixed(2) : '—';
   const whiff = (m.pitcherArsenalWhiffPct!=null) ? Number(m.pitcherArsenalWhiffPct) : null;
-  const tier = PQ_DOMINANCE_META[m.lineupEdgeTier] || {color:'var(--text-mid)', label:'—'};
+  const tier = MX_TIER_META[m.lineupEdgeTier] || {color:'var(--text-mid)', glow:'transparent', label:'—'};
   const edgeOps = (m.lineupEdgeOps!=null) ? Number(m.lineupEdgeOps).toFixed(3) : '—';
-  const sampleNote = (m.totalH2hPa!=null && m.totalH2hPa < 30)
-    ? `<div style="font-family:var(--font-mono); font-size:9px; color:var(--text-ghost); margin-top:6px; line-height:1.5;">Read from limited career H2H (${m.totalH2hPa} PA total) blended toward season form — treat as directional, not a guarantee.</div>`
-    : '';
   return `<div style="width:252px; font-family:var(--font-body);">
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
       <img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:silo:current.png/w_213,q_auto:best/v1/people/${m.pitcherId}/headshot/silo/current" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--bg-raised);flex-shrink:0;">
@@ -2582,13 +2567,12 @@ function mxPitcherTipHTML(m){
       ${mxStatDial(whip, 2, 'var(--mlb)', 'WHIP', whip)}
       ${mxStatDial(whiff, 45, 'var(--batter)', 'WHIFF', whiff!=null?whiff.toFixed(0)+'%':'—')}
     </div>
-    <div style="background:linear-gradient(135deg, color-mix(in srgb, ${tier.color} 10%, transparent), transparent); border:1px solid ${tier.color}; border-radius:10px; padding:10px 12px; margin-bottom:10px;">
+    <div style="background:linear-gradient(135deg, ${tier.glow.replace('.45','.1').replace('.4','.1')}, transparent); border:1px solid ${tier.color}; border-radius:10px; padding:10px 12px; margin-bottom:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-lo); font-weight:700;">Vs. Today's Lineup</span>
-        <span style="font-family:var(--font-mono); font-size:9px; font-weight:800; text-transform:uppercase; color:${tier.color}; letter-spacing:.3px;">${escapeHTML(tier.label)}</span>
+        <span style="font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-lo); font-weight:700;">Projected vs Lineup</span>
+        <span style="font-family:var(--font-mono); font-size:9px; font-weight:800; text-transform:uppercase; color:${tier.color}; letter-spacing:.3px;">${tier.label}</span>
       </div>
-      <div style="font-family:var(--font-display); font-size:19px; font-weight:700; color:${tier.color};">${edgeOps} <span style="font-size:11px; color:var(--text-lo); font-weight:500; font-family:var(--font-mono);">lineup's blended OPS</span></div>
-      ${sampleNote}
+      <div style="font-family:var(--font-display); font-size:19px; font-weight:700; color:${tier.color};">${edgeOps} <span style="font-size:11px; color:var(--text-lo); font-weight:500; font-family:var(--font-mono);">blended OPS</span></div>
     </div>
     <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:10px;">
       <span style="color:var(--text-lo);">Roster Status</span>

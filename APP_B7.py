@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -96,47 +95,6 @@ def _warm_cache_on_startup() -> None:
                 logger.exception("Startup cache warm failed for %s (%s) — first request will build it instead.", label, target_date)
 
     threading.Thread(target=_warm, daemon=True, name="cache-warmup").start()
-
-
-# FIX (2026-09-11, diagnostic pass): PredictionRepository.upsert_prediction()
-# was being called correctly (every prop, every player, every slate build —
-# see the 2026-08-29 consolidation note at the top of prediction_service.py),
-# and sync_results() was fully built and working (fetches the real boxscore,
-# extracts the actual stat, writes it back) — but NOTHING ever actually
-# called sync_results(). No cron, no startup hook, no button in the
-# frontend. Every prediction this app has ever logged has sat in the
-# database with actual=NULL forever, which means /api/track-record's
-# calibration chart and prediction log have been permanently empty —
-# there has never been a real, objective record of whether this app's
-# predictions have actually been landing or missing. That's a serious gap:
-# it means any read on "is the model getting worse" has had to rely on
-# memory and a handful of recent anecdotes, which is exactly the kind of
-# signal that both overreacts to normal variance AND can't catch a real
-# regression early. This runs sync_results() automatically every
-# RESULTS_SYNC_INTERVAL_SECONDS for as long as the process is up, so
-# Track Record actually starts accumulating real, checkable history
-# starting now.
-RESULTS_SYNC_INTERVAL_SECONDS = 600
-
-
-@app.on_event("startup")
-def _auto_sync_results_loop() -> None:
-    logger = logging.getLogger("trckr21.app")
-
-    def _loop() -> None:
-        while True:
-            try:
-                result = prediction_service.sync_results()
-                if result.get("resolved"):
-                    logger.info(
-                        "Auto results sync: resolved %s of %s pending predictions (%s failed).",
-                        result.get("resolved"), result.get("checked"), result.get("failed"),
-                    )
-            except Exception:
-                logger.exception("Auto results sync failed this cycle — will retry next cycle.")
-            time.sleep(RESULTS_SYNC_INTERVAL_SECONDS)
-
-    threading.Thread(target=_loop, daemon=True, name="results-auto-sync").start()
 
 
 @app.get("/", include_in_schema=False)

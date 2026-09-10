@@ -51,7 +51,7 @@ from __future__ import annotations
 import logging
 import math
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeoutError, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import Lock
@@ -136,15 +136,6 @@ logger = logging.getLogger("trckr21.prediction_service")
 # show up within a reasonable wait, long enough that rapid page
 # reloads/refreshes don't each trigger their own cold rebuild.
 LINEUP_RECHECK_INTERVAL_SECONDS = 300
-
-# NEW (2026-09-11, diagnostic pass) — see the inflight-join fix in
-# _build_slate_blocking / _blocking_list_build. Bounds how long a request
-# will wait on a build it's piggybacking on before giving up on that one
-# and starting its own.
-INFLIGHT_JOIN_TIMEOUT_SECONDS = 180
-
-# NEW (2026-09-11, diagnostic pass) — see _pitcher_quality_snapshot's note.
-PITCHER_QUALITY_CACHE_TTL_SECONDS = 1800
 
 
 # TASK 1 UI (2026-08-31) — carries the weather signal both consumers need:
@@ -424,16 +415,6 @@ class PredictionService:
         self._starter_recent_form_cache: dict[int, dict] = {}
         self._starter_arsenal_whiff_cache: dict[int, float | None] = {}
         self._lineup_signal_cache: dict[tuple[int, int, int], tuple] = {}
-        # NEW (2026-09-11, diagnostic pass): _pitcher_quality_snapshot's
-        # season-stat fetch and put-away aggregation (which walks several
-        # recent starts' worth of pitch-by-pitch data) were re-run from
-        # scratch on EVERY Pitcher Props rebuild, including every 5-minute
-        # stale-while-revalidate cycle — none of which meaningfully changes
-        # within a day. That's real added load on top of everything else
-        # this app already fetches, and a likely contributor to slowdowns
-        # after hours of continuous use. Cached per pitcher_id for
-        # PITCHER_QUALITY_CACHE_TTL_SECONDS instead of every rebuild.
-        self._pitcher_quality_cache: dict[int, dict] = {}
         self._team_cache_lock = Lock()
 
     # ------------------------------------------------------------------
@@ -808,30 +789,7 @@ class PredictionService:
 
         if not is_builder:
             logger.info("build_slate(%s): joining an already-running build instead of starting a redundant one.", target_date)
-            # FIX (2026-09-11, diagnostic pass): this used to be an
-            # unbounded inflight.result() — if the build it's joining ever
-            # genuinely hangs (a stuck network call somewhere, or just a
-            # pathologically slow day against a throttled upstream API),
-            # every request piles up waiting on that SAME stuck Future
-            # forever, with no way out short of restarting the process —
-            # matching "nag timeout tapos di na maibalik." Bounded to
-            # INFLIGHT_JOIN_TIMEOUT_SECONDS; a request that waits this
-            # long gives up on the stuck build and starts its own fresh
-            # one instead of hanging alongside it indefinitely.
-            try:
-                return inflight.result(timeout=INFLIGHT_JOIN_TIMEOUT_SECONDS)
-            except FutureTimeoutError:
-                logger.warning(
-                    "build_slate(%s): the build we were joining has been running for over %ss — starting a fresh one instead of waiting indefinitely.",
-                    target_date, INFLIGHT_JOIN_TIMEOUT_SECONDS,
-                )
-                with self._lock:
-                    # Only clear it if it's still the SAME stuck entry —
-                    # don't clobber a newer build that may have already
-                    # taken its place.
-                    if self._slate_inflight.get(target_date) is inflight:
-                        self._slate_inflight.pop(target_date, None)
-                return self._build_slate_blocking(target_date)
+            return inflight.result()
 
         try:
             slate = self._build_slate_uncached(target_date)
@@ -896,19 +854,7 @@ class PredictionService:
 
         if not is_builder:
             logger.info("%s(%s): joining an already-running build instead of starting a redundant one.", cache_name, target_date)
-            # FIX (2026-09-11, diagnostic pass) — same unbounded-wait fix as
-            # _build_slate_blocking above, applied here too.
-            try:
-                return fut.result(timeout=INFLIGHT_JOIN_TIMEOUT_SECONDS)
-            except FutureTimeoutError:
-                logger.warning(
-                    "%s(%s): the build we were joining has been running for over %ss — starting a fresh one instead of waiting indefinitely.",
-                    cache_name, target_date, INFLIGHT_JOIN_TIMEOUT_SECONDS,
-                )
-                with self._lock:
-                    if inflight.get(target_date) is fut:
-                        inflight.pop(target_date, None)
-                return self._blocking_list_build(cache, inflight, target_date, build_fn, cache_name)
+            return fut.result()
 
         try:
             data = build_fn(target_date)
@@ -1940,45 +1886,6 @@ class PredictionService:
     #     off once he's got two strikes," aggregated here across his whole
     #     arsenal instead of per-pitch-type.
     def _pitcher_quality_snapshot(self, pitcher_id: int, history_outs: list[int]) -> dict:
-        with self._team_cache_lock:
-            cached = self._pitcher_quality_cache.get(pitcher_id)
-        if cached is not None:
-            age = (datetime.now(timezone.utc) - cached["cachedAt"]).total_seconds()
-            if age < PITCHER_QUALITY_CACHE_TTL_SECONDS:
-                # projectedWorkload is the one part that's cheap to recompute
-                # and legitimately DOES shift build-to-build (fresher recent-
-                # outs history) — refreshed on every call even on a cache
-                # hit, everything else (season stats, put-away rate) reused.
-                snapshot = dict(cached["data"])
-                snapshot["projectedWorkload"] = self._pitcher_projected_workload(history_outs)
-                return snapshot
-
-        snapshot = self._pitcher_quality_snapshot_uncached(pitcher_id)
-        with self._team_cache_lock:
-            self._pitcher_quality_cache[pitcher_id] = {"data": dict(snapshot), "cachedAt": datetime.now(timezone.utc)}
-        snapshot["projectedWorkload"] = self._pitcher_projected_workload(history_outs)
-        return snapshot
-
-    def _pitcher_projected_workload(self, history_outs: list[int]) -> dict | None:
-        # Same Poisson/NB2 calibration engine used for every other prop in
-        # this app (calibrate_count_market), run on this pitcher's own
-        # last-10-start outs-recorded history. mu is in OUTS internally
-        # (consistent unit for the count-market model); converted to
-        # innings (outs / 3) only for display.
-        if not history_outs:
-            return None
-        outs_model = calibrate_count_market(history_outs, 15.5)
-        mu_outs = outs_model["mu"]
-        sd_outs = math.sqrt(outs_model["variance"]) if outs_model["variance"] > 0 else 0.0
-        return {
-            "projectedIP": round(mu_outs / 3.0, 1),
-            "projectedIPLow": round(max(0.0, mu_outs - sd_outs) / 3.0, 1),
-            "projectedIPHigh": round((mu_outs + sd_outs) / 3.0, 1),
-            "sampleStarts": outs_model["sampleSize"],
-            "distribution": outs_model["distribution"],
-        }
-
-    def _pitcher_quality_snapshot_uncached(self, pitcher_id: int) -> dict:
         season_pitching = self.mlb._first_stat(self.mlb.person_stats(pitcher_id, group="pitching", stats="season"))
         era_raw = season_pitching.get("era")
         whip_raw = season_pitching.get("whip")
@@ -2041,9 +1948,24 @@ class PredictionService:
         except Exception:
             logger.warning("Pitcher quality snapshot: put-away aggregation failed for pitcher_id=%s.", pitcher_id, exc_info=True)
 
-        # Projected workload is computed separately by
-        # _pitcher_projected_workload() every call (cheap, and legitimately
-        # benefits from the freshest recent-outs history) — not cached here.
+        # Projected workload — same Poisson/NB2 calibration engine used for
+        # every other prop in this app (calibrate_count_market), run on
+        # this pitcher's own last-10-start outs-recorded history. mu is in
+        # OUTS internally (consistent unit for the count-market model);
+        # converted to innings (outs / 3) only for display.
+        outs_model = calibrate_count_market(history_outs, 15.5) if history_outs else None
+        if outs_model:
+            mu_outs = outs_model["mu"]
+            sd_outs = math.sqrt(outs_model["variance"]) if outs_model["variance"] > 0 else 0.0
+            projected_workload = {
+                "projectedIP": round(mu_outs / 3.0, 1),
+                "projectedIPLow": round(max(0.0, mu_outs - sd_outs) / 3.0, 1),
+                "projectedIPHigh": round((mu_outs + sd_outs) / 3.0, 1),
+                "sampleStarts": outs_model["sampleSize"],
+                "distribution": outs_model["distribution"],
+            }
+        else:
+            projected_workload = None
 
         return {
             "era": era, "whip": whip, "k9": k9, "bb9": bb9,
@@ -2051,6 +1973,7 @@ class PredictionService:
             "qualityTier": {"tier": tier, "note": tier_note},
             "twoStrikePutAwayPct": put_away_pct,
             "twoStrikeSampleSize": put_away_sample,
+            "projectedWorkload": projected_workload,
         }
 
     # ------------------------------------------------------------------
